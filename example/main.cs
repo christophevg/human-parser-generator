@@ -1,3 +1,6 @@
+// small runner example to load a Pascal file, parse it and dump the AST
+// author: Christophe VG <contact@christophe.vg>
+
 using System;
 using System.IO;
 

@@ -100,7 +100,7 @@ The next important step is being self hosting and parsing the EBNF-like grammars
 
 The grammar for the EBNF-like notation looks like this:
 
-```
+```ebnf
 identifier = /([A-Z][A-Z0-9]*)/;
 number     = /(-?[1-9][0-9]*)/ ;
 string     = /"([^"]*)"/;

@@ -15,6 +15,18 @@ using System.Linq;
 
 namespace Parser {
 
+  // Parser Model classes
+  // 
+  // The Parser Model (PM) consists of
+  // - Entities
+  // - Extractions
+  //
+  // Entities have Properties and ParseParseActions
+  // Extractions have a Name and Pattern to extract tokens
+  //
+  // Properties have a Name, Type and IsPlural indication
+  // ParseParseActions are an ordered list of steps to parse into Properties
+
   public class Property {
     public string Name { get; set; }
     public string Type { get; set; }
@@ -28,21 +40,20 @@ namespace Parser {
     }
   }
 
-  public abstract class Action {}
+  public abstract class ParseAction {
+    public virtual Property Prop { get; set; }
+    public abstract string Label { get; }
+  }
 
-  public class ConsumeLiteral : Action {
+  public class ConsumeLiteral : ParseAction {
     public string Literal { get; set; }
+    public override string Label { get { return this.Literal; } }
     public override string ToString() {
       return "Consume(" + this.Literal + ")";
     }
   }
   
-  public abstract class ConsumeProperty : Action {
-    public virtual Property Prop { get; set; }
-    public abstract string Label { get; }
-  }
-
-  public class ConsumeExtraction : ConsumeProperty {
+  public class ConsumeExtraction : ParseAction {
     public Extraction Extr { get; set; }
     public override string Label { get { return this.Extr.Name; } }
     public override string ToString() {
@@ -50,7 +61,7 @@ namespace Parser {
     }    
   }
 
-  public class ConsumeEntity : ConsumeProperty {
+  public class ConsumeEntity : ParseAction {
     public string Id { get; set; }
     public override string Label { get { return this.Id; } }
     public override string ToString() {
@@ -58,8 +69,8 @@ namespace Parser {
     }
   }
 
-  public class ConsumeAny : ConsumeProperty {
-    public List<ConsumeProperty> Options;
+  public class ConsumeAny : ParseAction {
+    public List<ParseAction> Options;
     public override string Label {
       get {
         return string.Join( " | ", this.Options.Select(x => x.Label ));
@@ -80,7 +91,7 @@ namespace Parser {
       }
     }
     public ConsumeAny() {
-      this.Options = new List<ConsumeProperty>();
+      this.Options = new List<ParseAction>();
     }
     public override string ToString() {
       return "Consume([" + 
@@ -94,10 +105,11 @@ namespace Parser {
     // name -> entity information
     public Dictionary<string,Property> Properties;
     // ordered list of parsing actions to fill properties
-    public List<Action> Actions;
+    public List<ParseAction> ParseActions;
+
     public Entity() {
       this.Properties = new Dictionary<string,Property>();
-      this.Actions    = new List<Action>();
+      this.ParseActions    = new List<ParseAction>();
     }
     public override string ToString() {
       return
@@ -108,9 +120,9 @@ namespace Parser {
               this.Properties.Select(x => x.Key + "=" + x.Value.ToString())
             ) +
           "]" + "," +
-          "Actions=" + "[" +
+          "ParseActions=" + "[" +
             string.Join(",",
-              this.Actions.Select(x => x.ToString())
+              this.ParseActions.Select(x => x.ToString())
             ) +
           "]" +
         ")";
@@ -135,9 +147,11 @@ namespace Parser {
   }
 
   public class Model {
-    public Dictionary<string,Grammar.Rule>       Rules;
-    public Dictionary<string,Entity>     Entities;
-    public Dictionary<string,Extraction> Extractions;
+    public Dictionary<string,Grammar.Rule> Rules;
+
+    public Dictionary<string,Entity>       Entities;
+    public Dictionary<string,Extraction>   Extractions;
+
     public Entity Root;
 
     public Model Import(Grammar.Model grammar) {
@@ -158,8 +172,8 @@ namespace Parser {
       this.Entities = new Dictionary<string,Entity>();
       foreach(KeyValuePair<string, Grammar.Rule> rule in this.Rules) {
         Entity entity = new Entity() { Name = rule.Key };
-        this.ExtractPropertiesAndActions(rule.Value.Exp, entity);
-        if( entity.Properties.Count + entity.Actions.Count > 0) {
+        this.ExtractPropertiesAndParseActions(rule.Value.Exp, entity);
+        if( entity.Properties.Count + entity.ParseActions.Count > 0) {
           this.Entities.Add(rule.Key, entity);
           if(this.Root == null) { this.Root = entity; }
         }
@@ -179,9 +193,9 @@ namespace Parser {
         );
     }
 
-    // Properties and Actions Extraction methods
+    // Properties and ParseActions Extraction methods
 
-    private void ExtractPropertiesAndActions(Grammar.Expression exp, Entity entity) {
+    private void ExtractPropertiesAndParseActions(Grammar.Expression exp, Entity entity) {
       try {
         new Dictionary<string, Action<Grammar.Expression,Entity>>() {
           { "Grammar.IdentifierExpression",   this.ExtractIdentifierExpression   },
@@ -193,35 +207,45 @@ namespace Parser {
           { "Grammar.AlternativesExpression", this.ExtractAlternativesExpression },
           { "Grammar.SequenceExpression",     this.ExtractSequenceExpression     }
         }[exp.GetType().ToString()](exp, entity);
-      } catch(KeyNotFoundException) {
+      } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
-          "extracting not posible for " + exp.GetType().ToString()
+          "extracting not implemented for " + exp.GetType().ToString(), e
         );
       }
     }
 
     private void ExtractIdentifierExpression(Grammar.Expression exp, Entity entity) {
       string id = ((Grammar.IdentifierExpression)exp).Id;
-      if( ! this.IsTerminal(id) ) {
-        throw new NotImplementedException(
-          "Identifier is not a terminal : " + id
-        );
+      if( this.IsTerminal(id) ) {
+        // this is an extractor, the extraction is a "string"
+        Property property = new Property() {
+          Name = id,
+          Type = "string",
+          IsPlural = false
+        };
+        entity.Properties.Add(id, property);
+        entity.ParseActions.Add(new ConsumeExtraction() {
+          Prop = property,
+          Extr = this.Extractions[id]
+        });
+      } else {
+        // this is an entity, the identifier results in an other Entity
+        Property property = new Property() {
+          Name = id,
+          Type = "Enity",
+          IsPlural = false
+        };
+        entity.Properties.Add(id, property);
+        entity.ParseActions.Add(new ConsumeEntity() {
+          Id   = id,
+          Prop = property
+        });
       }
-      Property property = new Property() {
-        Name = id,
-        Type = "string",
-        IsPlural = false
-      };
-      entity.Properties.Add(id, property);
-      entity.Actions.Add(new ConsumeExtraction() {
-        Prop = property,
-        Extr = this.Extractions[id]
-      });
     }
 
     private void ExtractStringExpression(Grammar.Expression exp, Entity entity) {
       // this only requires an action
-      entity.Actions.Add(new ConsumeLiteral() {
+      entity.ParseActions.Add(new ConsumeLiteral() {
         Literal = ((Grammar.StringExpression)exp).String
       });
     }
@@ -245,9 +269,9 @@ namespace Parser {
           IsPlural = true
         };
         entity.Properties.Add(id, property);
-        entity.Actions.Add(new ConsumeEntity() {
-          Prop = property,
-          Id   = id
+        entity.ParseActions.Add(new ConsumeEntity() {
+          Id   = id,
+          Prop = property
         });
       } else {
         throw new NotImplementedException();          
@@ -279,12 +303,12 @@ namespace Parser {
         }
       }
       entity.Properties.Add(property.Name, property);
-      entity.Actions.Add(consume);
+      entity.ParseActions.Add(consume);
     }
 
     private void ExtractSequenceExpression(Grammar.Expression exp, Entity entity) {
       foreach(var subExp in ((Grammar.SequenceExpression)exp).Expressions) {
-        this.ExtractPropertiesAndActions(subExp, entity);
+        this.ExtractPropertiesAndParseActions(subExp, entity);
       }
     }
 

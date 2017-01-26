@@ -172,7 +172,7 @@ using System.Linq;
         new List<string>() {
           this.GenerateEntityParserHeader(entity),
           string.Join("\n\n",
-            entity.Actions.Select(action => this.GenerateAction(action))
+            entity.ParseActions.Select(action => this.GenerateParseAction(action))
           ),
           this.GenerateEntityParserFooter(entity)
         }
@@ -193,7 +193,7 @@ using System.Linq;
         "    try {";
     }
 
-    private string GenerateAction(Parser.Action action) {
+    private string GenerateParseAction(Parser.ParseAction action) {
       if(action is Parser.ConsumeLiteral) {
         return "      this.source.Consume(\"" + ((Parser.ConsumeLiteral)action).Literal + "\");";
       }
@@ -231,7 +231,7 @@ using System.Linq;
         foreach(var option in consumption.Options) {
           code +=
             indent + "try {\n" +
-            indent + this.GenerateAction(option) + "\n" +
+            indent + this.GenerateParseAction(option) + "\n" +
             indent + "} catch(ParseException) {\n";
           indent += "  ";
         }

@@ -83,14 +83,14 @@ namespace Grammar {
     }
   }
 
-  public class OrExpression : Expression {
-    public Expression Exp1;
-    public Expression Exp2;
+  public class AlternativesExpression : Expression {
+    public List<Expression> Expressions;
     public override string ToString() {
       return
-        "OrExpression(" +
-          "Exp1=" + this.Exp1.ToString() + "," +
-          "Exp2=" + this.Exp2.ToString() +
+        "AlernativesExpression(" +
+          "Expressions=" + "[" + 
+            string.Join("|", this.Expressions.Select(x => x.ToString())) +
+          "]" +
         ")";
     }
   }

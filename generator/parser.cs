@@ -225,7 +225,7 @@ namespace Parser {
         } else {
           throw new NotImplementedException();          
         }
-      } else if(exp is Grammar.OrExpression) {
+      } else if(exp is Grammar.AlternativesExpression) {
         // TODO: expand to "value" + number
         Property property = new Property() {
           Name     = "value",
@@ -233,25 +233,12 @@ namespace Parser {
           IsPlural = false
         };
         ConsumeAny consume = new ConsumeAny();
-        var o = (Grammar.OrExpression)exp;
-        while(true) { // loop to recurse through Or(Id,[Id|Or(...)])
-          if( o.Exp1 is Grammar.IdentifierExpression ) {
+        foreach(var alt in ((Grammar.AlternativesExpression)exp).Expressions) {
+          if( alt is Grammar.IdentifierExpression ) {
             consume.Options.Add(new ConsumeExtraction() {
               Prop = property,
-              Extr = this.Extractions[((Grammar.IdentifierExpression)o.Exp1).Id]
+              Extr = this.Extractions[((Grammar.IdentifierExpression)alt).Id]
             });
-            if( o.Exp2 is Grammar.IdentifierExpression ) {
-              consume.Options.Add(new ConsumeExtraction() {
-                Prop = property,
-                Extr = this.Extractions[((Grammar.IdentifierExpression)o.Exp2).Id]
-              });              
-              break; // stop recusion
-            } else if( o.Exp2 is Grammar.OrExpression ) {
-              // recurse
-              o = (Grammar.OrExpression)o.Exp2;
-            } else {
-              throw new NotImplementedException();
-            }
           } else {
             throw new NotImplementedException();
           }

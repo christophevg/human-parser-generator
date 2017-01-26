@@ -52,11 +52,11 @@ public class Runner {
             Expressions = new List<Expression> {
               new IdentifierExpression() { Id = "identifier" },
               new StringExpression() { String = ":=" },
-              new OrExpression() {
-                Exp1 = new IdentifierExpression() { Id = "number" },
-                Exp2 = new OrExpression() {
-                  Exp1 = new IdentifierExpression() { Id = "identifier" },
-                  Exp2 = new IdentifierExpression() { Id = "string" }
+              new AlternativesExpression() {
+                Expressions = new List<Expression> {
+                  new IdentifierExpression() { Id = "number" },
+                  new IdentifierExpression() { Id = "identifier" },
+                  new IdentifierExpression() { Id = "string" }
                 }
               },
               new StringExpression() { String = ";" }

@@ -178,75 +178,113 @@ namespace Parser {
           extraction => extraction
         );
     }
-    
-    // TODO: refactor
-    // TODO: evaluate if polymorphism or Visitor pattern results in nicer 
-    //       interface/code
+
+    // Properties and Actions Extraction methods
+
     private void ExtractPropertiesAndActions(Grammar.Expression exp, Entity entity) {
-      if( exp is Grammar.SequenceExpression) {
-        // recurse
-        foreach(var subExp in ((Grammar.SequenceExpression)exp).Expressions) {
-          this.ExtractPropertiesAndActions(subExp, entity);
-        }
-      } else if(exp is Grammar.StringExpression){
-        // this only requires an action
-        entity.Actions.Add(new ConsumeLiteral() {
-          Literal = ((Grammar.StringExpression)exp).String
-        });
-      } else if(exp is Grammar.Extractor){
-        // this will be an Extracting entry
-      } else if(exp is Grammar.IdentifierExpression) {
-        string id = ((Grammar.IdentifierExpression)exp).Id;
-        if( ! this.IsTerminal(id) ) { throw new NotImplementedException(); }
+      try {
+        new Dictionary<string, Action<Grammar.Expression,Entity>>() {
+          { "Grammar.IdentifierExpression",   this.ExtractIdentifierExpression   },
+          { "Grammar.StringExpression",       this.ExtractStringExpression       },
+          { "Grammar.Extractor",              this.ExtractExtractorExpression    },
+          { "Grammar.OptionalExpression",     this.ExtractOptionalExpression     },
+          { "Grammar.RepetitionExpression",   this.ExtractRepetitionExpression   },
+          { "Grammar.GroupExpression",        this.ExtractGroupExpression        },
+          { "Grammar.AlternativesExpression", this.ExtractAlternativesExpression },
+          { "Grammar.SequenceExpression",     this.ExtractSequenceExpression     }
+        }[exp.GetType().ToString()](exp, entity);
+      } catch(KeyNotFoundException) {
+        throw new NotImplementedException(
+          "extracting not posible for " + exp.GetType().ToString()
+        );
+      }
+    }
+
+    private void ExtractIdentifierExpression(Grammar.Expression exp, Entity entity) {
+      string id = ((Grammar.IdentifierExpression)exp).Id;
+      if( ! this.IsTerminal(id) ) {
+        throw new NotImplementedException(
+          "Identifier is not a terminal : " + id
+        );
+      }
+      Property property = new Property() {
+        Name = id,
+        Type = "string",
+        IsPlural = false
+      };
+      entity.Properties.Add(id, property);
+      entity.Actions.Add(new ConsumeExtraction() {
+        Prop = property,
+        Extr = this.Extractions[id]
+      });
+    }
+
+    private void ExtractStringExpression(Grammar.Expression exp, Entity entity) {
+      // this only requires an action
+      entity.Actions.Add(new ConsumeLiteral() {
+        Literal = ((Grammar.StringExpression)exp).String
+      });
+    }
+    
+    private void ExtractExtractorExpression(Grammar.Expression exp, Entity entity) {
+      // this will be an Extractor
+      // nothing TODO ?
+    }
+
+    private void ExtractOptionalExpression(Grammar.Expression exp, Entity entity) {
+      throw new NotImplementedException("TODO: ExtractGroupExpression");
+    }
+    
+    private void ExtractRepetitionExpression(Grammar.Expression exp, Entity entity) {
+      var repetition = (Grammar.RepetitionExpression)exp;
+      if( repetition.Exp is Grammar.IdentifierExpression) {
+        string id   = ((Grammar.IdentifierExpression)repetition.Exp).Id;
         Property property = new Property() {
-          Name = id,
-          Type = "string",
-          IsPlural = false
+          Name = id + "s",
+          Type = this.IsTerminal(id) ? "string" : id,
+          IsPlural = true
         };
         entity.Properties.Add(id, property);
-        entity.Actions.Add(new ConsumeExtraction() {
+        entity.Actions.Add(new ConsumeEntity() {
           Prop = property,
-          Extr = this.Extractions[id]
+          Id   = id
         });
-      } else if(exp is Grammar.RepetitionExpression) {
-        var repetition = (Grammar.RepetitionExpression)exp;
-        if( repetition.Exp is Grammar.IdentifierExpression) {
-          string id   = ((Grammar.IdentifierExpression)repetition.Exp).Id;
-          Property property = new Property() {
-            Name = id + "s",
-            Type = this.IsTerminal(id) ? "string" : id,
-            IsPlural = true
-          };
-          entity.Properties.Add(id, property);
-          entity.Actions.Add(new ConsumeEntity() {
+      } else {
+        throw new NotImplementedException();          
+      }
+    }
+
+    private void ExtractGroupExpression(Grammar.Expression exp, Entity entity) {
+      throw new NotImplementedException("TODO: ExtractGroupExpression");
+    }
+
+    private void ExtractAlternativesExpression(Grammar.Expression exp, Entity entity) {
+      // TODO: expand to "value" + number
+      Property property = new Property() {
+        Name     = "value",
+        Type     = "string",
+        IsPlural = false
+      };
+      ConsumeAny consume = new ConsumeAny();
+      foreach(var alt in ((Grammar.AlternativesExpression)exp).Expressions) {
+        if( alt is Grammar.IdentifierExpression ) {
+          consume.Options.Add(new ConsumeExtraction() {
             Prop = property,
-            Id   = id
+            Extr = this.Extractions[((Grammar.IdentifierExpression)alt).Id]
           });
         } else {
-          throw new NotImplementedException();          
+          throw new NotImplementedException(
+            "alternative is " + alt.GetType().ToString()
+          );
         }
-      } else if(exp is Grammar.AlternativesExpression) {
-        // TODO: expand to "value" + number
-        Property property = new Property() {
-          Name     = "value",
-          Type     = "string",
-          IsPlural = false
-        };
-        ConsumeAny consume = new ConsumeAny();
-        foreach(var alt in ((Grammar.AlternativesExpression)exp).Expressions) {
-          if( alt is Grammar.IdentifierExpression ) {
-            consume.Options.Add(new ConsumeExtraction() {
-              Prop = property,
-              Extr = this.Extractions[((Grammar.IdentifierExpression)alt).Id]
-            });
-          } else {
-            throw new NotImplementedException();
-          }
-        }
-        entity.Properties.Add(property.Name, property);
-        entity.Actions.Add(consume);
-      } else {
-        throw new NotImplementedException();
+      }
+      entity.Properties.Add(property.Name, property);
+      entity.Actions.Add(consume);
+    }
+
+    private void ExtractSequenceExpression(Grammar.Expression exp, Entity entity) {
+      foreach(var subExp in ((Grammar.SequenceExpression)exp).Expressions) {
+        this.ExtractPropertiesAndActions(subExp, entity);
       }
     }
 

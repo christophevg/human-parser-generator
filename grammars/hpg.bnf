@@ -19,7 +19,4 @@ or-expression         ::= expression "|" expression ;
 sequence-expression   ::= expression "," expression ;
 
 identifier            ::= /([A-Z][A-Z0-9]*)/;
-digit                 ::= /([0-9])/;
-int                   ::= /(-?[1-9][0-9]*)/ ;
-float                 ::= /([-+]?[0-9]*\.?[0-9]*)/; 
 string                ::= /"([^"]*)"|'([^']*)'/;

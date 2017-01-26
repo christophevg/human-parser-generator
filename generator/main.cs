@@ -10,8 +10,8 @@ using System.Linq;
 using Grammar;
 
 public class Runner {
-  public static void Main(string[] args) {
 
+  public static Model CreatePascalGrammar() {
     // program = 'PROGRAM', identifier,
     //           'BEGIN',
     //           { assignment },
@@ -21,7 +21,7 @@ public class Runner {
     // number     = /(-?[1-9][0-9]*)/ ;
     // string     = /"([^"]*)"/;
 
-    Model grammar = new Model() {
+    return new Model() {
       Rules = new List<Rule>() {
         new Rule() {
           Id   = "program",
@@ -68,8 +68,12 @@ public class Runner {
         }
       }
     };
+  }
 
+  public static void Main(string[] args) {
+    Model grammar = CreatePascalGrammar();
     Parser.Model model = new Parser.Model().Import(grammar);
+
     // Console.WriteLine(model.ToString());
     // Console.WriteLine();
 

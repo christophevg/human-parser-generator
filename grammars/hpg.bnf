@@ -1,0 +1,28 @@
+grammar               ::= { rule } ;
+
+rule                  ::= identifier  "::=" expression ";" ;
+
+expression            ::= identifier-expression
+                        | string-expression
+                        | optional-expression
+                        | repetition-expression
+                        | group-expression
+                        | or-expression
+                        | sequence-expression
+                        ;
+identifier-expression ::= identifier ;
+string-expression     ::= string ;
+optional-expression   ::= "[" expression "]" ;
+repetition-expression ::= "{" expression "}" ;
+group-expression      ::= "(" expression ")" ;
+or-expression         ::= expression "|" expression ;
+sequence-expression   ::= expression "," expression ;
+
+string                ::= single-string | double-string ;
+
+identifier            ::= /([A-Z][A-Z0-9]*)/;
+digit                 ::= /([0-9])/;
+int                   ::= /(-?[1-9][0-9]*)/ ;
+float                 ::= /([-+]?[0-9]*\.?[0-9]*)/; 
+single-string         ::= /'([^']*)'/;
+double-string         ::= /"([^"]*)"/;

@@ -1,0 +1,82 @@
+records          ::= { record };
+record           ::= ( renames-record | values-record | basic-record ) ".";
+
+renames-record   ::= "66" level-name "RENAMES"  identifier-range ;
+level-name       ::= identifier@'LevelName' | "FILLER" ;
+identifier-range ::= identifier@"start" "THRU" identifier@"end"
+                   | identifier@"start" "THROUGH" identifier@"end"
+                   | identifier
+                   ;
+
+values-record    ::= "88" level-name "VALUES" ["IS" | "ARE"] { value } ;
+value            ::= literal | variable ;
+literal          ::= number | float | string ;
+variable         ::= identifier [ "(" subset ")" ];
+subset           ::= numeric [ ":" subset ];
+numeric          ::= int | identifier;
+
+basic-record     ::= int level-name { option } ;
+
+option           ::= redefines-option
+                   | external-option
+                   | internal-option
+                   | picture-option
+                   | usage-option
+                   | sign-option
+                   | occurs-option
+                   | sync-option
+                   | just-option
+                   | blank-option
+                   | value-option
+                   ;
+
+redefines-option ::= "REDEFINES" identifier ;
+external-option  ::= [ "IS" ] "EXTERNAL" ;
+internal-option  ::= [ "IS" ] "INTERNAL" ;
+picture-option   ::= picture ;
+usage-option     ::= [ "USAGE" [ "IS" ] ] usage;
+sign-option      ::= "SIGN" [ "IS" ] ( "LEADING" | "TRAILING" ) [ "SEPARATE" [ "CHARACTER" ] ] ;
+occurs-option    ::= "OCCURS" numeric [ "TO" numeric@"end" [ "TIMES" ] "DEPENDING" [ "ON" ] identifier ] key index ;
+sync-option      ::= "SYNC" [ "HRONIZED" ] [ "LEFT" | "RIGHT" ] ;
+just-option      ::= "JUST" [ "IFIED" ] [ "RIGHT" ] ;
+blank-option     ::= "BLANK" [ "WHEN" ] "ZERO" ;
+value-option     ::= "VALUE" [ "IS" ] symbolic ;
+
+picture          ::= [ "PICTURE" | "PIC" ] [ "IS" ] picture-type [ "(" int@"length" ")" [ [ "V" | "." ] picture-type "(" int@"decimal" ")" ] ];
+                   | [ "PICTURE" | "PIC" ] [ "IS" ] string
+                   ;
+usage            ::= "BINARY"
+                   | "COMPUTATIONAL" [ "-" digit ]
+                   | "COMP" [ "-" digit ]
+                   | "DISPLAY"
+                   | "INDEX"
+                   | "PACKED-DECIMAL"
+                   ;
+key              ::= [ ( "ASCENDING" | "DESCENDING" ) [ "KEY" ] [ "IS" ] { identifier } ] ;
+index            ::= [ "INDEXED" [ "BY" ] identifier ] ;
+symbolic         ::= literal | variable | figurative ;
+
+figurative       ::= "ZEROS"
+                   | "ZEROES"
+                   | "ZERO"
+                   | "SPACES"
+                   | "SPACE"
+                   | "HIGH-VALUES"
+                   | "HIGH-VALUE"
+                   | "LOW-VALUES"
+                   | "LOW-VALUE"
+                   | "ALL" string
+                   | "NULLS"
+                   | "NULL"
+                   ;
+
+picture-type     ::= /(9AXVSP)+/;
+
+string           ::= single-string | double-string ;
+
+identifier       ::= /([A-Z][A-Z0-9]*)/;
+digit            ::= /([0-9])/;
+int              ::= /(-?[1-9][0-9]*)/ ;
+float            ::= /([-+]?[0-9]*\.?[0-9]*)/; 
+single-string    ::= /'([^']*)'/;
+double-string    ::= /"([^"]*)"/;

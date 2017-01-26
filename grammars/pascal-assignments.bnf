@@ -6,7 +6,7 @@ program    ::= "PROGRAM" identifier
 
 assignment ::= identifier
                ":="
-               ( number | identifier | string )@'Expression'
+               ( number | identifier | string )
                ";"
                ;
 

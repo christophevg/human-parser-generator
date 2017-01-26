@@ -121,14 +121,11 @@ group-expression      ::= "(" expression ")" ;
 or-expression         ::= expression "|" expression ;
 sequence-expression   ::= expression "," expression ;
 
-string                ::= single-string | double-string ;
-
 identifier            ::= /([A-Z][A-Z0-9]*)/;
 digit                 ::= /([0-9])/;
 int                   ::= /(-?[1-9][0-9]*)/ ;
 float                 ::= /([-+]?[0-9]*\.?[0-9]*)/; 
-single-string         ::= /'([^']*)'/;
-double-string         ::= /"([^"]*)"/;
+string                ::= /\"([^\"]*)\"|'([^']*)'/;
 ```
 
 The next step is bringing the `Parser` `Model` transformation and the `Emitter` for `CSharp` code up to par.

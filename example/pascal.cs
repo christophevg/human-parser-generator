@@ -39,7 +39,7 @@ public class Assignment {
 public class Extracting {
   public static Regex Identifier = new Regex("^([A-Z][A-Z0-9]*)");
   public static Regex Number     = new Regex("^(-?[1-9][0-9]*)");
-  public static Regex String     = new Regex("^\"([^\"]*)\"");
+  public static Regex String     = new Regex("^\"([^\"]*)\"|'([^']*)'");
 }
 
 public class Parser {

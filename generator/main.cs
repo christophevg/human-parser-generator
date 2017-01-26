@@ -12,14 +12,23 @@ using Grammar;
 public class Runner {
 
   public static Model CreatePascalGrammar() {
-    // program = 'PROGRAM', identifier,
-    //           'BEGIN',
-    //           { assignment },
-    //           'END.' ;
-    // assignment = identifier , ":=" , ( number | identifier | string ), ";";
-    // identifier = /([A-Z][A-Z0-9]*)/;
-    // number     = /(-?[1-9][0-9]*)/ ;
-    // string     = /"([^"]*)"/;
+    // program    ::= "PROGRAM" identifier
+    //                "BEGIN"
+    //                { assignment }
+    //                "END."
+    //                ;
+    //
+    // assignment ::= identifier
+    //                ":="
+    //                ( number | identifier | string )@'Expression'
+    //                ";"
+    //                ;
+    //
+    // identifier ::= /([A-Z][A-Z0-9]*)/ ;
+    // digit      ::= /([0-9])/ ;
+    // int        ::= /(-?[1-9][0-9]*)/ ;
+    // float      ::= /([-+]?[0-9]*\.?[0-9]*)/ ;
+    // string     ::= /"([^"]*)"|'([^']*)'/ ;
 
     return new Model() {
       Rules = new List<Rule>() {
@@ -64,7 +73,7 @@ public class Runner {
         },
         new Rule() {
           Id  = "string",
-          Exp = new Extractor() { Pattern = "\\\"([^\\\"]*)\\\"" }
+          Exp = new Extractor() { Pattern = "\\\"([^\\\"]*)\\\"|'([^']*)'" }
         }
       }
     };

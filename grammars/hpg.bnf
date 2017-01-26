@@ -4,6 +4,7 @@ rule                  ::= identifier  "::=" expression ";" ;
 
 expression            ::= identifier-expression
                         | string-expression
+                        | extractor-expression
                         | optional-expression
                         | repetition-expression
                         | group-expression
@@ -12,11 +13,13 @@ expression            ::= identifier-expression
                         ;
 identifier-expression ::= identifier ;
 string-expression     ::= string ;
+extractor-expression  ::= "[" regex "]" ;
 optional-expression   ::= "[" expression "]" ;
 repetition-expression ::= "{" expression "}" ;
 group-expression      ::= "(" expression ")" ;
 or-expression         ::= expression "|" expression ;
 sequence-expression   ::= expression "," expression ;
 
-identifier            ::= /([A-Z][A-Z0-9]*)/;
-string                ::= /"([^"]*)"|'([^']*)'/;
+identifier            ::= /([A-Z][A-Z0-9]*)/ ;
+string                ::= /"([^"]*)"|'([^']*)'/ ;
+regex                 ::= /([^/]*)/ ;

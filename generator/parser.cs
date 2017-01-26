@@ -100,9 +100,15 @@ namespace Parser {
     }
   }
 
-  public class Entity {
-    public Grammar.Rule Rule { get; set; }
+  // TODO improve name
+  public abstract class Referable {
     public string Name { get; set; }
+    public abstract string Type { get; }
+  }
+
+  public class Entity : Referable {
+    public Grammar.Rule Rule { get; set; }
+    public override string Type { get { return this.Name; } }
     // name -> entity information
     public Dictionary<string,Property> Properties;
     // ordered list of parsing actions to fill properties
@@ -136,8 +142,8 @@ namespace Parser {
     }
   }
 
-  public class Extraction {
-    public string Name { get; set; }
+  public class Extraction : Referable {
+    public override string Type { get { return "string"; } }
     public string Pattern { get; set; }
     public override string ToString() {
       return"Extraction(" + 
@@ -230,32 +236,13 @@ namespace Parser {
     }
 
     private void ExtractIdentifierExpression(Grammar.Expression exp, Entity entity) {
-      string id = ((Grammar.IdentifierExpression)exp).Id;
-      if( this.IsTerminal(id) ) {
-        // this is an extractor, the extraction is a "string"
-        Property property = new Property() {
-          Name = id,
-          Type = "string",
-          IsPlural = false
-        };
-        entity.Properties.Add(id, property);
-        entity.ParseActions.Add(new ConsumeExtraction() {
-          Prop = property,
-          Extr = this.Extractions[id]
-        });
-      } else {
-        // this is an entity, the identifier results in an other Entity
-        Property property = new Property() {
-          Name = id,
-          Type = "Entity",
-          IsPlural = false
-        };
-        entity.Properties.Add(id, property);
-        entity.ParseActions.Add(new ConsumeEntity() {
-          Ent  = this.Entities[id],
-          Prop = property
-        });
-      }
+      Grammar.IdentifierExpression id = (Grammar.IdentifierExpression)exp;
+      
+      Property    property = this.CreatePropertyFor(id);
+      ParseAction consumer = this.CreateConsumerFor(property, id);
+
+      entity.Properties.Add(id.Id, property);
+      entity.ParseActions.Add(consumer);
     }
 
     private void ExtractStringExpression(Grammar.Expression exp, Entity entity) {
@@ -296,19 +283,39 @@ namespace Parser {
     private void ExtractGroupExpression(Grammar.Expression exp, Entity entity) {
       throw new NotImplementedException("TODO: ExtractGroupExpression");
     }
+    
+    private Referable GetReferred(string name) {
+      if( this.IsEntityName(name) ) {
+        return this.Entities[name];
+      } else if( this.IsExtractionName(name) ) {
+        return this.Extractions[name];
+      }
+      throw new ArgumentException(
+        name + " doesn't refer to known Entity or Extraction."
+      );
+    }
 
-    private ParseAction CreateIdentifierConsumer(Property property,
-                                                 Grammar.IdentifierExpression exp)
+    private Property CreatePropertyFor(Grammar.IdentifierExpression exp) {
+      return new Property() {
+        Name = exp.Id,
+        Type = this.GetReferred(exp.Id).Type,
+        IsPlural = false
+      };
+    }
+
+    private ParseAction CreateConsumerFor(Property property,
+                                          Grammar.IdentifierExpression exp)
     {
-      if( this.IsEntityName(exp.Id) ) {
+      Referable referred = this.GetReferred(exp.Id);
+      if( referred is Entity ) {
         return new ConsumeEntity() {
           Prop = property,
-          Ent  = this.Entities[exp.Id]
+          Ent  = (Entity)referred
         };
-      } else if( this.IsExtractionName(exp.Id) ) {
+      } else if( referred is Extraction ) {
         return new ConsumeExtraction() {
           Prop = property,
-          Extr = this.Extractions[exp.Id]
+          Extr = (Extraction)referred
         };
       }
       throw new ArgumentException(
@@ -334,7 +341,7 @@ namespace Parser {
       ConsumeAny consume = new ConsumeAny();
       foreach(var alt in ((Grammar.AlternativesExpression)exp).Expressions) {
         if( alt is Grammar.IdentifierExpression ) {
-          consume.Options.Add(this.CreateIdentifierConsumer(
+          consume.Options.Add(this.CreateConsumerFor(
             property, (Grammar.IdentifierExpression)alt)
           );
         } else {

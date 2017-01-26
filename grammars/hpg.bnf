@@ -18,7 +18,7 @@ optional-expression   ::= "[" expression "]" ;
 repetition-expression ::= "{" expression "}" ;
 group-expression      ::= "(" expression ")" ;
 or-expression         ::= expression "|" expression ;
-sequence-expression   ::= expression "," expression ;
+sequence-expression   ::= expression expression ;
 
 identifier            ::= /([A-Z][A-Z0-9]*)/ ;
 string                ::= /"([^"]*)"|'([^']*)'/ ;

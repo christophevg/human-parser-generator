@@ -63,7 +63,7 @@ using System.Linq;
     }
 
     private string GenerateSignature(Parser.Entity entity) {
-      return "public class " + this.UCase(entity.Name) + " {";
+      return "public class " + this.PascalCase(entity.Name) + " {";
     }
 
     private string GenerateProperties(Parser.Entity entity) {
@@ -74,23 +74,23 @@ using System.Linq;
 
     private string GenerateProperty(Parser.Property property) {
       return "  public " + this.GenerateType(property) + " " + 
-        this.UCase(property.Name) + " { get; set; }";
+        this.PascalCase(property.Name) + " { get; set; }";
     }
 
     private string GenerateType(Parser.Property property) {
       if(property.IsPlural) {
-        return "List<" + this.UCase(property.Type) + ">";
+        return "List<" + this.PascalCase(property.Type) + ">";
       }
       return property.Type.Equals("string") ?
-        property.Type : this.UCase(property.Type);
+        property.Type : this.PascalCase(property.Type);
     }
 
     private string GenerateConstructor(Parser.Entity entity) {
       if( ! entity.HasPluralProperty() ) { return null; }
-      return "  public " + this.UCase(entity.Name) + "() {\n" +
+      return "  public " + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
           entity.Properties.Values.Where(x => x.IsPlural).Select(x => 
-            "    this." + this.UCase(x.Name) + " = new " + 
+            "    this." + this.PascalCase(x.Name) + " = new " + 
               this.GenerateType(x) + "();\n"
           )
         ) +
@@ -100,7 +100,7 @@ using System.Linq;
     private string GenerateToString(Parser.Entity entity) {
       return "  public override string ToString() {\n" +
         "    return\n" +
-        "      \"" + this.UCase(entity.Name) + "(\" +\n" + 
+        "      \"" + this.PascalCase(entity.Name) + "(\" +\n" + 
         string.Join(" + \",\" +\n",
           entity.Properties.Values.Select(x => this.GenerateToString(x))
         ) + " + \n" +
@@ -114,12 +114,12 @@ using System.Linq;
           "        \"{0}=\" + \"[\" + string.Join(\",\",\n" +
           "          this.{0}.Select(x => x.ToString())\n" +
           "        ) + \"]\"",
-          this.UCase(property.Name)
+          this.PascalCase(property.Name)
         );
       } else {
         return string.Format(
           "        \"{0}=\" + this.{0}",
-          this.UCase(property.Name)
+          this.PascalCase(property.Name)
         );
       }
     }
@@ -134,7 +134,7 @@ using System.Linq;
         string.Join("\n",
           this.Model.Extractions.Values
                     .Select(extraction =>
-                      "  public static Regex " + this.UCase(extraction.Name) +
+                      "  public static Regex " + this.PascalCase(extraction.Name) +
                         " = new Regex(\"^" + extraction.Pattern + "\");"
                     )
         ) + "\n" +
@@ -152,11 +152,11 @@ using System.Linq;
     private string GenerateParserHeader() {
       return @"public class Parser {
   private Parsable source;
-  public " + this.UCase(this.Model.Root) + @" AST { get; set; }
+  public " + this.PascalCase(this.Model.Root) + @" AST { get; set; }
 
   public Parser Parse(string source) {
     this.source = new Parsable(source);
-    this.AST    = this.Parse" + this.UCase(this.Model.Root) + @"();
+    this.AST    = this.Parse" + this.PascalCase(this.Model.Root) + @"();
     return this;
   }";
     }
@@ -180,8 +180,8 @@ using System.Linq;
     }
 
     private string GenerateEntityParserHeader(Parser.Entity entity) {
-      return "  public " + this.UCase(entity.Name) + 
-        " Parse" + this.UCase(entity.Name) + "() {\n" +
+      return "  public " + this.PascalCase(entity.Name) + 
+        " Parse" + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
           entity.Properties.Values.Select(x =>
             "    " + this.GenerateType(x) + " " + x.Name.ToLower() + 
@@ -253,11 +253,11 @@ using System.Linq;
 
     private string GenerateConsumeExtraction(string id, string extractor) {
       return id + " = this.source.Consume(Extracting." + 
-        this.UCase(extractor) + ");";
+        this.PascalCase(extractor) + ");";
     }
 
     private string GenerateConsumeEntity(string id, Parser.Entity entity) {
-      return id + " = this.Parse" + this.UCase(entity.Name) + "();";
+      return id + " = this.Parse" + this.PascalCase(entity.Name) + "();";
     }
 
     private string GenerateEntityParserFooter(Parser.Entity entity) {
@@ -265,13 +265,13 @@ using System.Linq;
         "    } catch(ParseException e) {\n" +
         "        this.source.position = pos;\n" +
         "        throw this.source.GenerateParseException(\n" +
-        "          \"Failed to parse " + this.UCase(entity.Name) + ".\", e\n" +
+        "          \"Failed to parse " + this.PascalCase(entity.Name) + ".\", e\n" +
         "        );\n" +
         "    }\n\n" +
-        "    return new " + this.UCase(entity.Name) + "() {\n" + 
+        "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
         string.Join( ",\n",
           entity.Properties.Values.Select(x =>
-            "      " + this.UCase(x.Name) + " = " + x.Name.ToLower()
+            "      " + this.PascalCase(x.Name) + " = " + x.Name.ToLower()
           )
         ) + "\n" +
         "    };\n" +
@@ -282,8 +282,14 @@ using System.Linq;
       return "}";
     }
 
-    private string UCase(string text) {
-      return text.First().ToString().ToUpper() + text.Substring(1);
+    // this function makes sure that text is correctly case'd ;-)
+    // Dashes are removed and the first letter of each part is uppercased
+    private string PascalCase(string text) {
+      return string.Join("",
+        text.Split('-').Select(x =>
+          x.First().ToString().ToUpper() + x.ToLower().Substring(1)
+        )
+      );
     }
 
   }

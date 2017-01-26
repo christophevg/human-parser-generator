@@ -1,12 +1,6 @@
 // Parser Model Generator - transforms the Grammar-AST into a Parser-AST
 // author: Christophe VG <contact@christophe.vg>
 
-// transformation rules:
-//   1. all extractor-(non)-terminals are recorded/indexed
-//   2. for each non-terminal, a ParserEntity is constructed, holding all 
-//      first-level properties and information about the actual parsing, the 
-//      actions
-
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -28,7 +22,7 @@ namespace Parser {
   // ParseParseActions are an ordered list of steps to parse into Properties
 
   public class Property {
-    public string Name { get; set; }
+    public string Name { get; set; }    // unique identification
     public string Type { get; set; }
     public bool   IsPlural { get; set; }
     public override string ToString() {
@@ -40,6 +34,7 @@ namespace Parser {
     }
   }
 
+  // A ParseAction parses into a Property
   public abstract class ParseAction {
     public virtual Property Prop { get; set; }
     public abstract string Label { get; }
@@ -69,6 +64,8 @@ namespace Parser {
     }
   }
 
+  // given a set of possible ParseActions, this tries each of these ParseActions
+  // and parses the first that matches in the Property
   public class ConsumeAny : ParseAction {
     public List<ParseAction> Options;
     public override string Label {
@@ -100,7 +97,7 @@ namespace Parser {
     }
   }
 
-  // TODO improve name
+  // TODO improve name (what is true semantic meaning?)
   public abstract class Referable {
     public string Name { get; set; }
     public abstract string Type { get; }
@@ -114,10 +111,40 @@ namespace Parser {
     // ordered list of parsing actions to fill properties
     public List<ParseAction> ParseActions;
 
+    // To store propertyNames with the last given index
+    private Dictionary<string, int> propertyIndices;
+
     public Entity() {
-      this.Properties = new Dictionary<string,Property>();
-      this.ParseActions    = new List<ParseAction>();
+      this.Properties    = new Dictionary<string,Property>();
+      this.ParseActions  = new List<ParseAction>();
+      
+      this.propertyIndices = new Dictionary<string, int>();
     }
+
+    public void Add(Property property) {
+      // make sure the name of the property is unique
+      if( ! this.propertyIndices.Keys.Contains(property.Name) ) {
+        this.propertyIndices.Add(property.Name, 0);
+        // for first one, just use it's name
+      } else {
+        // this is (at least) the second occurence, start using indices
+        if(this.propertyIndices[property.Name] == 0) {
+          // update the first property to match the naming scheme
+          Property firstProperty = this.Properties[property.Name]; // get
+          this.Properties.Remove(property.Name);                   // remove
+          firstProperty.Name += "0";                               // update
+          this.Properties.Add(firstProperty.Name, firstProperty);  // re-add
+        }
+        this.propertyIndices[property.Name]++;
+        property.Name += this.propertyIndices[property.Name].ToString();
+      }
+      this.Properties.Add(property.Name, property);
+    }
+
+    public void Add(ParseAction parseAction) {
+      this.ParseActions.Add(parseAction);
+    }
+
     public override string ToString() {
       return
         "Entity(" +
@@ -235,14 +262,16 @@ namespace Parser {
       }
     }
 
+    // an IDExp part of an Entity rule Expression requires the creation of a
+    // Property to store the Referred Entity or Extraction.
     private void ExtractIdentifierExpression(Grammar.Expression exp, Entity entity) {
       Grammar.IdentifierExpression id = (Grammar.IdentifierExpression)exp;
-      
-      Property    property = this.CreatePropertyFor(id);
-      ParseAction consumer = this.CreateConsumerFor(property, id);
 
-      entity.Properties.Add(id.Id, property);
-      entity.ParseActions.Add(consumer);
+      Property property = this.CreatePropertyFor(id);
+      entity.Add(property);
+
+      ParseAction consumer = this.CreateConsumerFor(property, id);
+      entity.Add(consumer);
     }
 
     private void ExtractStringExpression(Grammar.Expression exp, Entity entity) {
@@ -354,6 +383,8 @@ namespace Parser {
       entity.ParseActions.Add(consume);
     }
 
+    // a sequence consists of one or more Expressions that all are consumed
+    // into properties of the entity
     private void ExtractSequenceExpression(Grammar.Expression exp, Entity entity) {
       foreach(var subExp in ((Grammar.SequenceExpression)exp).Expressions) {
         this.ExtractPropertiesAndParseActions(subExp, entity);

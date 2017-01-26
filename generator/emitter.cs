@@ -206,7 +206,7 @@ using System.Linq;
       if(action is Parser.ConsumeEntity) {
         var consumption = (Parser.ConsumeEntity)action;
         var id          = consumption.Prop.Name;
-        var entity      = consumption.Id;
+        var entity      = consumption.Ent;
         if(consumption.Prop.IsPlural) {
           return
             "      Assignment temp;\n" +
@@ -256,8 +256,8 @@ using System.Linq;
         this.UCase(extractor) + ");";
     }
 
-    private string GenerateConsumeEntity(string id, string entity) {
-      return id + " = this.Parse" + this.UCase(entity) + "();";
+    private string GenerateConsumeEntity(string id, Parser.Entity entity) {
+      return id + " = this.Parse" + this.UCase(entity.Name) + "();";
     }
 
     private string GenerateEntityParserFooter(Parser.Entity entity) {

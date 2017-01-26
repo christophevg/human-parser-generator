@@ -52,7 +52,7 @@ namespace Parser {
       return "Consume(" + this.Literal + ")";
     }
   }
-  
+
   public class ConsumeExtraction : ParseAction {
     public Extraction Extr { get; set; }
     public override string Label { get { return this.Extr.Name; } }
@@ -62,10 +62,10 @@ namespace Parser {
   }
 
   public class ConsumeEntity : ParseAction {
-    public string Id { get; set; }
-    public override string Label { get { return this.Id; } }
+    public Entity Ent { get; set; }
+    public override string Label { get { return this.Ent.Name; } }
     public override string ToString() {
-      return "Consume(" + this.Prop.Name + ",Entity.Id=" + this.Id + ")";
+      return "Consume(" + this.Prop.Name + ",Entity.Name=" + this.Ent.Name + ")";
     }
   }
 
@@ -247,12 +247,12 @@ namespace Parser {
         // this is an entity, the identifier results in an other Entity
         Property property = new Property() {
           Name = id,
-          Type = "Enity",
+          Type = "Entity",
           IsPlural = false
         };
         entity.Properties.Add(id, property);
         entity.ParseActions.Add(new ConsumeEntity() {
-          Id   = id,
+          Ent  = this.Entities[id],
           Prop = property
         });
       }
@@ -285,7 +285,7 @@ namespace Parser {
         };
         entity.Properties.Add(id, property);
         entity.ParseActions.Add(new ConsumeEntity() {
-          Id   = id,
+          Ent  = this.Entities[id],
           Prop = property
         });
       } else {
@@ -295,6 +295,33 @@ namespace Parser {
 
     private void ExtractGroupExpression(Grammar.Expression exp, Entity entity) {
       throw new NotImplementedException("TODO: ExtractGroupExpression");
+    }
+
+    private ParseAction CreateIdentifierConsumer(Property property,
+                                                 Grammar.IdentifierExpression exp)
+    {
+      if( this.IsEntityName(exp.Id) ) {
+        return new ConsumeEntity() {
+          Prop = property,
+          Ent  = this.Entities[exp.Id]
+        };
+      } else if( this.IsExtractionName(exp.Id) ) {
+        return new ConsumeExtraction() {
+          Prop = property,
+          Extr = this.Extractions[exp.Id]
+        };
+      }
+      throw new ArgumentException(
+        "IdentifierExpression doesn't refer to known Entity or Extraction."
+      );
+    }
+
+    private bool IsEntityName(string name) {
+      return this.Entities.Keys.Contains(name);
+    }
+
+    private bool IsExtractionName(string name) {
+      return this.Extractions.Keys.Contains(name);
     }
 
     private void ExtractAlternativesExpression(Grammar.Expression exp, Entity entity) {
@@ -307,10 +334,9 @@ namespace Parser {
       ConsumeAny consume = new ConsumeAny();
       foreach(var alt in ((Grammar.AlternativesExpression)exp).Expressions) {
         if( alt is Grammar.IdentifierExpression ) {
-          consume.Options.Add(new ConsumeExtraction() {
-            Prop = property,
-            Extr = this.Extractions[((Grammar.IdentifierExpression)alt).Id]
-          });
+          consume.Options.Add(this.CreateIdentifierConsumer(
+            property, (Grammar.IdentifierExpression)alt)
+          );
         } else {
           throw new NotImplementedException(
             "alternative is " + alt.GetType().ToString()

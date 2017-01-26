@@ -101,6 +101,7 @@ namespace Parser {
   }
 
   public class Entity {
+    public Grammar.Rule Rule { get; set; }
     public string Name { get; set; }
     // name -> entity information
     public Dictionary<string,Property> Properties;
@@ -158,6 +159,7 @@ namespace Parser {
       this.ImportRules(grammar);
       this.ExtractExtractions();
       this.ExtractEntities();
+      this.ExtractPropertiesAndActions();
       return this;
     }
 
@@ -173,13 +175,23 @@ namespace Parser {
     }
 
     private void ExtractEntities() {
-      this.Entities = new Dictionary<string,Entity>();
-      foreach(KeyValuePair<string, Grammar.Rule> rule in this.Rules) {
-        Entity entity = new Entity() { Name = rule.Key };
-        this.ExtractPropertiesAndParseActions(rule.Value.Exp, entity);
-        if( entity.Properties.Count + entity.ParseActions.Count > 0) {
-          this.Entities.Add(rule.Key, entity);
-        }
+      this.Entities = this.Rules.Values
+        .Where(rule => !( rule.Exp is Grammar.Extractor) )
+        .Select(rule => new Entity() {
+          Name = rule.Id,
+          Rule = rule
+        })
+        .ToDictionary(
+          entity => entity.Name,
+          entity => entity
+        );
+    }
+
+    private void ExtractPropertiesAndActions() {
+      foreach(KeyValuePair<string, Entity> entity in this.Entities) {
+        this.ExtractPropertiesAndParseActions(
+          entity.Value.Rule.Exp, entity.Value
+        );
       }
     }
     
@@ -191,7 +203,7 @@ namespace Parser {
           Pattern = ((Grammar.Extractor)rule.Exp).Pattern
         })
        .ToDictionary(
-          extraction => extraction.Name.ToLower(),
+          extraction => extraction.Name,
           extraction => extraction
         );
     }

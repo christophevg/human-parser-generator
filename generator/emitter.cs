@@ -152,11 +152,11 @@ using System.Linq;
     private string GenerateParserHeader() {
       return @"public class Parser {
   private Parsable source;
-  public " + this.UCase(this.Model.Root.Name) + @" AST { get; set; }
+  public " + this.UCase(this.Model.Root) + @" AST { get; set; }
 
   public Parser Parse(string source) {
     this.source = new Parsable(source);
-    this.AST    = this.Parse" + this.UCase(this.Model.Root.Name) + @"();
+    this.AST    = this.Parse" + this.UCase(this.Model.Root) + @"();
     return this;
   }";
     }

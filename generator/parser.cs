@@ -152,7 +152,7 @@ namespace Parser {
     public Dictionary<string,Entity>       Entities;
     public Dictionary<string,Extraction>   Extractions;
 
-    public Entity Root;
+    public string Root;
 
     public Model Import(Grammar.Model grammar) {
       this.ImportRules(grammar);
@@ -162,10 +162,14 @@ namespace Parser {
     }
 
     private void ImportRules(Grammar.Model grammar) {
+      if(grammar.Rules.Count < 1) {
+        throw new ArgumentException("grammar contains no rules");
+      }
       this.Rules = new Dictionary<string,Grammar.Rule>();
       foreach(var rule in grammar.Rules) {
         this.Rules.Add(rule.Id, rule);
       }
+      this.Root = grammar.Rules[0].Id;
     }
 
     private void ExtractEntities() {
@@ -175,7 +179,6 @@ namespace Parser {
         this.ExtractPropertiesAndParseActions(rule.Value.Exp, entity);
         if( entity.Properties.Count + entity.ParseActions.Count > 0) {
           this.Entities.Add(rule.Key, entity);
-          if(this.Root == null) { this.Root = entity; }
         }
       }
     }

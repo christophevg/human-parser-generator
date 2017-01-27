@@ -360,13 +360,16 @@ namespace Parser {
       return this.Extractions.Keys.Contains(name);
     }
 
-    private void ExtractAlternativesExpression(Grammar.Expression exp, Entity entity) {
-      // TODO: expand to "value" + number
+    private void ExtractAlternativesExpression(Grammar.Expression exp,
+                                               Entity entity)
+    {
       Property property = new Property() {
         Name     = "value",
-        Type     = "string",
+        Type     = "Object",
         IsPlural = false
       };
+      entity.Add(property);
+
       ConsumeAny consume = new ConsumeAny();
       foreach(var alt in ((Grammar.AlternativesExpression)exp).Expressions) {
         if( alt is Grammar.IdentifierExpression ) {
@@ -379,8 +382,7 @@ namespace Parser {
           );
         }
       }
-      entity.Properties.Add(property.Name, property);
-      entity.ParseActions.Add(consume);
+      entity.Add(consume);
     }
 
     // a sequence consists of one or more Expressions that all are consumed

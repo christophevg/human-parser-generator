@@ -7,7 +7,9 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-namespace Emitter {
+using HumanParserGenerator;
+
+namespace HumanParserGenerator.Emitter {
   
   public class CSharp {
 

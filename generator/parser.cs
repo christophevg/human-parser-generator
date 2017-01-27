@@ -7,7 +7,9 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-namespace Parser {
+using Grammar = HumanParserGenerator.Grammar;
+
+namespace HumanParserGenerator.Parser {
 
   // Parser Model classes
   // 
@@ -246,15 +248,16 @@ namespace Parser {
     private void ExtractPropertiesAndParseActions(Grammar.Expression exp, Entity entity) {
       try {
         new Dictionary<string, Action<Grammar.Expression,Entity>>() {
-          { "Grammar.IdentifierExpression",   this.ExtractIdentifierExpression   },
-          { "Grammar.StringExpression",       this.ExtractStringExpression       },
-          { "Grammar.Extractor",              this.ExtractExtractorExpression    },
-          { "Grammar.OptionalExpression",     this.ExtractOptionalExpression     },
-          { "Grammar.RepetitionExpression",   this.ExtractRepetitionExpression   },
-          { "Grammar.GroupExpression",        this.ExtractGroupExpression        },
-          { "Grammar.AlternativesExpression", this.ExtractAlternativesExpression },
-          { "Grammar.SequenceExpression",     this.ExtractSequenceExpression     }
-        }[exp.GetType().ToString()](exp, entity);
+          { "IdentifierExpression",   this.ExtractIdentifierExpression   },
+          { "StringExpression",       this.ExtractStringExpression       },
+          { "Extractor",              this.ExtractExtractorExpression    },
+          { "OptionalExpression",     this.ExtractOptionalExpression     },
+          { "RepetitionExpression",   this.ExtractRepetitionExpression   },
+          { "GroupExpression",        this.ExtractGroupExpression        },
+          { "AlternativesExpression", this.ExtractAlternativesExpression },
+          { "SequenceExpression",     this.ExtractSequenceExpression     }
+        }[exp.GetType().ToString().Replace("HumanParserGenerator.Grammar.", "")]
+          (exp, entity);
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
           "extracting not implemented for " + exp.GetType().ToString(), e

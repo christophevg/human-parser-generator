@@ -72,7 +72,14 @@ public class Parsable {
       this.Log("Consume(" + pattern.ToString() + ") SUCCESS ");
       int length = m.Groups[0].Captures[0].ToString().Length; // total match
       this.Consume(length);
-      return m.Groups[1].Captures[0].ToString(); // only selected part
+      // temp solution for regexps with two groups of which only one "captures"
+      try {
+        return m.Groups[1].Captures[0].ToString(); // only selected part
+      } catch {
+        return m.Groups[2].Captures[0].ToString(); // only selected part
+      }
+    } else {
+      this.Log("Consume(" + pattern.ToString() + ") FAILED ");
     }
     throw new ParseException( "could not consume pattern " + pattern.ToString() + " at " + this.Context );    
   }

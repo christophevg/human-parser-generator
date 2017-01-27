@@ -5,6 +5,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Diagnostics;
 
 
 public class Program {
@@ -26,7 +27,7 @@ public class Program {
 
 public class Assignment {
   public string Identifier { get; set; }
-  public string Value { get; set; }
+  public Object Value { get; set; }
   public override string ToString() {
     return 
       "Assignment(" +
@@ -56,6 +57,7 @@ public class Parser {
     string identifier;
     List<Assignment> assignments = new List<Assignment>();
     
+    this.Log("ParseProgram");
     int pos = this.source.position;
     try {
 
@@ -92,8 +94,9 @@ public class Parser {
 
   public Assignment ParseAssignment() {
     string identifier;
-    string value;
+    Object value;
 
+    this.Log("ParseAssignment");
     int pos = this.source.position;
     try {
 
@@ -133,4 +136,9 @@ public class Parser {
     };
   }
 
+  
+  [ConditionalAttribute("DEBUG")]
+  private void Log(string msg) {
+    Console.WriteLine("!!! " + msg + " @ " + this.source.Peek(10).Replace('\n', 'n'));
+  }
 }

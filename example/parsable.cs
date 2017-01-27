@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 public class ParseException : System.Exception {
   public ParseException() : base() { }
@@ -54,11 +55,13 @@ public class Parsable {
   public string Consume(string text) {
     this.SkipLeadingWhitespace();
     if(! this.head.StartsWith(text) ) {
+      this.Log("Consume(" + text + ") FAILED");
       throw new ParseException(
         "could not consume '" + text + "' at " + this.Context
       );
     }
     // do actual consumption
+    this.Log("Consume(" + text + ") SUCCESS");
     return this.Consume(text.Length);
   }
   
@@ -66,6 +69,7 @@ public class Parsable {
     this.SkipLeadingWhitespace();
     Match m = pattern.Match(this.head);
     if(m.Success) {
+      this.Log("Consume(" + pattern.ToString() + ") SUCCESS ");
       int length = m.Groups[0].Captures[0].ToString().Length; // total match
       this.Consume(length);
       return m.Groups[1].Captures[0].ToString(); // only selected part
@@ -101,7 +105,8 @@ public class Parsable {
     return consumed;
   }
   
+  [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
-    Console.WriteLine("!!! " + msg + " @" + this.position.ToString() + "/" + this.head.Length);
+    Console.WriteLine("!!! " + msg + " @ " + this.Context);
   }
 }

@@ -1,6 +1,10 @@
 TARGET      = main
 BUILD       = .build
 
+ifdef DEBUG
+CFLAGS     += -define:DEBUG
+endif
+
 CC          = mcs
 RUN         = mono
 ARGUMENTS  ?=

@@ -79,28 +79,34 @@ public class Runner {
   
   public static Model CreateBNFGrammar() {
     // grammar                 ::= { rule } ;
-    // rule                    ::= identifier  "::=" expression ";" ;
-    // expression              ::= identifier-expression
-    //                           | string-expression
+    //
+    // rule                    ::= identifier  "::=" expression-list ";" ;
+    //
+    // expression-list         ::= alternatives-expression
+    //                           | sequence-expression
+    //                           ;
+    //
+    // alternatives-expression ::= expression "|" expression-list ;
+    // sequence-expression     ::= { expression } ;
+    //
+    // expression              ::= string-expression
     //                           | extractor-expression
     //                           | optional-expression
     //                           | repetition-expression
     //                           | group-expression
-    //                           | alternatives-expression
-    //                           | sequence-expression
+    //                           | or-expression
+    //                           | identifier-expression
     //                           ;
     // identifier-expression   ::= identifier ;
     // string-expression       ::= string ;
-    // extractor-expression    ::= "/" regex "/"
-    // optional-expression     ::= "[" expression "]" ;
-    // repetition-expression   ::= "{" expression "}" ;
-    // group-expression        ::= "(" expression ")" ;
-    // alternatives-expression ::= expression "|" expression ;
-    // sequence-expression     ::= expression     expression ;
+    // extractor-expression    ::= "[" regex "]" ;
+    // optional-expression     ::= "[" expression-list "]" ;
+    // repetition-expression   ::= "{" expression-list "}" ;
+    // group-expression        ::= "(" expression-list ")" ;
     //
-    // identifier              ::= /([A-Z][A-Z0-9]*)/ ;
-    // string                  ::= /"([^"]*)"|'([^']*)'/ ;
-    // regex                   ::= /([^/]*)/
+    // identifier              ::= /([A-Za-z][A-Z0-9a-z]*)/ ;
+    // string                  ::= /"([^"]*)"|^'([^']*)'/ ;
+    // regex                   ::= /([^/]*)/ ;
 
     return new Model()  {
       Rules = new List<Rule>() {
@@ -116,9 +122,34 @@ public class Runner {
             Expressions = new List<Expression> {
               new IdentifierExpression() { Id     = "identifier" },
               new StringExpression()     { String = "::="        },
-              new IdentifierExpression() { Id     = "expression" },
+              new IdentifierExpression() { Id     = "expression-list" },
               new StringExpression()     { String = ";"          }
             }
+          }
+        },
+        new Rule() {
+          Id = "expression-list",
+          Exp = new AlternativesExpression() {
+            Expressions = new List<Expression>() {
+              new IdentifierExpression() { Id = "alternatives-expression" },
+              new IdentifierExpression() { Id = "sequence-expression" }
+            }
+          }
+        },
+        new Rule() {
+          Id = "alternatives-expression",
+          Exp = new SequenceExpression() {
+            Expressions = new List<Expression> {
+              new IdentifierExpression() { Id     = "expression" },
+              new StringExpression()     { String = "|"          },
+              new IdentifierExpression() { Id     = "expression-list" }
+            }
+          }
+        },
+        new Rule() {
+          Id = "sequence-expression",
+          Exp = new RepetitionExpression() {
+            Exp = new IdentifierExpression() { Id = "expression" },
           }
         },
         new Rule() {
@@ -130,9 +161,7 @@ public class Runner {
               new IdentifierExpression() { Id = "extractor-expression"    },
               new IdentifierExpression() { Id = "optional-expression"     },
               new IdentifierExpression() { Id = "repetition-expression"   },
-              new IdentifierExpression() { Id = "group-expression"        },
-              new IdentifierExpression() { Id = "alternatives-expression" },
-              new IdentifierExpression() { Id = "sequence-expression"     }
+              new IdentifierExpression() { Id = "group-expression"        }
             }
           }
         },
@@ -159,7 +188,7 @@ public class Runner {
           Exp = new SequenceExpression() {
             Expressions = new List<Expression> {
               new StringExpression()     { String = "["          },
-              new IdentifierExpression() { Id     = "expression" },
+              new IdentifierExpression() { Id     = "expression-list" },
               new StringExpression()     { String = "]"          }
             }
           }
@@ -169,7 +198,7 @@ public class Runner {
           Exp = new SequenceExpression() {
             Expressions = new List<Expression> {
               new StringExpression()     { String = "{"          },
-              new IdentifierExpression() { Id     = "expression" },
+              new IdentifierExpression() { Id     = "expression-list" },
               new StringExpression()     { String = "}"          }
             }
           }
@@ -179,37 +208,18 @@ public class Runner {
           Exp = new SequenceExpression() {
             Expressions = new List<Expression> {
               new StringExpression()     { String = "("          },
-              new IdentifierExpression() { Id     = "expression" },
+              new IdentifierExpression() { Id     = "expression-list" },
               new StringExpression()     { String = ")"          }
             }
           }
         },
         new Rule() {
-          Id = "alternatives-expression",
-          Exp = new SequenceExpression() {
-            Expressions = new List<Expression> {
-              new IdentifierExpression() { Id     = "expression" },
-              new StringExpression()     { String = "|"          },
-              new IdentifierExpression() { Id     = "expression" }
-            }
-          }
-        },
-        new Rule() {
-          Id = "sequence-expression",
-          Exp = new SequenceExpression() {
-            Expressions = new List<Expression> {
-              new IdentifierExpression() { Id     = "expression" },
-              new IdentifierExpression() { Id     = "expression" }
-            }
-          }
-        },
-        new Rule() {
           Id  = "identifier",
-          Exp = new Extractor() { Pattern = "([A-Z][A-Z0-9]*)"             }
+          Exp = new Extractor() { Pattern = "([A-Za-z][A-Za-z0-9-]*)"       }
         },
         new Rule() {
           Id  = "string",
-          Exp = new Extractor() { Pattern = "\\\"([^\\\"]*)\\\"|'([^']*)'" }
+          Exp = new Extractor() { Pattern = "\\\"([^\\\"]*)\\\"|^'([^']*)'" }
         },
         new Rule() {
           Id  = "extractor",

@@ -2,9 +2,9 @@ records          ::= { record };
 record           ::= ( renames-record | values-record | basic-record ) ".";
 
 renames-record   ::= "66" level-name "RENAMES"  identifier-range ;
-level-name       ::= identifier@'LevelName' | "FILLER" ;
-identifier-range ::= identifier@"start" "THRU" identifier@"end"
-                   | identifier@"start" "THROUGH" identifier@"end"
+level-name       ::= identifier | "FILLER" ;
+identifier-range ::= ( identifier "THRU" identifier )
+                   | ( identifier "THROUGH" identifier )
                    | identifier
                    ;
 
@@ -36,13 +36,13 @@ internal-option  ::= [ "IS" ] "INTERNAL" ;
 picture-option   ::= picture ;
 usage-option     ::= [ "USAGE" [ "IS" ] ] usage;
 sign-option      ::= "SIGN" [ "IS" ] ( "LEADING" | "TRAILING" ) [ "SEPARATE" [ "CHARACTER" ] ] ;
-occurs-option    ::= "OCCURS" numeric [ "TO" numeric@"end" [ "TIMES" ] "DEPENDING" [ "ON" ] identifier ] key index ;
+occurs-option    ::= "OCCURS" numeric [ "TO" numeric [ "TIMES" ] "DEPENDING" [ "ON" ] identifier ] key index ;
 sync-option      ::= "SYNC" [ "HRONIZED" ] [ "LEFT" | "RIGHT" ] ;
 just-option      ::= "JUST" [ "IFIED" ] [ "RIGHT" ] ;
 blank-option     ::= "BLANK" [ "WHEN" ] "ZERO" ;
 value-option     ::= "VALUE" [ "IS" ] symbolic ;
 
-picture          ::= [ "PICTURE" | "PIC" ] [ "IS" ] picture-type [ "(" int@"length" ")" [ [ "V" | "." ] picture-type "(" int@"decimal" ")" ] ];
+picture          ::= [ "PICTURE" | "PIC" ] [ "IS" ] picture-type [ "(" int ")" [ [ "V" | "." ] picture-type "(" int ")" ] ];
                    | [ "PICTURE" | "PIC" ] [ "IS" ] string
                    ;
 usage            ::= "BINARY"

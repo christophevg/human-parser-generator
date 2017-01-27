@@ -178,17 +178,27 @@ using System.Linq;
         }
       );
     }
+    
+    // TODO QnD mapping of reserved words
+    private string GenerateLocalVariable(string name) {
+      if( name.Equals("string") ) {
+        return "str";
+      }
+      return this.CamelCase(name);
+    }
 
     private string GenerateEntityParserHeader(Parser.Entity entity) {
       return "  public " + this.PascalCase(entity.Name) + 
         " Parse" + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
           entity.Properties.Values.Select(x =>
-            "    " + this.GenerateType(x) + " " + x.Name.ToLower() + 
+            "    " + this.GenerateType(x) + " " + 
+              this.GenerateLocalVariable(x.Name.ToLower()) + 
             ( x.IsPlural ? " = new " + this.GenerateType(x) + "()" : "") +
             ";"
           )
         ) + "\n\n" +
+        "    this.Log(\"Parse" + this.PascalCase(entity.Name) + "\");\n" +
         "    int pos = this.source.position;\n" +
         "    try {";
     }
@@ -199,24 +209,24 @@ using System.Linq;
       }
       if(action is Parser.ConsumeExtraction) {
         var extraction = (Parser.ConsumeExtraction)action;
-        var id         = extraction.Prop.Name;
+        var id         = this.GenerateLocalVariable(extraction.Prop.Name);
         var extractor  = extraction.Extr.Name;
         return "      " + this.GenerateConsumeExtraction(id, extractor);
       }
       if(action is Parser.ConsumeEntity) {
         var consumption = (Parser.ConsumeEntity)action;
-        var id          = consumption.Prop.Name;
+        var id          = this.GenerateLocalVariable(consumption.Prop.Name);
         var entity      = consumption.Ent;
         if(consumption.Prop.IsPlural) {
           return
-            "      Assignment temp;\n" +
+            "      " + this.PascalCase(entity.Type) + " temp;\n" +
             "      while(true) {\n" +
             "        try {\n" +
             "          " + this.GenerateConsumeEntity("temp", entity) + "\n" +
             "        } catch(ParseException) {\n" +
             "          break;\n" +
             "        }\n" +
-            "        assignments.Add(temp);\n" +
+            "        " + this.GenerateLocalVariable(consumption.Prop.Name) + ".Add(temp);\n" +
             "      }";
         } else {
           return "      " + this.GenerateConsumeEntity(id, entity);
@@ -271,7 +281,8 @@ using System.Linq;
         "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
         string.Join( ",\n",
           entity.Properties.Values.Select(x =>
-            "      " + this.PascalCase(x.Name) + " = " + x.Name.ToLower()
+            "      " + this.PascalCase(x.Name) + " = " + 
+              this.GenerateLocalVariable(x.Name.ToLower())
           )
         ) + "\n" +
         "    };\n" +
@@ -290,6 +301,11 @@ using System.Linq;
           x.First().ToString().ToUpper() + x.ToLower().Substring(1)
         )
       );
+    }
+
+    private string CamelCase(string text) {
+      var x = this.PascalCase(text);
+      return x.First().ToString().ToLower() + x.Substring(1);
     }
 
   }

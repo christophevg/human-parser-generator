@@ -1,25 +1,29 @@
-grammar               ::= { rule } ;
+grammar                 ::= { rule } ;
 
-rule                  ::= identifier  "::=" expression ";" ;
+rule                    ::= identifier "::=" expression-list ";" ;
 
-expression            ::= identifier-expression
-                        | string-expression
-                        | extractor-expression
-                        | optional-expression
-                        | repetition-expression
-                        | group-expression
-                        | or-expression
-                        | sequence-expression
-                        ;
-identifier-expression ::= identifier ;
-string-expression     ::= string ;
-extractor-expression  ::= "[" regex "]" ;
-optional-expression   ::= "[" expression "]" ;
-repetition-expression ::= "{" expression "}" ;
-group-expression      ::= "(" expression ")" ;
-or-expression         ::= expression "|" expression ;
-sequence-expression   ::= expression expression ;
+expression-list         ::= alternatives-expression
+                          | sequence-expression
+                          ;
 
-identifier            ::= /([A-Z][A-Z0-9]*)/ ;
-string                ::= /"([^"]*)"|'([^']*)'/ ;
-regex                 ::= /([^/]*)/ ;
+alternatives-expression ::= expression "|" expression-list ;
+sequence-expression     ::= { expression } ;
+
+expression              ::= string-expression
+                          | extractor-expression
+                          | optional-expression
+                          | repetition-expression
+                          | group-expression
+                          | or-expression
+                          | identifier-expression
+                          ;
+string-expression       ::= string ;
+extractor-expression    ::= "/" regex "/" ;
+optional-expression     ::= "[" expression-list "]" ;
+repetition-expression   ::= "{" expression-list "}" ;
+group-expression        ::= "(" expression-list ")" ;
+identifier-expression   ::= identifier ;
+
+identifier              ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;
+string                  ::= /"([^"]*)"|^'([^']*)'/ ;
+regex                   ::= /([^/]*)/ ;

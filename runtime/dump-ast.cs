@@ -1,4 +1,4 @@
-// small runner example to load a Pascal file, parse it and dump the AST
+// small runner example to load a file, parse it and dump the AST
 // author: Christophe VG <contact@christophe.vg>
 
 using System;
@@ -19,7 +19,6 @@ public class Runner {
   
     string input = System.IO.File.ReadAllText(args[0]);
   
-    // create new DDL parsing object and parse the input
     Parser parser = new Parser();
     Console.WriteLine(parser.Parse(input).AST.ToString());
   }

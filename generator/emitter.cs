@@ -41,6 +41,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Diagnostics;
 ";
     }
 
@@ -290,7 +291,12 @@ using System.Linq;
     }
 
     private string GenerateParserFooter() {
-      return "}";
+      return @"
+        [ConditionalAttribute(""DEBUG"")]
+        private void Log(string msg) {
+          Console.WriteLine(""!!! "" + msg + "" @ "" + this.source.Peek(10).Replace('\n', 'n'));
+        }
+}";
     }
 
     // this function makes sure that text is correctly case'd ;-)

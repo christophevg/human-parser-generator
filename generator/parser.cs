@@ -28,7 +28,7 @@ namespace HumanParserGenerator.Parser {
     private string _type;
     public string Type {
       get {
-        if(this.Parent.Virtual) {
+        if(this.Parent.IsVirtual) {
           return this.Parent.Type;
         }
         return this._type;
@@ -118,7 +118,7 @@ namespace HumanParserGenerator.Parser {
   }
 
   public class Entity : Referable {
-    public bool Virtual {
+    public bool IsVirtual {
       get {
         // implicit:
         // if an entity's RULE's EXPRESSION IS A AlternativeExpressions, it is 
@@ -128,7 +128,7 @@ namespace HumanParserGenerator.Parser {
       }
     }
     // By default an entity doens't have a super; all Entities are top-level.
-    // If this Entity is Part of a Rule of a Virtual Entity, it has a 
+    // If this Entity is Part of a Rule of a IsVirtual Entity, it has a 
     // SuperEntity.
     public bool HasSuper { get { return this.Super != null; } }
     private Entity super;
@@ -189,7 +189,7 @@ namespace HumanParserGenerator.Parser {
 
     public override string ToString() {
       return
-        (this.Virtual ? "Virtual": "") + "Entity(" +
+        (this.IsVirtual ? "IsVirtual": "") + "Entity(" +
           "Name=" + this.Name + "," +
           "Properties=" + "[" +
             string.Join(",",
@@ -426,7 +426,7 @@ namespace HumanParserGenerator.Parser {
           // TODO: is the best place?
           // if this entity is viertual, make sure that the alternatives have 
           // this entity as Super
-          if(entity.Virtual) {
+          if(entity.IsVirtual) {
             this.Entities[((IdentifierExpression)alt).Id].Super = entity;
           }
         } else {

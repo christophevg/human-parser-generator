@@ -54,7 +54,7 @@ using System.Diagnostics;
     }
 
     private string GenerateEntity(Parser.Entity entity) {
-      return entity.Virtual ?
+      return entity.IsVirtual ?
         this.GenerateVirtualEntity(entity) :
         this.GenerateRealEntity(entity);
     }
@@ -300,7 +300,7 @@ using System.Diagnostics;
     }
 
     private string GenerateEntityParserReturn(Parser.Entity entity) {
-      return entity.Virtual ?
+      return entity.IsVirtual ?
         this.GenerateVirtualEntityParserReturn(entity) :
         this.GenerateRealEntityParserReturn(entity);
     }

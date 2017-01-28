@@ -221,7 +221,7 @@ namespace HumanParserGenerator.Grammars {
   }
 
   public class Rule {
-    public bool       Virtual { get; set; }
+    public bool       IsVirtual { get; set; }
     public string     Id { get; set; }
     public Expression Exp { get; set; }
     public override string ToString() {

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-using Grammar = HumanParserGenerator.Grammar;
+using HumanParserGenerator.Grammars;
 
 namespace HumanParserGenerator.Parser {
 
@@ -106,7 +106,7 @@ namespace HumanParserGenerator.Parser {
   }
 
   public class Entity : Referable {
-    public Grammar.Rule Rule { get; set; }
+    public Rule Rule { get; set; }
     public override string Type { get { return this.Name; } }
     // name -> entity information
     public Dictionary<string,Property> Properties;
@@ -183,14 +183,14 @@ namespace HumanParserGenerator.Parser {
   }
 
   public class Model {
-    public Dictionary<string,Grammar.Rule> Rules;
+    public Dictionary<string,Rule> Rules;
 
     public Dictionary<string,Entity>       Entities;
     public Dictionary<string,Extraction>   Extractions;
 
     public string Root;
 
-    public Model Import(Grammar.Model grammar) {
+    public Model Import(Grammar grammar) {
       this.ImportRules(grammar);
       this.ExtractExtractions();
       this.ExtractEntities();
@@ -198,11 +198,11 @@ namespace HumanParserGenerator.Parser {
       return this;
     }
 
-    private void ImportRules(Grammar.Model grammar) {
+    private void ImportRules(Grammar grammar) {
       if(grammar.Rules.Count < 1) {
         throw new ArgumentException("grammar contains no rules");
       }
-      this.Rules = new Dictionary<string,Grammar.Rule>();
+      this.Rules = new Dictionary<string,Rule>();
       foreach(var rule in grammar.Rules) {
         this.Rules.Add(rule.Id, rule);
       }
@@ -211,7 +211,7 @@ namespace HumanParserGenerator.Parser {
 
     private void ExtractEntities() {
       this.Entities = this.Rules.Values
-        .Where(rule => !( rule.Exp is Grammar.Extractor) )
+        .Where(rule => !( rule.Exp is Extractor) )
         .Select(rule => new Entity() {
           Name = rule.Id,
           Rule = rule
@@ -232,10 +232,10 @@ namespace HumanParserGenerator.Parser {
     
     private void ExtractExtractions() {
       this.Extractions = this.Rules.Values
-        .Where(rule => rule.Exp is Grammar.Extractor)
+        .Where(rule => rule.Exp is Extractor)
         .Select(rule => new Extraction() {
           Name    = rule.Id,
-          Pattern = ((Grammar.Extractor)rule.Exp).Pattern
+          Pattern = ((Extractor)rule.Exp).Pattern
         })
        .ToDictionary(
           extraction => extraction.Name,
@@ -245,9 +245,9 @@ namespace HumanParserGenerator.Parser {
 
     // Properties and ParseActions Extraction methods
 
-    private void ExtractPropertiesAndParseActions(Grammar.Expression exp, Entity entity) {
+    private void ExtractPropertiesAndParseActions(Expression exp, Entity entity) {
       try {
-        new Dictionary<string, Action<Grammar.Expression,Entity>>() {
+        new Dictionary<string, Action<Expression,Entity>>() {
           { "IdentifierExpression",   this.ExtractIdentifierExpression   },
           { "StringExpression",       this.ExtractStringExpression       },
           { "Extractor",              this.ExtractExtractorExpression    },
@@ -256,7 +256,7 @@ namespace HumanParserGenerator.Parser {
           { "GroupExpression",        this.ExtractGroupExpression        },
           { "AlternativesExpression", this.ExtractAlternativesExpression },
           { "SequenceExpression",     this.ExtractSequenceExpression     }
-        }[exp.GetType().ToString().Replace("HumanParserGenerator.Grammar.", "")]
+        }[exp.GetType().ToString().Replace("HumanParserGenerator.Grammars.", "")]
           (exp, entity);
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
@@ -267,8 +267,8 @@ namespace HumanParserGenerator.Parser {
 
     // an IDExp part of an Entity rule Expression requires the creation of a
     // Property to store the Referred Entity or Extraction.
-    private void ExtractIdentifierExpression(Grammar.Expression exp, Entity entity) {
-      Grammar.IdentifierExpression id = (Grammar.IdentifierExpression)exp;
+    private void ExtractIdentifierExpression(Expression exp, Entity entity) {
+      IdentifierExpression id = (IdentifierExpression)exp;
 
       Property property = this.CreatePropertyFor(id);
       entity.Add(property);
@@ -277,26 +277,26 @@ namespace HumanParserGenerator.Parser {
       entity.Add(consumer);
     }
 
-    private void ExtractStringExpression(Grammar.Expression exp, Entity entity) {
+    private void ExtractStringExpression(Expression exp, Entity entity) {
       // this only requires an action
       entity.ParseActions.Add(new ConsumeLiteral() {
-        Literal = ((Grammar.StringExpression)exp).String
+        Literal = ((StringExpression)exp).String
       });
     }
     
-    private void ExtractExtractorExpression(Grammar.Expression exp, Entity entity) {
+    private void ExtractExtractorExpression(Expression exp, Entity entity) {
       // this will be an Extractor
       // nothing TODO ?
     }
 
-    private void ExtractOptionalExpression(Grammar.Expression exp, Entity entity) {
+    private void ExtractOptionalExpression(Expression exp, Entity entity) {
       throw new NotImplementedException("TODO: ExtractGroupExpression");
     }
     
-    private void ExtractRepetitionExpression(Grammar.Expression exp, Entity entity) {
-      var repetition = (Grammar.RepetitionExpression)exp;
-      if( repetition.Exp is Grammar.IdentifierExpression) {
-        string id   = ((Grammar.IdentifierExpression)repetition.Exp).Id;
+    private void ExtractRepetitionExpression(Expression exp, Entity entity) {
+      var repetition = (RepetitionExpression)exp;
+      if( repetition.Exp is IdentifierExpression) {
+        string id   = ((IdentifierExpression)repetition.Exp).Id;
         Property property = new Property() {
           Name = id + "s",
           Type = this.IsTerminal(id) ? "string" : id,
@@ -312,7 +312,7 @@ namespace HumanParserGenerator.Parser {
       }
     }
 
-    private void ExtractGroupExpression(Grammar.Expression exp, Entity entity) {
+    private void ExtractGroupExpression(Expression exp, Entity entity) {
       throw new NotImplementedException("TODO: ExtractGroupExpression");
     }
     
@@ -327,7 +327,7 @@ namespace HumanParserGenerator.Parser {
       );
     }
 
-    private Property CreatePropertyFor(Grammar.IdentifierExpression exp) {
+    private Property CreatePropertyFor(IdentifierExpression exp) {
       return new Property() {
         Name = exp.Id,
         Type = this.GetReferred(exp.Id).Type,
@@ -336,7 +336,7 @@ namespace HumanParserGenerator.Parser {
     }
 
     private ParseAction CreateConsumerFor(Property property,
-                                          Grammar.IdentifierExpression exp)
+                                          IdentifierExpression exp)
     {
       Referable referred = this.GetReferred(exp.Id);
       if( referred is Entity ) {
@@ -363,7 +363,7 @@ namespace HumanParserGenerator.Parser {
       return this.Extractions.Keys.Contains(name);
     }
 
-    private void ExtractAlternativesExpression(Grammar.Expression exp,
+    private void ExtractAlternativesExpression(Expression exp,
                                                Entity entity)
     {
       Property property = new Property() {
@@ -374,10 +374,10 @@ namespace HumanParserGenerator.Parser {
       entity.Add(property);
 
       ConsumeAny consume = new ConsumeAny();
-      foreach(var alt in ((Grammar.AlternativesExpression)exp).Expressions) {
-        if( alt is Grammar.IdentifierExpression ) {
+      foreach(var alt in ((AlternativesExpression)exp).Expressions) {
+        if( alt is IdentifierExpression ) {
           consume.Options.Add(this.CreateConsumerFor(
-            property, (Grammar.IdentifierExpression)alt)
+            property, (IdentifierExpression)alt)
           );
         } else {
           throw new NotImplementedException(
@@ -390,15 +390,15 @@ namespace HumanParserGenerator.Parser {
 
     // a sequence consists of one or more Expressions that all are consumed
     // into properties of the entity
-    private void ExtractSequenceExpression(Grammar.Expression exp, Entity entity) {
-      foreach(var subExp in ((Grammar.SequenceExpression)exp).Expressions) {
+    private void ExtractSequenceExpression(Expression exp, Entity entity) {
+      foreach(var subExp in ((SequenceExpression)exp).Expressions) {
         this.ExtractPropertiesAndParseActions(subExp, entity);
       }
     }
 
     private bool IsTerminal(string name) {
       return this.Rules.Keys.Contains(name)
-          && this.Rules[name].Exp is Grammar.Extractor;
+          && this.Rules[name].Exp is Extractor;
     }
     
     public override string ToString() {

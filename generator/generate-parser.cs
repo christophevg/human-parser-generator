@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-using Grammar = HumanParserGenerator.Grammar;
-using Parser  = HumanParserGenerator.Parser;
-using Emitter = HumanParserGenerator.Emitter;
+using HumanParserGenerator.Grammars;
+using HumanParserGenerator.Parser;
+using HumanParserGenerator.Emitter;
 
 public class Runner {
 
@@ -20,19 +20,19 @@ public class Runner {
       grammarName = args[0];
     }
 
-    Grammar.Model grammar;
+    Grammar grammar;
 
     switch(grammarName) {
-      case "bnf": grammar = Grammar.AsModel.BNF();    break;
-      default:    grammar = Grammar.AsModel.Pascal(); break;
+      case "bnf": grammar = AsModel.BNF;    break;
+      default:    grammar = AsModel.Pascal; break;
     }
 
-    Parser.Model model = new Parser.Model().Import(grammar);
+    Model model = new Model().Import(grammar);
 
     // Console.WriteLine(model.ToString());
     // Console.WriteLine();
 
-    Emitter.CSharp code = new Emitter.CSharp().Generate(model);
+    CSharp code = new CSharp().Generate(model);
     Console.WriteLine(code.ToString());
   }
 }

@@ -2,7 +2,7 @@
 // allows for generating a parser that then can parse the grammar in BNF-like
 // notation and generate itself to become self-hosting ;-)
 // See also: ../grammars/hpg.bnf
-// Below the BNF grammar, the Grammar Model is also proviede - The classes to
+// Below the BNF grammar, the Grammar Model is also provided - The classes to
 // model an HPG BNF-like parsed notation while bootstrapping. Once the parser is
 // generated, it will also include these generated classes.
 // author: Christophe VG <contact@christophe.vg>
@@ -13,13 +13,12 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-namespace HumanParserGenerator.Grammar {
+namespace HumanParserGenerator.Grammars {
 
   public class AsModel {
 
-    public static Model BNF() {
-
-      return new Model()  {
+    public static Grammar BNF =
+      new Grammar()  {
         Rules = new List<Rule>() {
           new Rule() {
             Id  = "grammar",
@@ -138,11 +137,10 @@ namespace HumanParserGenerator.Grammar {
           }
         }
       };
-    }
-    
+
     // Temporary Pascal grammar
   
-    public static Model Pascal() {
+    public static Grammar Pascal =
       // program    ::= "PROGRAM" identifier
       //                "BEGIN"
       //                { assignment }
@@ -159,7 +157,7 @@ namespace HumanParserGenerator.Grammar {
       // number     ::= /(-?[1-9][0-9]*)/ ;
       // string     ::= /"([^"]*)"|'([^']*)'/ ;
 
-      return new Model() {
+      new Grammar() {
         Rules = new List<Rule>() {
           new Rule() {
             Id   = "program",
@@ -206,14 +204,13 @@ namespace HumanParserGenerator.Grammar {
           }
         }
       };
-    }
 
   }
   
   // The classes below are also part of the bootstrap process, once a parser
   // is generated, it also generates these classes.
 
-  public class Model {
+  public class Grammar {
     public List<Rule> Rules { get; set; }
     public override string ToString() {
       return

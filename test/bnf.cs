@@ -79,56 +79,65 @@ public class Syntax {
   }
 
   [Test]
-    public void Failure() {
-      this.parseAndCompare(
-        "p ::= [ \"PICTURE\" | \"PIC\" ] [ \"IS\" ] pt [ \"(\" int \")\" [ [ \"V\" | \".\" ] pt \"(\" int \")\" ] ];",
-        @"Grammar(
-          Rules=[
-            Rule(Identifier=p,
-              Expressions=Expressions(Value=
-                SequentialExpressions(Expressions=[
-                  Expression(Value=
-                    OptionalExpression(Expressions=
-                      Expressions(Value=
-                        AlternativeExpressions(
-                          Expression=Expression(Value=
-                            StringExpression(String=PICTURE)),
-                          Expressions=Expressions(Value=
-                            SequentialExpressions(Expressions=[
-                              Expression(Value=
-                                StringExpression(String=PIC))])))))),
-                  Expression(Value=
-                    OptionalExpression(Expressions=
-                      Expressions(Value=
-                        SequentialExpressions(Expressions=[
-                          Expression(Value=StringExpression(String=IS))])))),
-                  Expression(Value=IdentifierExpression(Identifier=pt)),
-                  Expression(Value=
-                    OptionalExpression(Expressions=
-                      Expressions(Value=
-                        SequentialExpressions(Expressions=[
-                          Expression(Value=StringExpression(String=()),
-                          Expression(Value=IdentifierExpression(Identifier=int)),
-                          Expression(Value=StringExpression(String=))),
-                          Expression(Value=
-                            OptionalExpression(Expressions=
-                              Expressions(Value=
-                                SequentialExpressions(Expressions=[
-                                  Expression(Value=
-                                    OptionalExpression(Expressions=
-                                      Expressions(Value=
-                                        AlternativeExpressions(Expression=
-                                          Expression(Value=StringExpression(String=V)),
-                                          Expressions=Expressions(Value=
-                                            SequentialExpressions(Expressions=[
-                                              Expression(Value=StringExpression(String=.))])))))),
-                                  Expression(Value=IdentifierExpression(Identifier=pt)),
-                                  Expression(Value=StringExpression(String=()),
-                                  Expression(Value=IdentifierExpression(Identifier=int)),
-                                  Expression(Value=StringExpression(String=)))
-                                ]))))]))))])))])"
-      );
-    }
+  public void CobolPictureClauseRule() {
+    this.parseAndCompare(
+      "p ::= [ \"PICTURE\" | \"PIC\" ] [ \"IS\" ] pt [ \"(\" int \")\" [ [ \"V\" | \".\" ] pt \"(\" int \")\" ] ];",
+      @"Grammar(
+        Rules=[
+          Rule(Identifier=p,
+            Expressions=Expressions(Value=
+              SequentialExpressions(Expressions=[
+                Expression(Value=
+                  OptionalExpression(Expressions=
+                    Expressions(Value=
+                      AlternativeExpressions(
+                        Expression=Expression(Value=
+                          StringExpression(String=PICTURE)),
+                        Expressions=Expressions(Value=
+                          SequentialExpressions(Expressions=[
+                            Expression(Value=
+                              StringExpression(String=PIC))])))))),
+                Expression(Value=
+                  OptionalExpression(Expressions=
+                    Expressions(Value=
+                      SequentialExpressions(Expressions=[
+                        Expression(Value=StringExpression(String=IS))])))),
+                Expression(Value=IdentifierExpression(Identifier=pt)),
+                Expression(Value=
+                  OptionalExpression(Expressions=
+                    Expressions(Value=
+                      SequentialExpressions(Expressions=[
+                        Expression(Value=StringExpression(String=()),
+                        Expression(Value=IdentifierExpression(Identifier=int)),
+                        Expression(Value=StringExpression(String=))),
+                        Expression(Value=
+                          OptionalExpression(Expressions=
+                            Expressions(Value=
+                              SequentialExpressions(Expressions=[
+                                Expression(Value=
+                                  OptionalExpression(Expressions=
+                                    Expressions(Value=
+                                      AlternativeExpressions(Expression=
+                                        Expression(Value=StringExpression(String=V)),
+                                        Expressions=Expressions(Value=
+                                          SequentialExpressions(Expressions=[
+                                            Expression(Value=StringExpression(String=.))])))))),
+                                Expression(Value=IdentifierExpression(Identifier=pt)),
+                                Expression(Value=StringExpression(String=()),
+                                Expression(Value=IdentifierExpression(Identifier=int)),
+                                Expression(Value=StringExpression(String=)))
+                              ]))))]))))])))])"
+    );
+  }
+
+  // Future ;-)
+  // [Test]
+  // public void BNFSelfHostingTest() {
+  //   this.parseAndCompare(
+  //     System.IO.File.ReadAllText("../grammars/hpg.bnf"),
+  //     HumanParserGenerator.Grammars.AsModel.BNF
+  //   );
+  // }
 }
 
 

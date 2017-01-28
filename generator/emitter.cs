@@ -54,6 +54,12 @@ using System.Diagnostics;
     }
 
     private string GenerateEntity(Parser.Entity entity) {
+      return entity.Virtual ?
+        this.GenerateVirtualEntity(entity) :
+        this.GenerateRealEntity(entity);
+    }
+
+    private string GenerateRealEntity(Parser.Entity entity) {
       return string.Join( "\n",
         new List<string>() {
           this.GenerateSignature(entity),
@@ -65,8 +71,16 @@ using System.Diagnostics;
       );
     }
 
+    private string GenerateVirtualEntity(Parser.Entity entity) {
+      return
+        this.GenerateSignature(entity) +
+        this.GenerateFooter(entity);
+    }
+
     private string GenerateSignature(Parser.Entity entity) {
-      return "public class " + this.PascalCase(entity.Name) + " {";
+      return "public class " + this.PascalCase(entity.Name) + 
+        (entity.HasSuper ? " : " + this.PascalCase(entity.Super.Name) : "") +
+        " {";
     }
 
     private string GenerateProperties(Parser.Entity entity) {
@@ -84,8 +98,9 @@ using System.Diagnostics;
       if(property.IsPlural) {
         return "List<" + this.PascalCase(property.Type) + ">";
       }
-      return property.Type.Equals("string") ?
-        property.Type : this.PascalCase(property.Type);
+      if( property.Type == null ) { return "Object"; }
+      if( property.Type.Equals("string") ) { return "string"; }
+      return this.PascalCase(property.Type);
     }
 
     private string GenerateConstructor(Parser.Entity entity) {
@@ -281,7 +296,17 @@ using System.Diagnostics;
         "          \"Failed to parse " + this.PascalCase(entity.Name) + ".\", e\n" +
         "        );\n" +
         "    }\n\n" +
-        "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
+        this.GenerateEntityParserReturn(entity);
+    }
+
+    private string GenerateEntityParserReturn(Parser.Entity entity) {
+      return entity.Virtual ?
+        this.GenerateVirtualEntityParserReturn(entity) :
+        this.GenerateRealEntityParserReturn(entity);
+    }
+    
+    private string GenerateRealEntityParserReturn(Parser.Entity entity) {
+      return "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
         string.Join( ",\n",
           entity.Properties.Values.Select(x =>
             "      " + this.PascalCase(x.Name) + " = " + 
@@ -292,12 +317,19 @@ using System.Diagnostics;
         "  }";
     }
 
+    private string GenerateVirtualEntityParserReturn(Parser.Entity entity) {
+      string name = entity.Properties.Keys.ToList()[0];
+      
+      return "    return " + this.CamelCase(name) + ";\n" +
+             "  }"; 
+    }
+
     private string GenerateParserFooter() {
       return @"
-        [ConditionalAttribute(""DEBUG"")]
-        private void Log(string msg) {
-          Console.WriteLine(""!!! "" + msg + "" @ "" + this.source.Peek(10).Replace('\n', 'n'));
-        }
+  [ConditionalAttribute(""DEBUG"")]
+  private void Log(string msg) {
+    Console.WriteLine(""!!! "" + msg + "" @ "" + this.source.Peek(10).Replace('\n', 'n'));
+  }
 }";
     }
 

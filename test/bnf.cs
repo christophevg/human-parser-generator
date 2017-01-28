@@ -44,14 +44,10 @@ public class Syntax {
         Rules = new List<Rule>() {
           new Rule() {
             Identifier     = "r",
-            Expressions = new Expressions() {
-              Value= new SequentialExpressions() {
-                Expressions = new List<Expression>() {
-                  new Expression() {
-                    Value = new StringExpression() {
-                      String = "a"
-                    }
-                  }
+            Expressions = new SequentialExpressions() {
+              Expressions = new List<Expression>() {
+                new StringExpression() {
+                  String = "a"
                 }
               }
             }
@@ -68,13 +64,11 @@ public class Syntax {
       @"Grammar(
         Rules=[
           Rule(Identifier=r,
-          Expressions=Expressions(Value=
-            AlternativeExpressions(
-              Expression=Expression(Value=StringExpression(String=a)),
-              Expressions=Expressions(Value=SequentialExpressions(
-                Expressions=[
-                  Expression(Value=StringExpression(String=b))
-                ])))))])"
+          Expressions=AlternativeExpressions(
+            Expression=StringExpression(String=a),
+            Expressions=SequentialExpressions(Expressions=[
+              StringExpression(String=b)
+            ])))])"
     );
   }
 
@@ -85,48 +79,35 @@ public class Syntax {
       @"Grammar(
         Rules=[
           Rule(Identifier=p,
-            Expressions=Expressions(Value=
-              SequentialExpressions(Expressions=[
-                Expression(Value=
-                  OptionalExpression(Expressions=
-                    Expressions(Value=
-                      AlternativeExpressions(
-                        Expression=Expression(Value=
-                          StringExpression(String=PICTURE)),
-                        Expressions=Expressions(Value=
-                          SequentialExpressions(Expressions=[
-                            Expression(Value=
-                              StringExpression(String=PIC))])))))),
-                Expression(Value=
-                  OptionalExpression(Expressions=
-                    Expressions(Value=
+            Expressions=SequentialExpressions(Expressions=[
+              OptionalExpression(Expressions=
+                AlternativeExpressions(
+                  Expression=StringExpression(String=PICTURE),
+                  Expressions=SequentialExpressions(Expressions=[
+                    StringExpression(String=PIC)
+                  ]))),
+              OptionalExpression(Expressions=
+                SequentialExpressions(Expressions=[
+                  StringExpression(String=IS)
+                ])),
+              IdentifierExpression(Identifier=pt),
+              OptionalExpression(Expressions=
+                SequentialExpressions(Expressions=[
+                  StringExpression(String=(),
+                    IdentifierExpression(Identifier=int),
+                    StringExpression(String=)),
+                    OptionalExpression(Expressions=
                       SequentialExpressions(Expressions=[
-                        Expression(Value=StringExpression(String=IS))])))),
-                Expression(Value=IdentifierExpression(Identifier=pt)),
-                Expression(Value=
-                  OptionalExpression(Expressions=
-                    Expressions(Value=
-                      SequentialExpressions(Expressions=[
-                        Expression(Value=StringExpression(String=()),
-                        Expression(Value=IdentifierExpression(Identifier=int)),
-                        Expression(Value=StringExpression(String=))),
-                        Expression(Value=
-                          OptionalExpression(Expressions=
-                            Expressions(Value=
-                              SequentialExpressions(Expressions=[
-                                Expression(Value=
-                                  OptionalExpression(Expressions=
-                                    Expressions(Value=
-                                      AlternativeExpressions(Expression=
-                                        Expression(Value=StringExpression(String=V)),
-                                        Expressions=Expressions(Value=
-                                          SequentialExpressions(Expressions=[
-                                            Expression(Value=StringExpression(String=.))])))))),
-                                Expression(Value=IdentifierExpression(Identifier=pt)),
-                                Expression(Value=StringExpression(String=()),
-                                Expression(Value=IdentifierExpression(Identifier=int)),
-                                Expression(Value=StringExpression(String=)))
-                              ]))))]))))])))])"
+                        OptionalExpression(Expressions=
+                          AlternativeExpressions(Expression=
+                            StringExpression(String=V),
+                            Expressions=SequentialExpressions(Expressions=[
+                              StringExpression(String=.)]))),
+                        IdentifierExpression(Identifier=pt),
+                        StringExpression(String=(),
+                        IdentifierExpression(Identifier=int),
+                        StringExpression(String=))
+                      ]))]))]))])"
     );
   }
 

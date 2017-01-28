@@ -38,8 +38,8 @@ namespace HumanParserGenerator.Grammars {
             }
           },
           new Rule() {
-            Id = "expressions",
-            Exp = new AlternativesExpression() {
+            Id      = "expressions",
+            Exp     = new AlternativesExpression() {
               Expressions = new List<Expression>() {
                 new IdentifierExpression() { Id = "alternative-expressions" },
                 new IdentifierExpression() { Id = "sequential-expressions" }
@@ -221,6 +221,7 @@ namespace HumanParserGenerator.Grammars {
   }
 
   public class Rule {
+    public bool       Virtual { get; set; }
     public string     Id { get; set; }
     public Expression Exp { get; set; }
     public override string ToString() {

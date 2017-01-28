@@ -25,8 +25,20 @@ namespace HumanParserGenerator.Parser {
 
   public class Property {
     public string Name { get; set; }    // unique identification
-    public string Type { get; set; }
+    private string _type;
+    public string Type {
+      get {
+        if(this.Parent.Virtual) {
+          return this.Parent.Type;
+        }
+        return this._type;
+      }
+      set {
+        this._type = value;
+      }
+    }
     public bool   IsPlural { get; set; }
+    public Entity Parent { get; set; }
     public override string ToString() {
       return "Property(" +
         "Name=" + this.Name + "," + 
@@ -106,6 +118,32 @@ namespace HumanParserGenerator.Parser {
   }
 
   public class Entity : Referable {
+    public bool Virtual {
+      get {
+        // implicit:
+        // if an entity's RULE's EXPRESSION IS A AlternativeExpressions, it is 
+        // VIRTUAL, which means it can be referred to, but doesn't show up in 
+        // the AST.
+        return Rule.Exp is AlternativesExpression;     
+      }
+    }
+    // By default an entity doens't have a super; all Entities are top-level.
+    // If this Entity is Part of a Rule of a Virtual Entity, it has a 
+    // SuperEntity.
+    public bool HasSuper { get { return this.Super != null; } }
+    private Entity super;
+    public Entity Super { 
+      get {
+        return this.super;
+      }
+      set {
+        if( this.super != null && this.super != value ) {
+          throw new ArgumentException("can't assign more than one super. previous super was: " + this.super.ToString() + " // new super is: " + value.ToString());
+        }
+        this.super = value;
+      }
+    }
+
     public Rule Rule { get; set; }
     public override string Type { get { return this.Name; } }
     // name -> entity information
@@ -124,6 +162,8 @@ namespace HumanParserGenerator.Parser {
     }
 
     public void Add(Property property) {
+      // set the Parent reference to point to us
+      property.Parent = this;
       // make sure the name of the property is unique
       if( ! this.propertyIndices.Keys.Contains(property.Name) ) {
         this.propertyIndices.Add(property.Name, 0);
@@ -149,7 +189,7 @@ namespace HumanParserGenerator.Parser {
 
     public override string ToString() {
       return
-        "Entity(" +
+        (this.Virtual ? "Virtual": "") + "Entity(" +
           "Name=" + this.Name + "," +
           "Properties=" + "[" +
             string.Join(",",
@@ -213,8 +253,8 @@ namespace HumanParserGenerator.Parser {
       this.Entities = this.Rules.Values
         .Where(rule => !( rule.Exp is Extractor) )
         .Select(rule => new Entity() {
-          Name = rule.Id,
-          Rule = rule
+          Name    = rule.Id,
+          Rule    = rule
         })
         .ToDictionary(
           entity => entity.Name,
@@ -302,7 +342,7 @@ namespace HumanParserGenerator.Parser {
           Type = this.IsTerminal(id) ? "string" : id,
           IsPlural = true
         };
-        entity.Properties.Add(id, property);
+        entity.Add(property);
         entity.ParseActions.Add(new ConsumeEntity() {
           Ent  = this.Entities[id],
           Prop = property
@@ -366,9 +406,12 @@ namespace HumanParserGenerator.Parser {
     private void ExtractAlternativesExpression(Expression exp,
                                                Entity entity)
     {
+      // Alternative expressions should all return the same type.
+      // We create a property on the Entity to store the result.
+      // The Type of this property must be a superclass for all alternatives.
       Property property = new Property() {
         Name     = "value",
-        Type     = "Object",
+        Type     = null, // default, cause we don't know, other "rules" fix this
         IsPlural = false
       };
       entity.Add(property);
@@ -379,6 +422,13 @@ namespace HumanParserGenerator.Parser {
           consume.Options.Add(this.CreateConsumerFor(
             property, (IdentifierExpression)alt)
           );
+
+          // TODO: is the best place?
+          // if this entity is viertual, make sure that the alternatives have 
+          // this entity as Super
+          if(entity.Virtual) {
+            this.Entities[((IdentifierExpression)alt).Id].Super = entity;
+          }
         } else {
           throw new NotImplementedException(
             "alternative is " + alt.GetType().ToString()

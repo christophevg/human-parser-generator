@@ -18,13 +18,13 @@ SRCS        = generator/{grammar,parser,emitter}.cs
 
 PARSER      = parser.cs
 
-all: clean generate test
+all: clean test
 
-generate:
+$(PARSER):
 	@echo "*** generating HPG BNF-like parser..."
 	@(cd ../generator; make parser LANG=bnf > ../test/$(PARSER))
 
-$(BUILD)/test.dll: *.cs
+$(BUILD)/test.dll: *.cs $(PARSER)
 	@echo "*** building unit tests"
 	@mkdir -p $(BUILD)
 	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^

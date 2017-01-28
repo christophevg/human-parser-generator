@@ -33,32 +33,32 @@ namespace HumanParserGenerator.Grammar {
               Expressions = new List<Expression> {
                 new IdentifierExpression() { Id     = "identifier" },
                 new StringExpression()     { String = "::="        },
-                new IdentifierExpression() { Id     = "expression-list" },
+                new IdentifierExpression() { Id     = "expressions" },
                 new StringExpression()     { String = ";"          }
               }
             }
           },
           new Rule() {
-            Id = "expression-list",
+            Id = "expressions",
             Exp = new AlternativesExpression() {
               Expressions = new List<Expression>() {
-                new IdentifierExpression() { Id = "alternatives-expression" },
-                new IdentifierExpression() { Id = "sequence-expression" }
+                new IdentifierExpression() { Id = "alternative-expressions" },
+                new IdentifierExpression() { Id = "sequential-expressions" }
               }
             }
           },
           new Rule() {
-            Id = "alternatives-expression",
+            Id = "alternative-expressions",
             Exp = new SequenceExpression() {
               Expressions = new List<Expression> {
                 new IdentifierExpression() { Id     = "expression" },
                 new StringExpression()     { String = "|"          },
-                new IdentifierExpression() { Id     = "expression-list" }
+                new IdentifierExpression() { Id     = "expressions" }
               }
             }
           },
           new Rule() {
-            Id = "sequence-expression",
+            Id = "sequential-expressions",
             Exp = new RepetitionExpression() {
               Exp = new IdentifierExpression() { Id = "expression" },
             }
@@ -99,7 +99,7 @@ namespace HumanParserGenerator.Grammar {
             Exp = new SequenceExpression() {
               Expressions = new List<Expression> {
                 new StringExpression()     { String = "["          },
-                new IdentifierExpression() { Id     = "expression-list" },
+                new IdentifierExpression() { Id     = "expressions" },
                 new StringExpression()     { String = "]"          }
               }
             }
@@ -109,7 +109,7 @@ namespace HumanParserGenerator.Grammar {
             Exp = new SequenceExpression() {
               Expressions = new List<Expression> {
                 new StringExpression()     { String = "{"          },
-                new IdentifierExpression() { Id     = "expression-list" },
+                new IdentifierExpression() { Id     = "expressions" },
                 new StringExpression()     { String = "}"          }
               }
             }
@@ -119,7 +119,7 @@ namespace HumanParserGenerator.Grammar {
             Exp = new SequenceExpression() {
               Expressions = new List<Expression> {
                 new StringExpression()     { String = "("          },
-                new IdentifierExpression() { Id     = "expression-list" },
+                new IdentifierExpression() { Id     = "expressions" },
                 new StringExpression()     { String = ")"          }
               }
             }

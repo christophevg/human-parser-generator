@@ -2,6 +2,7 @@
 // author: Christophe VG <contact@christophe.vg>
 
 using System;
+using System.IO;
 using NUnit.Framework;
 
 using System.Collections.Generic;
@@ -28,9 +29,10 @@ public class Syntax {
   }
 
   private void parseAndCompare(string src, string expected) {
+    this.parser.Parse(src);
     Assert.AreEqual(
-      expected,
-      this.parser.Parse(src).AST.ToString()
+      expected.Replace(" ","").Replace("\n",""),
+      this.parser.AST.ToString()
     );
   }
 
@@ -42,8 +44,8 @@ public class Syntax {
         Rules = new List<Rule>() {
           new Rule() {
             Identifier     = "r",
-            ExpressionList = new ExpressionList() {
-              Value= new SequenceExpression() {
+            Expressions = new Expressions() {
+              Value= new SequentialExpressions() {
                 Expressions = new List<Expression>() {
                   new Expression() {
                     Value = new StringExpression() {
@@ -63,19 +65,72 @@ public class Syntax {
   public void TwoAlternativeCharactersRule() {
     this.parseAndCompare(
       "r ::= \"a\" | \"b\";",
-      "Grammar(" +
-        "Rules=[" +
-          "Rule(" +
-            "Identifier=r,"+
-            "ExpressionList=ExpressionList(" +
-              "Value=AlternativesExpression(" +
-                "Expression="+
-                  "Expression(Value=StringExpression(String=a)),"+
-                  "ExpressionList=ExpressionList(" +
-                    "Value=SequenceExpression(" +
-                    "Expressions=["+
-                      "Expression(Value=StringExpression(String=b))])))))])"
+      @"Grammar(
+        Rules=[
+          Rule(Identifier=r,
+          Expressions=Expressions(Value=
+            AlternativeExpressions(
+              Expression=Expression(Value=StringExpression(String=a)),
+              Expressions=Expressions(Value=SequentialExpressions(
+                Expressions=[
+                  Expression(Value=StringExpression(String=b))
+                ])))))])"
     );
   }
 
+  [Test]
+    public void Failure() {
+      this.parseAndCompare(
+        "p ::= [ \"PICTURE\" | \"PIC\" ] [ \"IS\" ] pt [ \"(\" int \")\" [ [ \"V\" | \".\" ] pt \"(\" int \")\" ] ];",
+        @"Grammar(
+          Rules=[
+            Rule(Identifier=p,
+              Expressions=Expressions(Value=
+                SequentialExpressions(Expressions=[
+                  Expression(Value=
+                    OptionalExpression(Expressions=
+                      Expressions(Value=
+                        AlternativeExpressions(
+                          Expression=Expression(Value=
+                            StringExpression(String=PICTURE)),
+                          Expressions=Expressions(Value=
+                            SequentialExpressions(Expressions=[
+                              Expression(Value=
+                                StringExpression(String=PIC))])))))),
+                  Expression(Value=
+                    OptionalExpression(Expressions=
+                      Expressions(Value=
+                        SequentialExpressions(Expressions=[
+                          Expression(Value=StringExpression(String=IS))])))),
+                  Expression(Value=IdentifierExpression(Identifier=pt)),
+                  Expression(Value=
+                    OptionalExpression(Expressions=
+                      Expressions(Value=
+                        SequentialExpressions(Expressions=[
+                          Expression(Value=StringExpression(String=()),
+                          Expression(Value=IdentifierExpression(Identifier=int)),
+                          Expression(Value=StringExpression(String=))),
+                          Expression(Value=
+                            OptionalExpression(Expressions=
+                              Expressions(Value=
+                                SequentialExpressions(Expressions=[
+                                  Expression(Value=
+                                    OptionalExpression(Expressions=
+                                      Expressions(Value=
+                                        AlternativeExpressions(Expression=
+                                          Expression(Value=StringExpression(String=V)),
+                                          Expressions=Expressions(Value=
+                                            SequentialExpressions(Expressions=[
+                                              Expression(Value=StringExpression(String=.))])))))),
+                                  Expression(Value=IdentifierExpression(Identifier=pt)),
+                                  Expression(Value=StringExpression(String=()),
+                                  Expression(Value=IdentifierExpression(Identifier=int)),
+                                  Expression(Value=StringExpression(String=)))
+                                ]))))]))))])))])"
+      );
+    }
 }
+
+
+
+

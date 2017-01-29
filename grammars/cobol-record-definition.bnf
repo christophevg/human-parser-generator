@@ -42,12 +42,12 @@ just-option      ::= "JUST" [ "IFIED" ] [ "RIGHT" ] ;
 blank-option     ::= "BLANK" [ "WHEN" ] "ZERO" ;
 value-option     ::= "VALUE" [ "IS" ] symbolic ;
 
-picture          ::= [ "PICTURE" | "PIC" ] [ "IS" ] picture-type [ "(" int ")" [ [ "V" | "." ] picture-type "(" int ")" ] ];
-                   | [ "PICTURE" | "PIC" ] [ "IS" ] string
+picture          ::= ( [ "PICTURE" | "PIC" ] [ "IS" ] picture-type [ "(" int ")" [ [ "V" | "." ] picture-type "(" int ")" ] ] )
+                   | ( [ "PICTURE" | "PIC" ] [ "IS" ] string )
                    ;
 usage            ::= "BINARY"
-                   | "COMPUTATIONAL" [ "-" digit ]
-                   | "COMP" [ "-" digit ]
+                   | ( "COMPUTATIONAL" [ "-" digit ] )
+                   | ( "COMP" [ "-" digit ] )
                    | "DISPLAY"
                    | "INDEX"
                    | "PACKED-DECIMAL"
@@ -65,7 +65,7 @@ figurative       ::= "ZEROS"
                    | "HIGH-VALUE"
                    | "LOW-VALUES"
                    | "LOW-VALUE"
-                   | "ALL" string
+                   | ( "ALL" string )
                    | "NULLS"
                    | "NULL"
                    ;

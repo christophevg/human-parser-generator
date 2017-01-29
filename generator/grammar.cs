@@ -88,7 +88,7 @@ namespace HumanParserGenerator.Grammars {
             Exp = new SequenceExpression() {
               Expressions = new List<Expression> {
                 new StringExpression()     { String = "/"          },
-                new IdentifierExpression() { Id     = "extractor" },
+                new IdentifierExpression() { Id     = "regex"      },
                 new StringExpression()     { String = "/"          }
               }
             }
@@ -132,8 +132,8 @@ namespace HumanParserGenerator.Grammars {
             Exp = new Extractor() { Pattern = "\\\"([^\\\"]*)\\\"|^'([^']*)'" }
           },
           new Rule() {
-            Id  = "extractor",
-            Exp = new Extractor() { Pattern = "([^/]*)"                      }
+            Id  = "regex",
+            Exp = new Extractor() { Pattern = "(.*?)(?<keep>/\\\\s*;)"                   }
           }
         }
       };

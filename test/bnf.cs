@@ -164,6 +164,10 @@ public class Syntax {
                       Expressions=SequentialExpressions(Expressions=[
                         IdentifierExpression(Identifier=identifier-expression)
                       ]))))))),
+          Rule(Identifier=identifier-expression,
+            Expressions=SequentialExpressions(Expressions=[
+              IdentifierExpression(Identifier=identifier)
+            ])),
           Rule(Identifier=string-expression,
             Expressions=SequentialExpressions(Expressions=[
               IdentifierExpression(Identifier=string)
@@ -192,21 +196,17 @@ public class Syntax {
               IdentifierExpression(Identifier=expressions),
               StringExpression(String=))
             ])),
-          Rule(Identifier=identifier-expression,
-            Expressions=SequentialExpressions(Expressions=[
-              IdentifierExpression(Identifier=identifier)
-            ])),
           Rule(Identifier=identifier,
             Expressions=SequentialExpressions(Expressions=[
-              ExtractorExpression(Extractor=([A-Za-z][A-Z0-9a-z-]*))
+              ExtractorExpression(Regex=([A-Za-z][A-Z0-9a-z-]*))
             ])),
           Rule(Identifier=string,
             Expressions=SequentialExpressions(Expressions=[
-              ExtractorExpression(Extractor=""([^""]*)""|^'([^']*)')
+              ExtractorExpression(Regex=""([^""]*)""|^'([^']*)')
             ])),
-          Rule(Identifier=extractor,
+          Rule(Identifier=regex,
             Expressions=SequentialExpressions(Expressions=[
-              ExtractorExpression(Extractor=([^/]*)
+              ExtractorExpression(Regex=(.*?)(?<keep>/\s*;))
             ]))
         ])"
     );

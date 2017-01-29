@@ -14,16 +14,17 @@ expression              ::= string-expression
                           | optional-expression
                           | repetition-expression
                           | group-expression
-                          | or-expression
                           | identifier-expression
                           ;
+
+identifier-expression   ::= identifier ;
 string-expression       ::= string ;
 extractor-expression    ::= "/" regex "/" ;
+
 optional-expression     ::= "[" expressions "]" ;
 repetition-expression   ::= "{" expressions "}" ;
 group-expression        ::= "(" expressions ")" ;
-identifier-expression   ::= identifier ;
 
 identifier              ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;
 string                  ::= /"([^"]*)"|^'([^']*)'/ ;
-regex                   ::= /([^/]*)/ ;
+regex                   ::= /(.*?)(?<keep>/\s*;)/ ;

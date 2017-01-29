@@ -72,11 +72,15 @@ public class Parsable {
       this.Log("Consume(" + pattern.ToString() + ") SUCCESS ");
       int length = m.Groups[0].Captures[0].ToString().Length; // total match
       this.Consume(length);
+      // we "re-add" what is marked "to-keep"
+      // TODO make more generic, for now, we rewind the length, expecting keep
+      //      to be at the end
+      this.position -= m.Groups["keep"].Length;
       // temp solution for regexps with two groups of which only one "captures"
       try {
-        return m.Groups[1].Captures[0].ToString(); // only selected part
+        return m.Groups[1].Value; // only selected part
       } catch {
-        return m.Groups[2].Captures[0].ToString(); // only selected part
+        return m.Groups[2].Value; // only selected part
       }
     } else {
       this.Log("Consume(" + pattern.ToString() + ") FAILED ");

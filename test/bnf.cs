@@ -161,11 +161,9 @@ public class Syntax {
                     Expression=IdentifierExpression(Identifier=repetition-expression),
                     Expressions=AlternativeExpressions(
                       Expression=IdentifierExpression(Identifier=group-expression),
-                      Expressions=AlternativeExpressions(
-                        Expression=IdentifierExpression(Identifier=or-expression),
-                        Expressions=SequentialExpressions(Expressions=[
-                          IdentifierExpression(Identifier=identifier-expression)
-                        ])))))))),
+                      Expressions=SequentialExpressions(Expressions=[
+                        IdentifierExpression(Identifier=identifier-expression)
+                      ]))))))),
           Rule(Identifier=string-expression,
             Expressions=SequentialExpressions(Expressions=[
               IdentifierExpression(Identifier=string)

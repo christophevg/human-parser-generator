@@ -17,9 +17,10 @@ public class Runner {
       return;
     }
   
-    string input = System.IO.File.ReadAllText(args[0]);
-  
+    string input  = System.IO.File.ReadAllText(args[0]);
     Parser parser = new Parser();
-    Console.WriteLine(parser.Parse(input).AST.ToString());
+    string code   = parser.Parse(input).AST.ToString();
+
+    Console.WriteLine(code);
   }
 }

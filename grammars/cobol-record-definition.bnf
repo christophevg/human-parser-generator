@@ -1,5 +1,5 @@
 records          ::= { record };
-record           ::= ( renames-record | values-record | basic-record ) ".";
+record           ::= renames-record | values-record | basic-record ".";
 
 renames-record   ::= "66" level-name "RENAMES"  identifier-range ;
 level-name       ::= identifier | "FILLER" ;
@@ -52,7 +52,7 @@ usage            ::= "BINARY"
                    | "INDEX"
                    | "PACKED-DECIMAL"
                    ;
-key              ::= [ ( "ASCENDING" | "DESCENDING" ) [ "KEY" ] [ "IS" ] { identifier } ] ;
+key              ::= [ "ASCENDING" | "DESCENDING" [ "KEY" ] [ "IS" ] { identifier } ] ;
 index            ::= [ "INDEXED" [ "BY" ] identifier ] ;
 symbolic         ::= literal | variable | figurative ;
 

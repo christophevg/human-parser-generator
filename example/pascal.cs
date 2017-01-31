@@ -7,9 +7,9 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.Diagnostics;
 
-
+  
 public class Program {
-  public string Identifier { get; set; }
+  public string           Identifier  { get; set; }
   public List<Assignment> Assignments { get; set; }
   public Program() {
     this.Assignments = new List<Assignment>();
@@ -27,20 +27,52 @@ public class Program {
 
 public class Assignment {
   public string Identifier { get; set; }
-  public Object Value { get; set; }
+  public Expression Expression   { get; set; }
   public override string ToString() {
     return 
       "Assignment(" +
         "Identifier=" + this.Identifier + "," +
-        "Value=" + this.Value +
+        "Expression=" + this.Expression +
+      ")";
+  }
+}
+
+public interface Expression {}
+
+public class IdentifierExpression : Expression {
+  public string Identifier { get; set; }
+  public override string ToString() {
+    return
+      "IdentifierExpression(" +
+        "Identifier=" + this.Identifier +
+      ")";
+  }
+}
+
+public class StringExpression : Expression {
+  public string String { get; set; }
+  public override string ToString() {
+    return
+      "StringExpression(" +
+        "String=" + this.String +
+      ")";
+  }
+}
+
+public class NumberExpression : Expression {
+  public string Number { get; set; }
+  public override string ToString() {
+    return
+      "NumberExpression(" +
+        "Number=" + this.Number +
       ")";
   }
 }
 
 public class Extracting {
-  public static Regex Identifier = new Regex("^([A-Z][A-Z0-9]*)");
-  public static Regex Number     = new Regex("^(-?[1-9][0-9]*)");
-  public static Regex String     = new Regex("^\"([^\"]*)\"|'([^']*)'");
+  public static Regex Identifier = new Regex( @"^([A-Z][A-Z0-9]*)" );
+  public static Regex String = new Regex( @"^""([^""]*)""|'([^']*)'" );
+  public static Regex Number = new Regex( @"^(-?[1-9][0-9]*)" );
 }
 
 public class Parser {
@@ -87,14 +119,14 @@ public class Parser {
     }
 
     return new Program() {
-      Identifier = identifier,
+      Identifier  = identifier,
       Assignments = assignments
     };
   }
 
   public Assignment ParseAssignment() {
     string identifier;
-    Object value;
+    Expression expression;
 
     this.Log("ParseAssignment");
     int pos = this.source.position;
@@ -104,22 +136,7 @@ public class Parser {
 
       this.source.Consume(":=");
 
-      try {
-        value = this.source.Consume(Extracting.Number);
-      } catch(ParseException) {
-        try {
-          value = this.source.Consume(Extracting.Identifier);
-        } catch(ParseException) {
-          try {
-            value = this.source.Consume(Extracting.String);
-            } catch(ParseException) {
-              throw this.source.GenerateParseException(
-                "Expected: number | identifier | string"
-              );
-            }
-        }
-      }
-
+      expression = this.ParseExpression();
 
       this.source.Consume(";");
 
@@ -129,14 +146,111 @@ public class Parser {
         "Failed to parse Assignment.", e
       );
     }
-    
+
     return new Assignment() {
       Identifier = identifier,
-      Value = value
+      Expression = expression
     };
   }
 
-  
+  public Expression ParseExpression() {
+    Expression alternative;
+
+    this.Log("ParseExpression");
+    int pos = this.source.position;
+    try {
+
+      try {
+        alternative = this.ParseIdentifierExpression();
+      } catch(ParseException) {
+        try {
+          alternative = this.ParseStringExpression();
+        } catch(ParseException) {
+          try {
+            alternative = this.ParseNumberExpression();
+          } catch(ParseException) {
+            throw this.source.GenerateParseException(
+              "Expected: identifier-expression | string-expression | number-expression"
+            );
+          }
+        }
+      }
+
+
+    } catch(ParseException e) {
+      this.source.position = pos;
+      throw this.source.GenerateParseException(
+        "Failed to parse Expression.", e
+      );
+    }
+
+    return alternative;
+  }
+
+  public IdentifierExpression ParseIdentifierExpression() {
+    string identifier;
+    
+    this.Log("ParseIdentifierExpression");
+    int pos = this.source.position;
+    try {
+
+      identifier = this.source.Consume(Extracting.Identifier);
+
+    } catch(ParseException e) {
+      this.source.position = pos;
+      throw this.source.GenerateParseException(
+        "Failed to parse IdentifierExpression.", e
+      );
+    }
+    
+    return new IdentifierExpression() {
+      Identifier = identifier
+    };
+  }
+
+  public StringExpression ParseStringExpression() {
+    string str;
+    
+    this.Log("ParseStringExpression");
+    int pos = this.source.position;
+    try {
+
+      str = this.source.Consume(Extracting.String);
+
+    } catch(ParseException e) {
+      this.source.position = pos;
+      throw this.source.GenerateParseException(
+        "Failed to parse StringExpression.", e
+      );
+    }
+    
+    return new StringExpression() {
+      String = str
+    };
+  }
+
+  public NumberExpression ParseNumberExpression() {
+    string number;
+    
+    this.Log("ParseNumberExpression");
+    int pos = this.source.position;
+    try {
+
+      number = this.source.Consume(Extracting.Number);
+
+    } catch(ParseException e) {
+      this.source.position = pos;
+      throw this.source.GenerateParseException(
+        "Failed to parse NumberExpression.", e
+      );
+    }
+    
+    return new NumberExpression() {
+      Number = number
+    };
+  }
+
+
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
     Console.WriteLine("!!! " + msg + " @ " + this.source.Peek(10).Replace('\n', 'n'));

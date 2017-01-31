@@ -78,8 +78,14 @@ using System.Diagnostics;
     }
 
     private string GenerateSignature(Parser.Entity entity) {
-      return "public class " + this.PascalCase(entity.Name) + 
-        (entity.HasSuper ? " : " + this.PascalCase(entity.Super.Name) : "") +
+      return "public " +
+        ( entity.IsVirtual ? "interface" : "class" ) + " " +
+        this.PascalCase(entity.Name) + 
+        (entity.HasSupers ?
+          " : " + string.Join( ", ",
+            entity.Supers.Select(x => this.PascalCase(x.Name))
+          )
+          : "") +
         " {";
     }
 
@@ -153,7 +159,7 @@ using System.Diagnostics;
           this.Model.Extractions.Values
                     .Select(extraction =>
                       "  public static Regex " + this.PascalCase(extraction.Name) +
-                        " = new Regex(\"^" + extraction.Pattern + "\");"
+                        " = new Regex(@\"^" + extraction.Pattern.Replace("\"", "\"\"") + "\");"
                     )
         ) + "\n" +
         "}";
@@ -170,11 +176,11 @@ using System.Diagnostics;
     private string GenerateParserHeader() {
       return @"public class Parser {
   private Parsable source;
-  public " + this.PascalCase(this.Model.Root) + @" AST { get; set; }
+  public " + this.PascalCase(this.Model.Root.Name) + @" AST { get; set; }
 
   public Parser Parse(string source) {
     this.source = new Parsable(source);
-    this.AST    = this.Parse" + this.PascalCase(this.Model.Root) + @"();
+    this.AST    = this.Parse" + this.PascalCase(this.Model.Root.Name) + @"();
     return this;
   }";
     }
@@ -189,9 +195,7 @@ using System.Diagnostics;
       return string.Join("\n\n",
         new List<string>() {
           this.GenerateEntityParserHeader(entity),
-          string.Join("\n\n",
-            entity.ParseActions.Select(action => this.GenerateParseAction(action))
-          ),
+          this.GenerateParseAction(entity.ParseAction),
           this.GenerateEntityParserFooter(entity)
         }
       );
@@ -199,6 +203,7 @@ using System.Diagnostics;
     
     // TODO QnD mapping of reserved words
     private string GenerateLocalVariable(string name) {
+      // this would become string, which is reserved
       if( name.Equals("string") ) {
         return "str";
       }
@@ -227,15 +232,15 @@ using System.Diagnostics;
       }
       if(action is Parser.ConsumeExtraction) {
         var extraction = (Parser.ConsumeExtraction)action;
-        var id         = this.GenerateLocalVariable(extraction.Prop.Name);
-        var extractor  = extraction.Extr.Name;
+        var id         = this.GenerateLocalVariable(extraction.Property.Name);
+        var extractor  = extraction.Extraction.Name;
         return "      " + this.GenerateConsumeExtraction(id, extractor);
       }
       if(action is Parser.ConsumeEntity) {
         var consumption = (Parser.ConsumeEntity)action;
-        var id          = this.GenerateLocalVariable(consumption.Prop.Name);
-        var entity      = consumption.Ent;
-        if(consumption.Prop.IsPlural) {
+        var id          = this.GenerateLocalVariable(consumption.Property.Name);
+        var entity      = consumption.Entity;
+        if(consumption.Property.IsPlural) {
           return
             "      " + this.PascalCase(entity.Type) + " temp;\n" +
             "      while(true) {\n" +
@@ -244,7 +249,7 @@ using System.Diagnostics;
             "        } catch(ParseException) {\n" +
             "          break;\n" +
             "        }\n" +
-            "        " + this.GenerateLocalVariable(consumption.Prop.Name) + ".Add(temp);\n" +
+            "        " + this.GenerateLocalVariable(consumption.Property.Name) + ".Add(temp);\n" +
             "      }";
         } else {
           return "      " + this.GenerateConsumeEntity(id, entity);
@@ -252,7 +257,7 @@ using System.Diagnostics;
       }
       if(action is Parser.ConsumeAny)  {
         var consumption = (Parser.ConsumeAny)action;
-        var id          = consumption.Prop.Name;
+        var id          = consumption.Property.Name;
         var code        = "";
         var indent      = "      ";
 
@@ -275,8 +280,16 @@ using System.Diagnostics;
         
         return code;
       }
+      if(action is Parser.ConsumeAll) {
+        return string.Join("\n\n",
+          (((Parser.ConsumeAll)action).Actions).Select(a =>
+            this.GenerateParseAction(a)
+          )
+        );
+        
+      }
 
-      throw new NotImplementedException();
+      throw new NotImplementedException("ParseAction<" + action.GetType().ToString() + ">");
     }
 
     private string GenerateConsumeExtraction(string id, string extractor) {

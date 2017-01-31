@@ -1,4 +1,4 @@
-// runner example - implements grammar for (small subset) of the Pascal language
+// runner - generates a parser Model and parser from a Model-based grammar 
 // author: Christophe VG <contact@christophe.vg>
 
 using System;
@@ -29,6 +29,7 @@ public class Runner {
 
     Model model = new Model().Import(grammar);
 
+    // outputs the intermediate Parser Model
     // Console.WriteLine(model.ToString());
     // Console.WriteLine();
 

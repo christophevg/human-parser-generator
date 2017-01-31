@@ -1,15 +1,20 @@
-program    ::= "PROGRAM" identifier
-               "BEGIN"
-               { assignment }
-               "END."
-               ;
+program               ::= "PROGRAM" identifier
+                          "BEGIN"
+                          { assignment }
+                          "END."
+                        ;
 
-assignment ::= identifier
-               ":="
-               ( number | identifier | string )
-               ";"
-               ;
+assignment            ::= identifier ":=" expression ";" ;
 
-identifier       ::= /([A-Z][A-Z0-9]*)/ ;
-number           ::= /(-?[1-9][0-9]*)/ ;
-string           ::= /"([^"]*)"|'([^']*)'/ ;
+expression            ::= identifier-expression
+                        | string-expression
+                        | number-expression
+                        ;
+
+identifier-expression ::= identifier;
+string-expression     ::= string;
+number-expression     ::= number;
+
+identifier            ::= /([A-Z][A-Z0-9]*)/ ;
+string                ::= /"([^"]*)"|'([^']*)'/ ;
+number                ::= /(-?[1-9][0-9]*)/ ;

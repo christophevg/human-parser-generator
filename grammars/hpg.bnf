@@ -1,30 +1,43 @@
-grammar                 ::= { rule } ;
+grammar                   ::= { rule } ;
 
-rule                    ::= identifier "::=" expressions ";" ;
+rule                      ::= identifier "::=" expression ";" ;
 
-expressions             ::= alternative-expressions
-                          | sequential-expressions
-                          ;
+expression                ::= sequential-expression
+                            | non-sequential-expression
+                            ;
 
-alternative-expressions ::= expression "|" expressions ;
-sequential-expressions  ::= { expression } ;
+sequential-expression     ::= non-sequential-expression expression ;
 
-expression              ::= string-expression
-                          | extractor-expression
-                          | optional-expression
-                          | repetition-expression
-                          | group-expression
-                          | identifier-expression
-                          ;
+non-sequential-expression ::= alternatives-expression
+                            | atomic-expression
+                            ;
 
-identifier-expression   ::= identifier ;
-string-expression       ::= string ;
-extractor-expression    ::= "/" regex "/" ;
+alternatives-expression   ::= atomic-expression "|" non-sequential-expression ;
 
-optional-expression     ::= "[" expressions "]" ;
-repetition-expression   ::= "{" expressions "}" ;
-group-expression        ::= "(" expressions ")" ;
 
-identifier              ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;
-string                  ::= /"([^"]*)"|^'([^']*)'/ ;
-regex                   ::= /(.*?)(?<keep>/\s*;)/ ;
+atomic-expression         ::= nested-expression
+                            | terminal-expression
+                            ;
+
+nested-expression         ::= optional-expression
+                            | repetition-expression
+                            | group-expression
+                            ;
+
+optional-expression       ::= "[" expression "]" ;
+repetition-expression     ::= "{" expression "}" ;
+group-expression          ::= "(" expression ")" ;
+
+terminal-expression       ::= identifier-expression
+                            | string-expression
+                            | extractor-expression
+                            ;
+
+identifier-expression     ::= identifier ;
+string-expression         ::= string ;
+
+extractor-expression      ::= "/" regex "/" ;
+
+identifier                ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;
+string                    ::= /"([^"]*)"|^'([^']*)'/ ;
+regex                     ::= /(.*?)(?<keep>/\s*;)/ ;

@@ -20,196 +20,275 @@ namespace HumanParserGenerator.Grammars {
     public static Grammar BNF =
       new Grammar()  {
         Rules = new List<Rule>() {
+          // grammar ::= { rule } ;
           new Rule() {
-            Id  = "grammar",
-            Exp = new RepetitionExpression() {
-              Exp = new IdentifierExpression() { Id = "rule" },
+            Identifier = "grammar",
+            Expression = new RepetitionExpression() {
+              Expression = new IdentifierExpression() { Identifier = "rule" },
             }
           },
+          // rule ::= identifier "::=" expression ";" ;
           new Rule() {
-            Id  = "rule",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new IdentifierExpression() { Id     = "identifier" },
-                new StringExpression()     { String = "::="        },
-                new IdentifierExpression() { Id     = "expressions" },
-                new StringExpression()     { String = ";"          }
+            Identifier = "rule",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "identifier" },
+              Expression              = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() { String = "::=" },
+                Expression              = new SequentialExpression() {
+                  NonSequentialExpression = new IdentifierExpression() { Identifier = "expression" },
+                  Expression              = new StringExpression() { String = ";" }
+                }
               }
             }
           },
+          // expression ::= sequential-expression
+          //              | alternatives-expression
+          //              | atomic-expression
+          //              ;
           new Rule() {
-            Id      = "expressions",
-            Exp     = new AlternativesExpression() {
-              Expressions = new List<Expression>() {
-                new IdentifierExpression() { Id = "alternative-expressions" },
-                new IdentifierExpression() { Id = "sequential-expressions" }
+            Identifier = "expression",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "sequential-expression" },
+              NonSequentialExpression = new AlternativesExpression() {
+                AtomicExpression        = new IdentifierExpression() { Identifier = "alternatives-expression" },
+                NonSequentialExpression =  new IdentifierExpression() { Identifier = "atomic-expression" }
               }
             }
           },
+          // sequential-expression ::= non-sequential-expression expression ;
           new Rule() {
-            Id = "alternative-expressions",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new IdentifierExpression() { Id     = "expression" },
-                new StringExpression()     { String = "|"          },
-                new IdentifierExpression() { Id     = "expressions" }
+            Identifier = "sequential-expression",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "non-sequential-expression" },
+              Expression              = new IdentifierExpression() { Identifier = "expression" }
+            }
+          },
+          // alternatives-expression ::= atomic-expression "|" 
+          //                                        non-sequential-expression ;
+          new Rule() {
+            Identifier = "alternatives-expression",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "atomic-expression" },
+              Expression            = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() { String = "|" },
+                Expression              = new IdentifierExpression() { Identifier = "non-sequential-expression" }
               }
             }
           },
+          // non-sequential-expression ::= alternatives-expression
+          //                             | atomic-expression
+          //                             ;
           new Rule() {
-            Id = "sequential-expressions",
-            Exp = new RepetitionExpression() {
-              Exp = new IdentifierExpression() { Id = "expression" },
+            Identifier = "non-sequential-expression",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "alternatives-expression" },
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "atomic-expression" }
             }
           },
+          // atomic-expression ::= nested-expression
+          //                     | terminal-expression
+          //                     ;
           new Rule() {
-            Id = "expression",
-            Exp = new AlternativesExpression() {
-              Expressions = new List<Expression> {
-                new IdentifierExpression() { Id = "identifier-expression"   },
-                new IdentifierExpression() { Id = "string-expression"       },
-                new IdentifierExpression() { Id = "extractor-expression"    },
-                new IdentifierExpression() { Id = "optional-expression"     },
-                new IdentifierExpression() { Id = "repetition-expression"   },
-                new IdentifierExpression() { Id = "group-expression"        }
+            Identifier = "atomic-expression",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "nested-expression" },
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "terminal-expression" }
+            }
+          },
+          // nested-expression ::= optional-expression
+          //                     | repetition-expression
+          //                     | group-expression
+          //                     ;
+          new Rule() {
+            Identifier = "nested-expression",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "optional-expression" },
+              NonSequentialExpression = new AlternativesExpression() {
+                AtomicExpression        = new IdentifierExpression() { Identifier = "repetition-expression" },
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "group-expression"    }
               }
             }
           },
+          // optional-expression ::= "[" expression "]" ;
           new Rule() {
-            Id = "identifier-expression",
-            Exp = new IdentifierExpression() { Id = "identifier" }
-          },
-          new Rule() {
-            Id = "string-expression",
-            Exp = new IdentifierExpression() { Id = "string" }
-          },
-          new Rule() {
-            Id = "extractor-expression",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new StringExpression()     { String = "/"          },
-                new IdentifierExpression() { Id     = "regex"      },
-                new StringExpression()     { String = "/"          }
+            Identifier = "optional-expression",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() { String = "[" },
+              Expression              = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "expression" },
+                Expression              = new StringExpression() { String = "]" }
               }
             }
           },
+          // repetition-expression ::= "{" expression "}" ;
           new Rule() {
-            Id = "optional-expression",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new StringExpression()     { String = "["          },
-                new IdentifierExpression() { Id     = "expressions" },
-                new StringExpression()     { String = "]"          }
+            Identifier = "repetition-expression",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() { String = "{" },
+              Expression              = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "expression" },
+                Expression              = new StringExpression() { String = "}" }
               }
             }
           },
+          // group-expression ::= "(" expression ")" ;
           new Rule() {
-            Id = "repetition-expression",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new StringExpression()     { String = "{"          },
-                new IdentifierExpression() { Id     = "expressions" },
-                new StringExpression()     { String = "}"          }
+            Identifier = "group-expression",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() { String = "(" },
+              Expression              = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "expression" },
+                Expression              = new StringExpression() { String = ")" }
               }
             }
           },
+          // terminal-expression ::= identifier-expression
+          //                       | string-expression
+          //                       | extractor-expression
+          //                       ;
           new Rule() {
-            Id = "group-expression",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new StringExpression()     { String = "("          },
-                new IdentifierExpression() { Id     = "expressions" },
-                new StringExpression()     { String = ")"          }
+            Identifier = "terminal-expression",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "identifier-expression" },
+              NonSequentialExpression = new AlternativesExpression() {
+                AtomicExpression        = new IdentifierExpression() { Identifier = "string-expression" },
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "extractor-expression"    }
               }
             }
           },
+          // identifier-expression ::= identifier ;
           new Rule() {
-            Id  = "identifier",
-            Exp = new Extractor() { Pattern = "([A-Za-z][A-Za-z0-9-]*)"       }
+            Identifier = "identifier-expression",
+            Expression = new IdentifierExpression() { Identifier = "identifier" }
           },
+          // string-expression ::= string ;
           new Rule() {
-            Id  = "string",
-            Exp = new Extractor() { Pattern = "\\\"([^\\\"]*)\\\"|^'([^']*)'" }
+            Identifier = "string-expression",
+            Expression = new IdentifierExpression() { Identifier = "string" }
           },
+          // extractor-expression ::= "/" regex "/" ;
           new Rule() {
-            Id  = "regex",
-            Exp = new Extractor() { Pattern = "(.*?)(?<keep>/\\\\s*;)"                   }
+            Identifier = "extractor-expression",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() { String = "/" },
+              Expression              = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "regex" },
+                Expression              = new StringExpression() { String = "/" }
+              }
+            }
+          },
+          // identifier ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;
+          new Rule() {
+            Identifier  = "identifier",
+            Expression = new ExtractorExpression() { Regex = @"([A-Za-z][A-Za-z0-9-]*)" }
+          },
+          // string ::= /"([^"]*)"|^'([^']*)'/ ;
+          new Rule() {
+            Identifier = "string",
+            Expression = new ExtractorExpression() { Regex = @"""([^""]*)""|^'([^']*)'" }
+          },
+          // regex ::= /(.*?)(?<keep>/\s*;)/ ;
+          new Rule() {
+            Identifier = "regex",
+            Expression = new ExtractorExpression() { Regex = @"(.*?)(?<keep>/\s*;)" }
           }
-        }
-      };
+        } // Rules
+      }; // Grammar
 
     // Temporary Pascal grammar
   
     public static Grammar Pascal =
-      // program    ::= "PROGRAM" identifier
-      //                "BEGIN"
-      //                { assignment }
-      //                "END."
-      //                ;
-      //
-      // assignment ::= identifier
-      //                ":="
-      //                ( number | identifier | string )@'Expression'
-      //                ";"
-      //                ;
-      //
-      // identifier ::= /([A-Z][A-Z0-9]*)/ ;
-      // number     ::= /(-?[1-9][0-9]*)/ ;
-      // string     ::= /"([^"]*)"|'([^']*)'/ ;
-
       new Grammar() {
         Rules = new List<Rule>() {
+          // program ::= "PROGRAM" identifier
+          //             "BEGIN"
+          //             { assignments }
+          //             "END."
+          //           ;
           new Rule() {
-            Id   = "program",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new StringExpression() { String = "PROGRAM" },
-                new IdentifierExpression() { Id = "identifier" },
-                new StringExpression() { String = "BEGIN" },
-                new RepetitionExpression() {
-                  Exp = new IdentifierExpression() { Id = "assignment" },
-                },
-                new StringExpression() { String = "END." }
-              }
-            }
-          },
-          new Rule() {
-            Id  = "assignment",
-            Exp = new SequenceExpression() {
-              Expressions = new List<Expression> {
-                new IdentifierExpression() { Id = "identifier" },
-                new StringExpression() { String = ":=" },
-                new AlternativesExpression() {
-                  Expressions = new List<Expression> {
-                    new IdentifierExpression() { Id = "number" },
-                    new IdentifierExpression() { Id = "identifier" },
-                    new IdentifierExpression() { Id = "string" }
+            Identifier = "program",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() { String = "PROGRAM" },
+              Expression            = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "identifier" },
+                Expression              = new SequentialExpression() {
+                  NonSequentialExpression = new StringExpression() { String = "BEGIN" },
+                  Expression              = new SequentialExpression() {
+                    NonSequentialExpression = new RepetitionExpression() {
+                      Expression = new IdentifierExpression() { Identifier = "assignment" }
+                    },
+                    Expression              = new StringExpression() { String = "END." }
                   }
-                },
-                new StringExpression() { String = ";" }
+                }
               }
             }
           },
+          // assignment ::= identifier ":=" expression ";" ;
           new Rule() {
-            Id  = "identifier",
-            Exp = new Extractor() { Pattern = "([A-Z][A-Z0-9]*)" }
+            Identifier = "assignment",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "identifier" },
+              Expression              = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() { String = ":=" },
+                Expression              = new SequentialExpression() {
+                  NonSequentialExpression = new IdentifierExpression { Identifier = "expression" },
+                  Expression              = new StringExpression { String = ";" }
+                }
+              }
+            }
           },
+          // expression ::= identifier-expression
+          //              | string-expression
+          //              | number-expression
+          //              ;
           new Rule() {
-            Id  = "number",
-            Exp = new Extractor() { Pattern = "(-?[1-9][0-9]*)" }
+            Identifier = "expression",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "identifier-expression"},
+              NonSequentialExpression = new AlternativesExpression() {
+                AtomicExpression        = new IdentifierExpression() { Identifier = "string-expression" },
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "number-expression" }
+              }
+            }
           },
+          // identifier-expression ::= identifier;
           new Rule() {
-            Id  = "string",
-            Exp = new Extractor() { Pattern = "\\\"([^\\\"]*)\\\"|'([^']*)'" }
+            Identifier = "identifier-expression",
+            Expression = new IdentifierExpression() { Identifier = "identifier" }
+          },
+          // string-expression ::= string;
+          new Rule() {
+            Identifier = "string-expression",
+            Expression = new IdentifierExpression() { Identifier = "string" }
+          },
+          // number-expression ::= number;
+          new Rule() {
+            Identifier = "number-expression",
+            Expression = new IdentifierExpression() { Identifier = "number" }
+          },
+          // identifier ::= /([A-Z][A-Z0-9]*)/ ;
+          new Rule() {
+            Identifier = "identifier",
+            Expression = new ExtractorExpression() { Regex = @"([A-Z][A-Z0-9]*)" }
+          },
+          // string ::= /"([^"]*)"|'([^']*)'/ ;
+          new Rule() {
+            Identifier = "string",
+            Expression = new ExtractorExpression() { Regex = @"""([^""]*)""|'([^']*)'" }
+          },
+          // number ::= /(-?[1-9][0-9]*)/ ;
+          new Rule() {
+            Identifier = "number",
+            Expression = new ExtractorExpression() { Regex = @"(-?[1-9][0-9]*)" }
           }
-        }
-      };
-
+        } // Rules
+      }; // Grammar
   }
   
   // The classes below are also part of the bootstrap process, once a parser
   // is generated, it also generates these classes.
 
+  //  grammar ::= { rule } ;
   public class Grammar {
     public List<Rule> Rules { get; set; }
     public override string ToString() {
@@ -220,32 +299,118 @@ namespace HumanParserGenerator.Grammars {
     }
   }
 
+  // rule ::= identifier "::=" expression ";" ;
   public class Rule {
-    public bool       IsVirtual { get; set; }
-    public string     Id { get; set; }
-    public Expression Exp { get; set; }
+    public string     Identifier { get; set; }
+    public Expression Expression { get; set; }
     public override string ToString() {
       return
         "Rule(" +
-          "Id=" + this.Id + "," + 
-          "Exp=" + this.Exp.ToString() +
+          "Identifier=" + this.Identifier + "," + 
+          "Expression=" + this.Expression +
         ")";
     }
   }
 
-  public abstract class Expression {}
+  // expression ::= sequential-expression
+  //              | non-sequential-expression
+  //              ;
+  public interface Expression {}
 
-  public class IdentifierExpression : Expression {
-    public string Id;
+  // sequential-expression ::= non-sequential-expression expression ;
+  public class SequentialExpression : Expression {
+    public NonSequentialExpression NonSequentialExpression { get; set; }
+    public Expression              Expression              { get; set; }
+    public override string ToString() {
+      return
+        "SequentialExpression("+
+          "NonSequentialExpression=" + this.NonSequentialExpression + "," +
+          "Expression=" + this.Expression +
+        ")";
+    }
+  }
+
+  // non-sequential-expression ::= alternatives-expression
+  //                             | atomic-expression
+  //                             ;
+  public interface NonSequentialExpression : Expression {}
+
+ // alternatives-expression ::= atomic-expression "|" non-sequential-expression;
+   public class AlternativesExpression : NonSequentialExpression {
+     public AtomicExpression        AtomicExpression        { get; set; }
+     public NonSequentialExpression NonSequentialExpression { get; set; }
+     public override string ToString() {
+       return
+         "AlternativesExpression("+
+           "AtomicExpression=" + this.AtomicExpression + "," +
+           "NonSequentialExpression=" + this.NonSequentialExpression +
+         ")";
+     }     
+   }
+
+  // atomic-expression ::= nested-expression
+  //                     | terminal-expression
+  //                     ;
+  public interface AtomicExpression : NonSequentialExpression {}
+
+  // nested-expression ::= optional-expression
+  //                     | repetition-expression
+  //                     | group-expression
+  //                     ;
+  public interface NestedExpression : AtomicExpression {}
+
+  // optional-expression ::= "[" expression "]" ;
+  public class OptionalExpression : NestedExpression {
+    public Expression Expression;
+    public override string ToString() {
+      return
+        "OptionalExpression(" +
+          "Expression=" + this.Expression +
+        ")";
+    }
+  }
+
+  // repetition-expression ::= "{" expression "}" ;
+  public class RepetitionExpression : NestedExpression {
+    public Expression Expression;
+    public override string ToString() {
+      return
+        "RepetitionExpression(" +
+          "Expression=" + this.Expression +
+        ")";
+    }
+  }
+
+  // group-expression ::= "(" expression ")" ;
+  public class GroupExpression : NestedExpression {
+    public Expression Expression { get; set; }
+    public override string ToString() {
+      return
+        "GroupExpression(" +
+          "Expression=" + this.Expression +
+        ")";
+    }
+  }
+  
+  // terminal-expression ::= identifier-expression
+  //                       | string-expression
+  //                       | extractor-expression
+  //                       ;
+  public interface TerminalExpression : AtomicExpression {}
+
+  // identifier-expression ::= identifier ;
+  public class IdentifierExpression : TerminalExpression {
+    public string Identifier { get; set; }
     public override string ToString() {
       return
         "IdentifierExpression(" +
-          "Id=" + this.Id +
+          "Identifier=" + this.Identifier +
         ")";
     }
   }
 
-  public class StringExpression : Expression {
+  // string-expression ::= string ;
+  public class StringExpression : TerminalExpression {
     public string String;
     public override string ToString() {
       return
@@ -255,66 +420,13 @@ namespace HumanParserGenerator.Grammars {
     }
   }
 
-  public class OptionalExpression : Expression {
-    public Expression Exp;
+  // extractor-expression ::= "/" regex "/" ;
+  public class ExtractorExpression : TerminalExpression {
+    public string Regex { get; set; }
     public override string ToString() {
       return
-        "OptionalExpression(" +
-          "Exp=" + this.Exp.ToString() +
-        ")";
-    }
-  }
-
-  public class RepetitionExpression : Expression {
-    public Expression Exp;
-    public override string ToString() {
-      return
-        "RepetitionExpression(" +
-          "Exp=" + this.Exp.ToString() +
-        ")";
-    }
-  }
-
-  public class GroupExpression : Expression {
-    public Expression Exp;
-    public override string ToString() {
-      return
-        "GroupExpression(" +
-          "Exp=" + this.Exp.ToString() +
-        ")";
-    }
-  }
-
-  public class AlternativesExpression : Expression {
-    public List<Expression> Expressions;
-    public override string ToString() {
-      return
-        "AlernativesExpression(" +
-          "Expressions=" + "[" + 
-            string.Join("|", this.Expressions.Select(x => x.ToString())) +
-          "]" +
-        ")";
-    }
-  }
-
-  public class SequenceExpression : Expression {
-    public List<Expression> Expressions;
-    public override string ToString() {
-      return
-        "SequenceExpression(" +
-          "Expressions=" + "[" + 
-            string.Join(",", this.Expressions.Select(x => x.ToString())) +
-          "]" +
-        ")";
-    }
-  }
-
-  public class Extractor : Expression {
-    public string Pattern { get; set; }
-    public override string ToString() {
-      return
-        "Extractor(" +
-          "Pattern=" + this.Pattern +
+        "ExtractorExpression(" +
+          "Regex=" + this.Regex +
         ")";
     }
   }

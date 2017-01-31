@@ -43,13 +43,9 @@ public class Syntax {
       new Grammar() {
         Rules = new List<Rule>() {
           new Rule() {
-            Identifier     = "r",
-            Expressions = new SequentialExpressions() {
-              Expressions = new List<Expression>() {
-                new StringExpression() {
-                  String = "a"
-                }
-              }
+            Identifier = "r",
+            Expression = new StringExpression() {
+              String = "a"
             }
           }
         }
@@ -64,11 +60,10 @@ public class Syntax {
       @"Grammar(
         Rules=[
           Rule(Identifier=r,
-          Expressions=AlternativeExpressions(
-            Expression=StringExpression(String=a),
-            Expressions=SequentialExpressions(Expressions=[
-              StringExpression(String=b)
-            ])))])"
+          Expression=AlternativesExpression(
+            AtomicExpression=StringExpression(String=a),
+            NonSequentialExpression=StringExpression(String=b)
+          ))])"
     );
   }
 
@@ -79,35 +74,67 @@ public class Syntax {
       @"Grammar(
         Rules=[
           Rule(Identifier=p,
-            Expressions=SequentialExpressions(Expressions=[
-              OptionalExpression(Expressions=
-                AlternativeExpressions(
-                  Expression=StringExpression(String=PICTURE),
-                  Expressions=SequentialExpressions(Expressions=[
-                    StringExpression(String=PIC)
-                  ]))),
-              OptionalExpression(Expressions=
-                SequentialExpressions(Expressions=[
-                  StringExpression(String=IS)
-                ])),
-              IdentifierExpression(Identifier=pt),
-              OptionalExpression(Expressions=
-                SequentialExpressions(Expressions=[
-                  StringExpression(String=(),
-                    IdentifierExpression(Identifier=int),
-                    StringExpression(String=)),
-                    OptionalExpression(Expressions=
-                      SequentialExpressions(Expressions=[
-                        OptionalExpression(Expressions=
-                          AlternativeExpressions(Expression=
-                            StringExpression(String=V),
-                            Expressions=SequentialExpressions(Expressions=[
-                              StringExpression(String=.)]))),
-                        IdentifierExpression(Identifier=pt),
-                        StringExpression(String=(),
-                        IdentifierExpression(Identifier=int),
-                        StringExpression(String=))
-                      ]))]))]))])"
+            Expression=SequentialExpression(
+              NonSequentialExpression=OptionalExpression(
+                Expression=AlternativesExpression(
+                  AtomicExpression=StringExpression(String=PICTURE),
+                  NonSequentialExpression=StringExpression(String=PIC)
+                )
+              ),
+              Expression=SequentialExpression(
+                NonSequentialExpression=OptionalExpression(
+                  Expression=StringExpression(String=IS)
+                ),
+                Expression=SequentialExpression(
+                  NonSequentialExpression=IdentifierExpression(Identifier=pt),
+                  Expression=OptionalExpression(
+                    Expression=SequentialExpression(
+                      NonSequentialExpression=StringExpression(String=(),
+                      Expression=SequentialExpression(
+                        NonSequentialExpression=IdentifierExpression(Identifier=int),
+                        Expression=SequentialExpression(
+                          NonSequentialExpression=StringExpression(String=)),
+                          Expression=OptionalExpression(
+                            Expression=SequentialExpression(
+                              NonSequentialExpression=OptionalExpression(
+                                Expression=AlternativesExpression(
+                                  AtomicExpression=StringExpression(String=V),
+                                  NonSequentialExpression=StringExpression(String=.)
+                                )
+                              ),
+                              Expression=SequentialExpression(
+                                NonSequentialExpression=IdentifierExpression(Identifier=pt),
+                                Expression=SequentialExpression(
+                                  NonSequentialExpression=StringExpression(String=(),
+                                  Expression=SequentialExpression(
+                                    NonSequentialExpression=IdentifierExpression(Identifier=int),
+                                    Expression=StringExpression(String=))
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        ]
+      )"
+    );
+  }
+
+  [Test]
+  public void IdentifierExtractorTest() {
+    this.parseAndCompare(
+      "identifier                ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;",
+      @"Grammar(Rules=[
+        Rule(Identifier=identifier,
+          Expression=ExtractorExpression(Regex=([A-Za-z][A-Z0-9a-z-]*)))
+      ])"
     );
   }
 
@@ -118,96 +145,124 @@ public class Syntax {
       @"Grammar(
         Rules=[
           Rule(Identifier=grammar,
-            Expressions=SequentialExpressions(Expressions=[
-              RepetitionExpression(
-                Expressions=SequentialExpressions(Expressions=[
-                  IdentifierExpression(Identifier=rule)
-                ]))
-            ])),
+            Expression=RepetitionExpression(
+              Expression=IdentifierExpression(Identifier=rule)
+            )
+          ),
           Rule(Identifier=rule,
-            Expressions=SequentialExpressions(Expressions=[
-              IdentifierExpression(Identifier=identifier),
-              StringExpression(String=::=),
-              IdentifierExpression(Identifier=expressions),
-              StringExpression(String=;)
-            ])),
-          Rule(Identifier=expressions,
-            Expressions=AlternativeExpressions(
-              Expression=IdentifierExpression(Identifier=alternative-expressions),
-              Expressions=SequentialExpressions(Expressions=[
-                IdentifierExpression(Identifier=sequential-expressions)
-              ]))),
-          Rule(Identifier=alternative-expressions,
-            Expressions=SequentialExpressions(Expressions=[
-              IdentifierExpression(Identifier=expression),
-              StringExpression(String=|),
-              IdentifierExpression(Identifier=expressions)
-            ])),
-          Rule(Identifier=sequential-expressions,
-            Expressions=SequentialExpressions(Expressions=[
-              RepetitionExpression(Expressions=
-                SequentialExpressions(Expressions=[
-                  IdentifierExpression(Identifier=expression)
-                ]))
-            ])),
+            Expression=SequentialExpression(
+              NonSequentialExpression=IdentifierExpression(Identifier=identifier),
+              Expression=SequentialExpression(
+                NonSequentialExpression=StringExpression(String=::=),
+                Expression=SequentialExpression(
+                  NonSequentialExpression=IdentifierExpression(Identifier=expression),
+                  Expression=StringExpression(String=;)
+                )
+              )
+            )
+          ),
           Rule(Identifier=expression,
-            Expressions=AlternativeExpressions(
-              Expression=IdentifierExpression(Identifier=string-expression),
-              Expressions=AlternativeExpressions(
-                Expression=IdentifierExpression(Identifier=extractor-expression),
-                Expressions=AlternativeExpressions(
-                  Expression=IdentifierExpression(Identifier=optional-expression),
-                  Expressions=AlternativeExpressions(
-                    Expression=IdentifierExpression(Identifier=repetition-expression),
-                    Expressions=AlternativeExpressions(
-                      Expression=IdentifierExpression(Identifier=group-expression),
-                      Expressions=SequentialExpressions(Expressions=[
-                        IdentifierExpression(Identifier=identifier-expression)
-                      ]))))))),
-          Rule(Identifier=identifier-expression,
-            Expressions=SequentialExpressions(Expressions=[
-              IdentifierExpression(Identifier=identifier)
-            ])),
-          Rule(Identifier=string-expression,
-            Expressions=SequentialExpressions(Expressions=[
-              IdentifierExpression(Identifier=string)
-            ])),
-          Rule(Identifier=extractor-expression,
-            Expressions=SequentialExpressions(Expressions=[
-              StringExpression(String=/),
-              IdentifierExpression(Identifier=regex),
-              StringExpression(String=/)
-            ])),
+            Expression=AlternativesExpression(
+              AtomicExpression=IdentifierExpression(Identifier=sequential-expression),
+              NonSequentialExpression=IdentifierExpression(Identifier=non-sequential-expression)
+            )
+          ),
+          Rule(Identifier=sequential-expression,
+            Expression=SequentialExpression(
+              NonSequentialExpression=IdentifierExpression(Identifier=non-sequential-expression),
+              Expression=IdentifierExpression(Identifier=expression)
+            )
+          ),
+          Rule(Identifier=non-sequential-expression,
+            Expression=AlternativesExpression(
+              AtomicExpression=IdentifierExpression(Identifier=alternatives-expression),
+              NonSequentialExpression=IdentifierExpression(Identifier=atomic-expression)
+            )
+          ),
+          Rule(Identifier=alternatives-expression,
+            Expression=SequentialExpression(
+              NonSequentialExpression=IdentifierExpression(Identifier=atomic-expression),
+              Expression=SequentialExpression(
+                NonSequentialExpression=StringExpression(String=|),
+                Expression=IdentifierExpression(Identifier=non-sequential-expression)
+              )
+            )
+          ),
+          Rule(Identifier=atomic-expression,
+            Expression=AlternativesExpression(
+              AtomicExpression=IdentifierExpression(Identifier=nested-expression),
+              NonSequentialExpression=IdentifierExpression(Identifier=terminal-expression)
+            )
+          ),
+          Rule(Identifier=nested-expression,
+            Expression=AlternativesExpression(
+              AtomicExpression=IdentifierExpression(Identifier=optional-expression),
+              NonSequentialExpression=AlternativesExpression(
+                AtomicExpression=IdentifierExpression(Identifier=repetition-expression),
+                NonSequentialExpression=IdentifierExpression(Identifier=group-expression)
+              )
+            )
+          ),
           Rule(Identifier=optional-expression,
-            Expressions=SequentialExpressions(Expressions=[
-              StringExpression(String=[),
-              IdentifierExpression(Identifier=expressions),
-              StringExpression(String=])
-            ])),
+            Expression=SequentialExpression(
+              NonSequentialExpression=StringExpression(String=[),
+              Expression=SequentialExpression(
+                NonSequentialExpression=IdentifierExpression(Identifier=expression),
+                Expression=StringExpression(String=])
+              )
+            )
+          ),
           Rule(Identifier=repetition-expression,
-            Expressions=SequentialExpressions(Expressions=[
-              StringExpression(String={),
-              IdentifierExpression(Identifier=expressions),
-              StringExpression(String=})
-            ])),
+            Expression=SequentialExpression(
+              NonSequentialExpression=StringExpression(String={),
+              Expression=SequentialExpression(
+                NonSequentialExpression=IdentifierExpression(Identifier=expression),
+                Expression=StringExpression(String=})
+              )
+            )
+          ),
           Rule(Identifier=group-expression,
-            Expressions=SequentialExpressions(Expressions=[
-              StringExpression(String=(),
-              IdentifierExpression(Identifier=expressions),
-              StringExpression(String=))
-            ])),
+            Expression=SequentialExpression(
+              NonSequentialExpression=StringExpression(String=(),
+              Expression=SequentialExpression(
+                NonSequentialExpression=IdentifierExpression(Identifier=expression),
+                Expression=StringExpression(String=))
+              )
+            )
+          ),
+          Rule(Identifier=terminal-expression,
+            Expression=AlternativesExpression(
+              AtomicExpression=IdentifierExpression(Identifier=identifier-expression),
+              NonSequentialExpression=AlternativesExpression(
+                AtomicExpression=IdentifierExpression(Identifier=string-expression),
+                NonSequentialExpression=IdentifierExpression(Identifier=extractor-expression)
+              )
+            )
+          ),
+          Rule(Identifier=identifier-expression,
+            Expression=IdentifierExpression(Identifier=identifier)
+          ),
+          Rule(Identifier=string-expression,
+            Expression=IdentifierExpression(Identifier=string)
+          ),
+          Rule(Identifier=extractor-expression,
+            Expression=SequentialExpression(
+              NonSequentialExpression=StringExpression(String=/),
+              Expression=SequentialExpression(
+                NonSequentialExpression=IdentifierExpression(Identifier=regex),
+                Expression=StringExpression(String=/)
+              )
+            )
+          ),
           Rule(Identifier=identifier,
-            Expressions=SequentialExpressions(Expressions=[
-              ExtractorExpression(Regex=([A-Za-z][A-Z0-9a-z-]*))
-            ])),
+            Expression=ExtractorExpression(Regex=([A-Za-z][A-Z0-9a-z-]*))
+          ),
           Rule(Identifier=string,
-            Expressions=SequentialExpressions(Expressions=[
-              ExtractorExpression(Regex=""([^""]*)""|^'([^']*)')
-            ])),
+            Expression=ExtractorExpression(Regex=""([^""]*)""|^'([^']*)')
+          ),
           Rule(Identifier=regex,
-            Expressions=SequentialExpressions(Expressions=[
-              ExtractorExpression(Regex=(.*?)(?<keep>/\s*;))
-            ]))
+            Expression=ExtractorExpression(Regex=(.*?)(?<keep>/\s*;))
+          )
         ])"
     );
   }

@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 
 using HumanParserGenerator.Grammars;
-using HumanParserGenerator.Parser;
+using HumanParserGenerator.Generator;
 using HumanParserGenerator.Emitter;
 
 public class Runner {

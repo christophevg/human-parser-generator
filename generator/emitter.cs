@@ -13,9 +13,9 @@ namespace HumanParserGenerator.Emitter {
   
   public class CSharp {
 
-    private Parser.Model Model;
+    private Generator.Model Model;
 
-    public CSharp Generate(Parser.Model model) {
+    public CSharp Generate(Generator.Model model) {
       this.Model = model;
       return this;
     }
@@ -53,13 +53,13 @@ using System.Diagnostics;
       );
     }
 
-    private string GenerateEntity(Parser.Entity entity) {
+    private string GenerateEntity(Generator.Entity entity) {
       return entity.IsVirtual ?
         this.GenerateVirtualEntity(entity) :
         this.GenerateRealEntity(entity);
     }
 
-    private string GenerateRealEntity(Parser.Entity entity) {
+    private string GenerateRealEntity(Generator.Entity entity) {
       return string.Join( "\n",
         new List<string>() {
           this.GenerateSignature(entity),
@@ -71,13 +71,13 @@ using System.Diagnostics;
       );
     }
 
-    private string GenerateVirtualEntity(Parser.Entity entity) {
+    private string GenerateVirtualEntity(Generator.Entity entity) {
       return
         this.GenerateSignature(entity) +
         this.GenerateFooter(entity);
     }
 
-    private string GenerateSignature(Parser.Entity entity) {
+    private string GenerateSignature(Generator.Entity entity) {
       return "public " +
         ( entity.IsVirtual ? "interface" : "class" ) + " " +
         this.PascalCase(entity.Name) + 
@@ -89,18 +89,18 @@ using System.Diagnostics;
         " {";
     }
 
-    private string GenerateProperties(Parser.Entity entity) {
+    private string GenerateProperties(Generator.Entity entity) {
       return string.Join("\n",
         entity.Properties.Values.Select(x => this.GenerateProperty(x))
       );
     }
 
-    private string GenerateProperty(Parser.Property property) {
+    private string GenerateProperty(Generator.Property property) {
       return "  public " + this.GenerateType(property) + " " + 
         this.PascalCase(property.Name) + " { get; set; }";
     }
 
-    private string GenerateType(Parser.Property property) {
+    private string GenerateType(Generator.Property property) {
       if(property.IsPlural) {
         return "List<" + this.PascalCase(property.Type) + ">";
       }
@@ -109,7 +109,7 @@ using System.Diagnostics;
       return this.PascalCase(property.Type);
     }
 
-    private string GenerateConstructor(Parser.Entity entity) {
+    private string GenerateConstructor(Generator.Entity entity) {
       if( ! entity.HasPluralProperty() ) { return null; }
       return "  public " + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
@@ -121,7 +121,7 @@ using System.Diagnostics;
         "  }";
     }
 
-    private string GenerateToString(Parser.Entity entity) {
+    private string GenerateToString(Generator.Entity entity) {
       return "  public override string ToString() {\n" +
         "    return\n" +
         "      \"" + this.PascalCase(entity.Name) + "(\" +\n" + 
@@ -132,7 +132,7 @@ using System.Diagnostics;
         "  }";
     }
 
-    private string GenerateToString(Parser.Property property) {
+    private string GenerateToString(Generator.Property property) {
       if(property.IsPlural) {
         return string.Format(
           "        \"{0}=\" + \"[\" + string.Join(\",\",\n" +
@@ -148,7 +148,7 @@ using System.Diagnostics;
       }
     }
 
-    private string GenerateFooter(Parser.Entity entity) {
+    private string GenerateFooter(Generator.Entity entity) {
       return "}";
     }
 
@@ -191,7 +191,7 @@ using System.Diagnostics;
       );
     }
 
-    private string GenerateEntityParser(Parser.Entity entity) {
+    private string GenerateEntityParser(Generator.Entity entity) {
       return string.Join("\n\n",
         new List<string>() {
           this.GenerateEntityParserHeader(entity),
@@ -210,7 +210,7 @@ using System.Diagnostics;
       return this.CamelCase(name);
     }
 
-    private string GenerateEntityParserHeader(Parser.Entity entity) {
+    private string GenerateEntityParserHeader(Generator.Entity entity) {
       return "  public " + this.PascalCase(entity.Name) + 
         " Parse" + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
@@ -226,18 +226,18 @@ using System.Diagnostics;
         "    try {";
     }
 
-    private string GenerateParseAction(Parser.ParseAction action) {
-      if(action is Parser.ConsumeLiteral) {
-        return "      this.source.Consume(\"" + ((Parser.ConsumeLiteral)action).Literal + "\");";
+    private string GenerateParseAction(Generator.ParseAction action) {
+      if(action is Generator.ConsumeLiteral) {
+        return "      this.source.Consume(\"" + ((Generator.ConsumeLiteral)action).Literal + "\");";
       }
-      if(action is Parser.ConsumeExtraction) {
-        var extraction = (Parser.ConsumeExtraction)action;
+      if(action is Generator.ConsumeExtraction) {
+        var extraction = (Generator.ConsumeExtraction)action;
         var id         = this.GenerateLocalVariable(extraction.Property.Name);
         var extractor  = extraction.Extraction.Name;
         return "      " + this.GenerateConsumeExtraction(id, extractor);
       }
-      if(action is Parser.ConsumeEntity) {
-        var consumption = (Parser.ConsumeEntity)action;
+      if(action is Generator.ConsumeEntity) {
+        var consumption = (Generator.ConsumeEntity)action;
         var id          = this.GenerateLocalVariable(consumption.Property.Name);
         var entity      = consumption.Entity;
         if(consumption.Property.IsPlural) {
@@ -255,8 +255,8 @@ using System.Diagnostics;
           return "      " + this.GenerateConsumeEntity(id, entity);
         }
       }
-      if(action is Parser.ConsumeAny)  {
-        var consumption = (Parser.ConsumeAny)action;
+      if(action is Generator.ConsumeAny)  {
+        var consumption = (Generator.ConsumeAny)action;
         var id          = consumption.Property.Name;
         var code        = "";
         var indent      = "      ";
@@ -280,9 +280,9 @@ using System.Diagnostics;
         
         return code;
       }
-      if(action is Parser.ConsumeAll) {
+      if(action is Generator.ConsumeAll) {
         return string.Join("\n\n",
-          (((Parser.ConsumeAll)action).Actions).Select(a =>
+          (((Generator.ConsumeAll)action).Actions).Select(a =>
             this.GenerateParseAction(a)
           )
         );
@@ -297,11 +297,11 @@ using System.Diagnostics;
         this.PascalCase(extractor) + ");";
     }
 
-    private string GenerateConsumeEntity(string id, Parser.Entity entity) {
+    private string GenerateConsumeEntity(string id, Generator.Entity entity) {
       return id + " = this.Parse" + this.PascalCase(entity.Name) + "();";
     }
 
-    private string GenerateEntityParserFooter(Parser.Entity entity) {
+    private string GenerateEntityParserFooter(Generator.Entity entity) {
       return
         "    } catch(ParseException e) {\n" +
         "        this.source.position = pos;\n" +
@@ -312,13 +312,13 @@ using System.Diagnostics;
         this.GenerateEntityParserReturn(entity);
     }
 
-    private string GenerateEntityParserReturn(Parser.Entity entity) {
+    private string GenerateEntityParserReturn(Generator.Entity entity) {
       return entity.IsVirtual ?
         this.GenerateVirtualEntityParserReturn(entity) :
         this.GenerateRealEntityParserReturn(entity);
     }
     
-    private string GenerateRealEntityParserReturn(Parser.Entity entity) {
+    private string GenerateRealEntityParserReturn(Generator.Entity entity) {
       return "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
         string.Join( ",\n",
           entity.Properties.Values.Select(x =>
@@ -330,7 +330,7 @@ using System.Diagnostics;
         "  }";
     }
 
-    private string GenerateVirtualEntityParserReturn(Parser.Entity entity) {
+    private string GenerateVirtualEntityParserReturn(Generator.Entity entity) {
       string name = entity.Properties.Keys.ToList()[0];
       
       return "    return " + this.CamelCase(name) + ";\n" +

@@ -9,7 +9,7 @@ using System.Linq;
 
 using HumanParserGenerator.Grammars;
 
-namespace HumanParserGenerator.Parser {
+namespace HumanParserGenerator.Generator {
 
   // Parser Model classes
   // 

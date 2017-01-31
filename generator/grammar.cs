@@ -42,17 +42,13 @@ namespace HumanParserGenerator.Grammars {
             }
           },
           // expression ::= sequential-expression
-          //              | alternatives-expression
-          //              | atomic-expression
+          //              | non-sequential-expression
           //              ;
           new Rule() {
             Identifier = "expression",
             Expression = new AlternativesExpression() {
               AtomicExpression        = new IdentifierExpression() { Identifier = "sequential-expression" },
-              NonSequentialExpression = new AlternativesExpression() {
-                AtomicExpression        = new IdentifierExpression() { Identifier = "alternatives-expression" },
-                NonSequentialExpression =  new IdentifierExpression() { Identifier = "atomic-expression" }
-              }
+              NonSequentialExpression =  new IdentifierExpression() { Identifier = "non-sequential-expression" }
             }
           },
           // sequential-expression ::= non-sequential-expression expression ;
@@ -63,18 +59,6 @@ namespace HumanParserGenerator.Grammars {
               Expression              = new IdentifierExpression() { Identifier = "expression" }
             }
           },
-          // alternatives-expression ::= atomic-expression "|" 
-          //                                        non-sequential-expression ;
-          new Rule() {
-            Identifier = "alternatives-expression",
-            Expression = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "atomic-expression" },
-              Expression            = new SequentialExpression() {
-                NonSequentialExpression = new StringExpression() { String = "|" },
-                Expression              = new IdentifierExpression() { Identifier = "non-sequential-expression" }
-              }
-            }
-          },
           // non-sequential-expression ::= alternatives-expression
           //                             | atomic-expression
           //                             ;
@@ -83,6 +67,18 @@ namespace HumanParserGenerator.Grammars {
             Expression = new AlternativesExpression() {
               AtomicExpression        = new IdentifierExpression() { Identifier = "alternatives-expression" },
               NonSequentialExpression = new IdentifierExpression() { Identifier = "atomic-expression" }
+            }
+          },
+          // alternatives-expression ::= atomic-expression "|" 
+          //                                     non-sequential-expression ;
+          new Rule() {
+            Identifier = "alternatives-expression",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "atomic-expression" },
+              Expression            = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() { String = "|" },
+                Expression              = new IdentifierExpression() { Identifier = "non-sequential-expression" }
+              }
             }
           },
           // atomic-expression ::= nested-expression

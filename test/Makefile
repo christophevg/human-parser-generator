@@ -22,7 +22,7 @@ all: clean test
 
 $(PARSER):
 	@echo "*** generating HPG BNF-like parser..."
-	@(cd ../generator; make parser LANG=bnf > ../test/$(PARSER))
+	@(cd ../generator; make parser LANG=bnf OUT=../test/$(PARSER))
 
 $(BUILD)/test.dll: *.cs $(PARSER)
 	@echo "*** building unit tests"

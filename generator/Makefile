@@ -17,16 +17,22 @@ LANG        = pascal
 EXAMPLE     = ../example
 RUNTIME     = ../runtime
 
+ifdef OUT
+OUTPUT      = > $(OUT)
+OUTPUT_LBL  = " to $(OUT)"
+endif
+
 all: diff execute
 	
 parser: $(BUILD)/$(TARGET).exe
-	@$(RUN) $< $(LANG)
+	@echo "*** generating parser for $(LANG)$(OUTPUT_LBL)"
+	@$(RUN) $< $(LANG) $(OUTPUT)
 	
 $(FOLDER): clean
 	@mkdir -p $(FOLDER)
 
 parser-file: $(BUILD)/$(TARGET).exe $(FOLDER)
-	@(make parser LANG=$(LANG)) > $(FOLDER)/$(PARSER)
+	@(make parser LANG=$(LANG) OUT=$(FOLDER)/$(PARSER))
 
 diff: parser-file
 	@echo "*** comparing to manual version"
@@ -48,4 +54,4 @@ $(BUILD)/%.exe: *.cs
 	@$(CC) $(CFLAGS) -out:$@ $^
 
 clean:
-	@rm -rf $(BUILD) $(FOLDER) hosting cobol
+	@rm -rf $(BUILD) $(FOLDER) $(OUT)

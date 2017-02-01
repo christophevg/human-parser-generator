@@ -661,18 +661,13 @@ namespace HumanParserGenerator.Generator {
 
     public override string ToString() {
       return
-        "grammar rules\n-------------\n" +
-        string.Join( "\n",
-          this.Rules.Select(x => " * " + x.ToString())
-        ) + "\n" +
-        "entities\n--------\n" +
-        string.Join( "\n",
-          this.Entities.Select(x => " * " + x.Key + "=" + x.Value.ToString())
-        ) + "\n" +
-        "extractions\n-----------\n" +
-        string.Join( "\n",
-          this.Extractions.Select(x => " * " + x.Key + "=" + x.Value.ToString())
-        ) + "\n";
+        "Model(" +
+        "Entities=[" +
+        string.Join(",", this.Entities.Values.Select(x => x.ToString())) +
+        "]," +
+        "Extractions=[" +
+        string.Join(",", this.Extractions.Values.Select(x => x.ToString())) +
+        "]";
     }
   
     [ConditionalAttribute("DEBUG")]

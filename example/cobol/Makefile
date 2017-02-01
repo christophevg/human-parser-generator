@@ -12,14 +12,13 @@ endif
 GRAMMAR    ?= grammars/cobol-record-definition.bnf
 
 PARSER     ?= cobol-parser.cs
-HPG        ?= hpg.cs
 
 all: clean run
 
 run: $(BUILD)/$(TARGET).exe
 	$(RUN) $< $(INPUT)
 
-$(BUILD)/%.exe: $(PARSER) $(HPG) *.cs
+$(BUILD)/%.exe: $(PARSER) *.cs
 	@echo "*** building $@ from $^"
 	@mkdir -p $(BUILD)
 	@$(CC) $(CFLAGS) -out:$@ $^

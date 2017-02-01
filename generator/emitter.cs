@@ -127,7 +127,7 @@ using System.Diagnostics;
         "      \"" + this.PascalCase(entity.Name) + "(\" +\n" + 
         string.Join(" + \",\" +\n",
           entity.Properties.Values.Select(x => this.GenerateToString(x))
-        ) + " + \n" +
+        ) + ( entity.Properties.Count > 0 ? " + \n" : "" ) +
         "      \")\";\n" +
         "  }";
     }

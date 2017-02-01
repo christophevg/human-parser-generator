@@ -1,4 +1,4 @@
-TARGET      = main
+TARGET      = hpg
 BUILD       = .build
 
 CC          = mcs
@@ -9,24 +9,25 @@ RUN        += --debug
 CFLAGS     += -define:DEBUG -debug
 endif
 
-INPUT      ?= ../../generator/grammars/cobol-record-definition.bnf
+GRAMMAR    ?= grammars/cobol-record-definition.bnf
 
-PARSER     ?= parser.cs
+PARSER     ?= cobol-parser.cs
+HPG        ?= hpg.cs
 
-all: run
+all: clean run
 
 run: $(BUILD)/$(TARGET).exe
-	@$(RUN) $< $(INPUT) 
+	$(RUN) $< $(INPUT)
 
-$(BUILD)/%.exe: $(PARSER) *.cs
+$(BUILD)/%.exe: $(PARSER) $(HPG) *.cs
 	@echo "*** building $@ from $^"
 	@mkdir -p $(BUILD)
 	@$(CC) $(CFLAGS) -out:$@ $^
 
 $(PARSER):
-	@echo "*** generating HPG BNF-like parser..."
-	@(cd ../../generator; make generation2)
-	@cp ../../generator/generation/generation/parser.cs .
+	@echo "*** generating parser generator, including EBNF-like parser"
+	@(cd ../../generator; make clean generation2)
+	@(cd ../../generator/generation/generation && make parser LANG=$(GRAMMAR) OUT=../../../example/cobol/$(PARSER))
 
 clean:
 	@rm -rf $(BUILD) $(PARSER)

@@ -108,6 +108,7 @@ namespace HumanParserGenerator.Generator {
       return
         (this.IsVirtual ? "Virtual": "") + "Entity(" +
           "Name=" + this.Name + "," +
+          "Type=" + this.Type + "," +
           "Supers=" + "[" +
             string.Join(",", this.Supers.Select(x => x.Name)) +
           "]," +

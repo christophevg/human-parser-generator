@@ -1,5 +1,6 @@
-records          ::= { record };
-record           ::= renames-record | values-record | basic-record ".";
+copybook         ::= { sentence };
+sentence         ::= record ".";
+record           ::= renames-record | values-record | basic-record ;
 
 renames-record   ::= "66" level-name "RENAMES"  identifier-range ;
 level-name       ::= identifier | "FILLER" ;

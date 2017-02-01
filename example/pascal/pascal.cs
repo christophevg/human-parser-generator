@@ -253,6 +253,8 @@ public class Parser {
 
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
-    Console.WriteLine("!!! " + msg + " @ " + this.source.Peek(10).Replace('\n', 'n'));
+    Console.Error.WriteLine("!!! " + msg + 
+      " @ " + this.source.Peek(10).Replace('\n', 'n')
+    );
   }
 }

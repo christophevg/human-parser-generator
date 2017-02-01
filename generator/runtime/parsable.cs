@@ -118,6 +118,6 @@ public class Parsable {
   
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
-    Console.WriteLine("!!! " + msg + " @ " + this.Context);
+    Console.Error.WriteLine("!!! " + msg + " @ " + this.Context);
   }
 }

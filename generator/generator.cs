@@ -676,7 +676,7 @@ namespace HumanParserGenerator.Generator {
   
     [ConditionalAttribute("DEBUG")]
     private void Log(string msg) {
-      Console.WriteLine(">>> " + msg );
+      Console.Error.WriteLine(">>> " + msg );
     }
   }
 }

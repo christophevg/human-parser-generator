@@ -171,7 +171,7 @@ public class AsModel {
             }
           }
         },
-        // identifier ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;
+        // identifier ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
         new Rule() {
           Identifier  = "identifier",
           Expression = new ExtractorExpression() { Regex = @"([A-Za-z][A-Za-z0-9-]*)" }

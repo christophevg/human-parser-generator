@@ -172,7 +172,7 @@ string-expression         ::= string ;
 
 extractor-expression      ::= "/" regex "/" ;
 
-identifier                ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;
+identifier                ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
 string                    ::= /"([^"]*)"|^'([^']*)'/ ;
 regex                     ::= /(.*?)(?<keep>/\s*;)/ ;
 ```

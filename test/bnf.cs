@@ -130,10 +130,10 @@ public class Syntax {
   [Test]
   public void IdentifierExtractorTest() {
     this.parseAndCompare(
-      "identifier                ::= /([A-Za-z][A-Z0-9a-z-]*)/ ;",
+      "identifier                ::= /([A-Za-z][A-Za-z0-9-]*)/ ;",
       @"Grammar(Rules=[
         Rule(Identifier=identifier,
-          Expression=ExtractorExpression(Regex=([A-Za-z][A-Z0-9a-z-]*)))
+          Expression=ExtractorExpression(Regex=([A-Za-z][A-Za-z0-9-]*)))
       ])"
     );
   }
@@ -255,7 +255,7 @@ public class Syntax {
             )
           ),
           Rule(Identifier=identifier,
-            Expression=ExtractorExpression(Regex=([A-Za-z][A-Z0-9a-z-]*))
+            Expression=ExtractorExpression(Regex=([A-Za-z][A-Za-z0-9-]*))
           ),
           Rule(Identifier=string,
             Expression=ExtractorExpression(Regex=""([^""]*)""|^'([^']*)')

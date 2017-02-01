@@ -584,7 +584,12 @@ namespace HumanParserGenerator.Generator {
         );
         // replace the action's property with the common property
         // also remove the original action property from the entity
-        entity.Properties.Remove(action.Property.Name);
+        if(action == null) {
+          throw new NotImplementedException("BORK");
+        }
+        if(action.Property != null) {
+          entity.Properties.Remove(action.Property.Name);
+        } 
         action.Property = property;
         consume.Options.Add(action);
         // recurse on the NonSequentialExpression part
@@ -596,7 +601,9 @@ namespace HumanParserGenerator.Generator {
           );
           // replace the action's property with the common property
           // also remove the original action property from the entity
-          entity.Properties.Remove(action.Property.Name);
+          if(action.Property != null) {
+            entity.Properties.Remove(action.Property.Name);
+          }
           action.Property = property;
           consume.Options.Add(action);
           break;

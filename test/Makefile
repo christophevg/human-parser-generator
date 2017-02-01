@@ -22,7 +22,7 @@ all: clean test
 
 $(PARSER):
 	@echo "*** generating parser generator, including EBNF-like parser"
-	@(cd ../generator; make generation2)
+	@(cd ../generator; make clean generation2)
 	@cp ../generator/generation/generation/parser.cs .
 
 $(BUILD)/test.dll: *.cs $(PARSER)

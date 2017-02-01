@@ -483,12 +483,19 @@ namespace HumanParserGenerator.Generator {
           IsPlural = true
         };
         entity.Add(property);
-        // the property is marked plural, so this action will be reused to parse
-        // all occurences
-        return new ConsumeEntity() {
-          Entity   = this.Entities[id],
-          Property = property
-        };
+
+        Referable referred = this.GetReferred(id);
+        if(referred is Entity) {
+          return new ConsumeEntity() {
+            Entity   = (Entity)referred,
+            Property = property
+          };
+        } else {
+          return new ConsumeExtraction() {
+            Extraction = (Extraction)referred,
+            Property   = property
+          };
+        }
       } else {
         throw new NotImplementedException("only single ID-exp can be repeated");
       }

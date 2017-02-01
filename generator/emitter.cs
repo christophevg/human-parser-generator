@@ -203,8 +203,9 @@ using System.Diagnostics;
     
     // TODO QnD mapping of reserved words
     private string GenerateLocalVariable(string name) {
-      if( name.Equals("string") ) { return "text";   }
-      if( name.Equals("int")    ) { return "number"; }
+      if( name.Equals("string") ) { return "text";     }
+      if( name.Equals("int")    ) { return "number";   }
+      if( name.Equals("float")  ) { return "floating"; }
       return this.CamelCase(name);
     }
 

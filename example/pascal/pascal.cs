@@ -18,9 +18,9 @@ public class Program {
     return
       "Program(" +
         "Identifier=" + this.Identifier + "," +
-        "Assignments=" + "[" + string.Join(",",
-          this.Assignments.Select(x => x.ToString())
-        ) + "]" +
+        "Assignments=" + "[" +
+          string.Join(",",this.Assignments.Select(x => x.ToString())) +
+        "]" +
       ")";
   }
 }

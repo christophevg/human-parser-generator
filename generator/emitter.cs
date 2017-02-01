@@ -135,9 +135,9 @@ using System.Diagnostics;
     private string GenerateToString(Generator.Property property) {
       if(property.IsPlural) {
         return string.Format(
-          "        \"{0}=\" + \"[\" + string.Join(\",\",\n" +
-          "          this.{0}.Select(x => x.ToString())\n" +
-          "        ) + \"]\"",
+          "\"{0}=\" + \"[\" + \nstring.Join(\",\", " +
+          "this.{0}.Select(x => x.ToString())) +\n" +
+          "\"]\"",
           this.PascalCase(this.GeneratePropertyName(property))
         );
       } else {

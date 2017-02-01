@@ -44,6 +44,8 @@ OUTPUT      = > $(OUT)
 OUTPUT_LBL  = " to $(OUT)"
 endif
 
+ASTYLE      = | astyle -s2
+
 all: clean pascal-demo
 	
 generation2:
@@ -52,7 +54,7 @@ generation2:
 
 parser: $(BUILD)/$(TARGET).exe
 	@echo "*** generating parser from $(LANG)$(OUTPUT_LBL)"
-	@$(RUN) $< $(LANG) $(OUTPUT)
+	@$(RUN) $< $(LANG) $(ASTYLE) $(OUTPUT)
 
 generator:
 	@echo "*** generating parser"

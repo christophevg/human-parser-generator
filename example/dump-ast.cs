@@ -1,1 +1,1 @@
-../runtime/dump-ast.cs
+../generator/runtime/dump-ast.cs

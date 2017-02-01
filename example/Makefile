@@ -1,1 +1,1 @@
-../runtime/Makefile
+../generator/runtime/Makefile

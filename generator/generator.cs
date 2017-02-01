@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-using HumanParserGenerator.Grammars;
-
 namespace HumanParserGenerator.Generator {
 
   // Parser Model classes

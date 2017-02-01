@@ -1,45 +1,78 @@
-ARGUMENTS  ?=
-FOLDER     ?= generated
+# folder for generation demo
+FOLDER     ?= demo
+# example folder (for pascal example)
+EXAMPLE     = ../example
+# input file for pascal demo
+PASCAL     ?= example.pas
+# original pascal parser
+PASPARSER  ?= pascal.cs
 
-TARGET      = generate-parser
+# folder to generate a generator in
+GENERATOR  ?= generation
+
+# filename of the generated parser
+PARSER     ?= parser.cs
+# language definition (aka grammar) to generate a parser for
+LANG       ?= $(GRAMMARS)/hpg.bnf
+
+# internal folders
+RUNTIME     = runtime
+GRAMMARS    = grammars
 BUILD       = .build
 
 CC          = mcs
-RUN         = mono --debug
+RUN         = mono
 
+ifdef DEBUG
+RUN        += --debug
 CFLAGS     += -define:DEBUG -debug
+endif
 
-PARSER      = parser.cs
-PASCAL      = example.pas
+SRCS        = generator.cs emitter.cs
 
-LANG        = pascal
-
-EXAMPLE     = ../example
-RUNTIME     = ../runtime
+ifneq ("$(wildcard bootstrap.cs)","")
+SRCS       += grammar.cs bootstrap.cs
+TARGET      = bootstrap
+LANG        = bootstrap
+else
+SRCS       += $(RUNTIME)/parsable.cs $(PARSER) hpg.cs 
+TARGET      = hpg
+endif
 
 ifdef OUT
 OUTPUT      = > $(OUT)
 OUTPUT_LBL  = " to $(OUT)"
 endif
 
-all: diff execute
+all: clean pascal-demo
 	
+generation2:
+	@echo "*** building second generation generator/parser"
+	@(make generator && cd $(GENERATOR) && make generator)
+
 parser: $(BUILD)/$(TARGET).exe
-	@echo "*** generating parser for $(LANG)$(OUTPUT_LBL)"
+	@echo "*** generating parser from $(LANG)$(OUTPUT_LBL)"
 	@$(RUN) $< $(LANG) $(OUTPUT)
-	
-$(FOLDER): clean
-	@mkdir -p $(FOLDER)
 
-parser-file: $(BUILD)/$(TARGET).exe $(FOLDER)
-	@(make parser LANG=$(LANG) OUT=$(FOLDER)/$(PARSER))
+generator:
+	@echo "*** generating parser"
+	@mkdir -p $(GENERATOR)
+	@(make parser OUT=$(GENERATOR)/$(PARSER))
+	@(make generator-env FOLDER=$(GENERATOR))
 
-diff: parser-file
-	@echo "*** comparing to manual version"
-	@diff -u -w $(EXAMPLE)/pascal.cs $(FOLDER)/$(PARSER)
+generator-env:
+	@echo "*** setting up generator environment"
+	@cp -r Makefile $(RUNTIME) $(GRAMMARS) generator.cs emitter.cs hpg.cs $(FOLDER)
 
-execute: parser-file runtime
-	@echo "*** running example with generated code"
+# Pascal demo
+
+pascal-demo: diff execute
+
+$(FOLDER)/$(PARSER): $(FOLDER) generation2
+	@(cd $(GENERATOR)/$(GENERATOR) && make parser LANG=grammars/pascal-assignments.bnf OUT=../../$@)
+
+execute: runtime
+	@echo "*** running example with generated parser"
 	@(cd $(FOLDER); make ARGUMENTS=$(PASCAL))
 
 runtime: $(FOLDER)
@@ -49,9 +82,16 @@ runtime: $(FOLDER)
 	@cp $(RUNTIME)/dump-ast.cs $<
 	@cp $(EXAMPLE)/$(PASCAL)   $<
 
-$(BUILD)/%.exe: *.cs
+diff: $(FOLDER)/$(PARSER)
+	@echo "*** comparing to manual version"
+	@diff -u -w $(EXAMPLE)/$(PASPARSER) $(FOLDER)/$(PARSER)
+
+$(BUILD)/%.exe: $(SRCS)
 	@mkdir -p $(BUILD)
 	@$(CC) $(CFLAGS) -out:$@ $^
 
+$(FOLDER):
+	@mkdir -p $@
+
 clean:
-	@rm -rf $(BUILD) $(FOLDER) $(OUT)
+	@rm -rf $(BUILD) $(FOLDER) $(OUT) $(GENERATOR) pascal

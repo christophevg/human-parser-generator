@@ -141,7 +141,7 @@ public class Syntax {
   [Test]
   public void BNFSelfHostingTest() {
     this.parseAndCompare(
-      System.IO.File.ReadAllText("../../grammars/hpg.bnf"),
+      System.IO.File.ReadAllText("../../generator/grammars/hpg.bnf"),
       @"Grammar(
         Rules=[
           Rule(Identifier=grammar,

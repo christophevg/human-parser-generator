@@ -102,17 +102,24 @@ $ make
 Program(Identifier=DEMO1,Assignments=[Assignment(Identifier=A,Expression=NumberExpression(Number=3)),Assignment(Identifier=B,Expression=NumberExpression(Number=45)),Assignment(Identifier=H,Expression=NumberExpression(Number=-100023)),Assignment(Identifier=C,Expression=IdentifierExpression(Identifier=A)),Assignment(Identifier=D123,Expression=IdentifierExpression(Identifier=B34A)),Assignment(Identifier=BABOON,Expression=IdentifierExpression(Identifier=GIRAFFE)),Assignment(Identifier=TEXT,Expression=StringExpression(String=Hello world!))])
 ```
 
-In the `generator/` folder a first (very rough) implementation of the generator is able to generate the same parser from a `Grammar` `Model`.
+In the `generator/` folder a first (rough) implementation of the generator is able to generate the same parser from a `Grammar` `Model`.
 
-The Makefile implements a complete demo that first generates the parser, compares the generated version to the manual version (not taking into account whitespace changes ;-) ) and then copies the other files from the demo (`parsable.cs`, which contains a helper class to deal with basic parsing operation, `main.cs`, the same runner, `example.pascal`, the Pascal source code and `Makefile`, to compile and run the parser).
+The Makefile implements a complete demo that first generates the parser, compares it to the manual version (not taking into account whitespace changes ;-) ) and then copies the other files from the demo (`parsable.cs`, which contains a helper class to deal with basic parsing operation, `main.cs`, the same runner, `example.pascal`, the Pascal source code and `Makefile`, to compile and run the parser).
 
 ```bash
 $ cd generator/
 $ make
-*** generating parser for pascal to generated/parser.cs
+*** building second generation generator/parser
+*** generating parser
+*** generating parser from bootstrap to generation/parser.cs
+*** setting up generator environment
+*** generating parser
+*** generating parser from grammars/hpg.bnf to generation/parser.cs
+*** setting up generator environment
+*** generating parser from grammars/pascal-assignments.bnf to ../../demo/parser.cs
 *** comparing to manual version
 *** setting up runtime environment for parser
-*** running example with generated code
+*** running example with generated parser
 Program(Identifier=DEMO1,Assignments=[Assignment(Identifier=A,Expression=NumberExpression(Number=3)),Assignment(Identifier=B,Expression=NumberExpression(Number=45)),Assignment(Identifier=H,Expression=NumberExpression(Number=-100023)),Assignment(Identifier=C,Expression=IdentifierExpression(Identifier=A)),Assignment(Identifier=D123,Expression=IdentifierExpression(Identifier=B34A)),Assignment(Identifier=BABOON,Expression=IdentifierExpression(Identifier=GIRAFFE)),Assignment(Identifier=TEXT,Expression=StringExpression(String=Hello world!))])
 ```
 
@@ -186,18 +193,24 @@ The structure of the Generator (currently) looks like this:
 
 > I've created these UML models after I had created the initial code. There are a few *crossing associations*, which, according to the *UML Design Law of Christophe VG*, indicate problematic parts in the design. These will be refactored soon ;-)
 
-### Test Driven Devwlopment
+### Test Driven Development
 
 To be able to focus on sub-problems and isolate combinations of constructs, I've set up a unit testing infrastructure that generates a EBNF-like parser and then uses that to run the tests:
 
 ```bash
 $ make
 *** generating HPG BNF-like parser...
-*** generating parser for bnf to ../test/parser.cs
+*** building second generation generator/parser
+*** generating parser
+*** generating parser from bootstrap to generation/parser.cs
+*** setting up generator environment
+*** generating parser
+*** generating parser from grammars/hpg.bnf to generation/parser.cs
+*** setting up generator environment
 *** building unit tests
 *** executing unit tests
 .....
-Tests run: 5, Failures: 0, Not run: 0, Time: 0.223 seconds
+Tests run: 5, Failures: 0, Not run: 0, Time: 0.170 seconds
 ```
 
 One of the tests is `BNFSelfHostingTest`, which parses the EBNF-like definition and compares this to the expected AST.

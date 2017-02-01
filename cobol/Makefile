@@ -13,16 +13,15 @@ CC          = mcs
 RUN         = mono
 ARGUMENTS  ?= ../grammars/cobol-record-definition.bnf
 
-SRCS        = generator/{grammar,parser,emitter}.cs
+SRCS        = ../generator/{grammar,parser,emitter}.cs
 
-PARSER      = parser.cs
+PARSER      = bnf-parser.cs
 
 all: clean parser run
 
 parser: $(PARSER)
 
 $(PARSER):
-	@echo "*** generating HPG BNF-like parser..."
 	@(cd ../generator; make parser LANG=bnf OUT=../cobol/$(PARSER))
 
 $(BUILD)/%.exe: *.cs

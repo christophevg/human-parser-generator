@@ -217,7 +217,7 @@ using System.Diagnostics;
           entity.Properties.Values.Select(x =>
             "    " + this.GenerateType(x) + " " + 
               this.GenerateLocalVariable(x.Name.ToLower()) + 
-            ( x.IsPlural ? " = new " + this.GenerateType(x) + "()" : "") +
+            ( x.IsPlural ? " = new " + this.GenerateType(x) + "()" : " = null") +
             ";"
           )
         ) + "\n\n" +

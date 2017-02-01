@@ -86,7 +86,7 @@ public class Parser {
   }
   
   public Program ParseProgram() {
-    string identifier;
+    string identifier = null;
     List<Assignment> assignments = new List<Assignment>();
     
     this.Log("ParseProgram");
@@ -125,8 +125,8 @@ public class Parser {
   }
 
   public Assignment ParseAssignment() {
-    string identifier;
-    Expression expression;
+    string identifier = null;
+    Expression expression = null;
 
     this.Log("ParseAssignment");
     int pos = this.source.position;
@@ -154,7 +154,7 @@ public class Parser {
   }
 
   public Expression ParseExpression() {
-    Expression alternative;
+    Expression alternative = null;
 
     this.Log("ParseExpression");
     int pos = this.source.position;
@@ -188,7 +188,7 @@ public class Parser {
   }
 
   public IdentifierExpression ParseIdentifierExpression() {
-    string identifier;
+    string identifier = null;
     
     this.Log("ParseIdentifierExpression");
     int pos = this.source.position;
@@ -209,7 +209,7 @@ public class Parser {
   }
 
   public StringExpression ParseStringExpression() {
-    string str;
+    string str = null;
     
     this.Log("ParseStringExpression");
     int pos = this.source.position;
@@ -230,7 +230,7 @@ public class Parser {
   }
 
   public NumberExpression ParseNumberExpression() {
-    string number;
+    string number = null;
     
     this.Log("ParseNumberExpression");
     int pos = this.source.position;

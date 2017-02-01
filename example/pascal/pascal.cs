@@ -209,13 +209,13 @@ public class Parser {
   }
 
   public StringExpression ParseStringExpression() {
-    string str = null;
+    string text = null;
     
     this.Log("ParseStringExpression");
     int pos = this.source.position;
     try {
 
-      str = this.source.Consume(Extracting.String);
+      text = this.source.Consume(Extracting.String);
 
     } catch(ParseException e) {
       this.source.position = pos;
@@ -225,7 +225,7 @@ public class Parser {
     }
     
     return new StringExpression() {
-      String = str
+      String = text
     };
   }
 

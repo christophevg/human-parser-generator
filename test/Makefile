@@ -21,7 +21,7 @@ PARSER      = parser.cs
 all: clean test
 
 $(PARSER):
-	@echo "*** generating HPG BNF-like parser..."
+	@echo "*** generating parser generator, including EBNF-like parser"
 	@(cd ../generator; make generation2)
 	@cp ../generator/generation/generation/parser.cs .
 

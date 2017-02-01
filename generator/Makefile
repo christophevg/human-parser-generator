@@ -1,7 +1,7 @@
 # folder for generation demo
 FOLDER     ?= demo
 # example folder (for pascal example)
-EXAMPLE     = ../example
+EXAMPLE     = ../example/pascal
 # input file for pascal demo
 PASCAL     ?= example.pas
 # original pascal parser

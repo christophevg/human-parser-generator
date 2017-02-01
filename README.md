@@ -97,7 +97,7 @@ The extensions that are applied are:
 In the `example/` folder I've started by writing a manual implementation (`parser.cs`), taking into account how I think this could be generated. The output of the example program, parses the example Pascal file and outputs an AST-like structure:
 
 ```bash
-$ cd example
+$ cd example/pascal
 $ make
 Program(Identifier=DEMO1,Assignments=[Assignment(Identifier=A,Expression=NumberExpression(Number=3)),Assignment(Identifier=B,Expression=NumberExpression(Number=45)),Assignment(Identifier=H,Expression=NumberExpression(Number=-100023)),Assignment(Identifier=C,Expression=IdentifierExpression(Identifier=A)),Assignment(Identifier=D123,Expression=IdentifierExpression(Identifier=B34A)),Assignment(Identifier=BABOON,Expression=IdentifierExpression(Identifier=GIRAFFE)),Assignment(Identifier=TEXT,Expression=StringExpression(String=Hello world!))])
 ```

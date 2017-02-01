@@ -97,7 +97,7 @@ using System.Diagnostics;
 
     private string GenerateProperty(Generator.Property property) {
       return "  public " + this.GenerateType(property) + " " + 
-        this.PascalCase(property.Name) + " { get; set; }";
+        this.PascalCase(this.GeneratePropertyName(property)) + " { get; set; }";
     }
 
     private string GenerateType(Generator.Property property) {
@@ -114,7 +114,7 @@ using System.Diagnostics;
       return "  public " + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
           entity.Properties.Values.Where(x => x.IsPlural).Select(x => 
-            "    this." + this.PascalCase(x.Name) + " = new " + 
+            "    this." + this.PascalCase(this.GeneratePropertyName(x)) + " = new " + 
               this.GenerateType(x) + "();\n"
           )
         ) +
@@ -138,12 +138,12 @@ using System.Diagnostics;
           "        \"{0}=\" + \"[\" + string.Join(\",\",\n" +
           "          this.{0}.Select(x => x.ToString())\n" +
           "        ) + \"]\"",
-          this.PascalCase(property.Name)
+          this.PascalCase(this.GeneratePropertyName(property))
         );
       } else {
         return string.Format(
           "        \"{0}=\" + this.{0}",
-          this.PascalCase(property.Name)
+          this.PascalCase(this.GeneratePropertyName(property))
         );
       }
     }
@@ -320,7 +320,7 @@ using System.Diagnostics;
       return "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
         string.Join( ",\n",
           entity.Properties.Values.Select(x =>
-            "      " + this.PascalCase(x.Name) + " = " + 
+            "      " + this.PascalCase(this.GeneratePropertyName(x)) + " = " + 
               this.GenerateLocalVariable(x.Name.ToLower())
           )
         ) + "\n" +
@@ -342,6 +342,18 @@ using System.Diagnostics;
     Console.Error.WriteLine(""!!! "" + msg + "" @ "" + this.source.Peek(10).Replace('\n', 'n'));
   }
 }";
+    }
+
+    // function to make sure that Properties don't have the same name as their
+    // Class.
+    // this is most of the time due to some recursion in a rule
+    // e.g. rule ::= something [ rule ]
+    private string GeneratePropertyName(Generator.Property property) {
+      if(property.Name.Equals(property.Entity.Name)) {
+        Console.Error.WriteLine("@@@@@@@ rewriting property name: " + property.Name);
+        return "next-" + property.Name;
+      }
+      return property.Name;
     }
 
     // this function makes sure that text is correctly case'd ;-)

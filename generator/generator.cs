@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Diagnostics;
 
 namespace HumanParserGenerator.Generator {
 
@@ -652,6 +653,11 @@ namespace HumanParserGenerator.Generator {
         string.Join( "\n",
           this.Extractions.Select(x => " * " + x.Key + "=" + x.Value.ToString())
         ) + "\n";
+    }
+  
+    [ConditionalAttribute("DEBUG")]
+    private void Log(string msg) {
+      Console.WriteLine(">>> " + msg );
     }
   }
 }

@@ -384,6 +384,10 @@ namespace HumanParserGenerator.Generator {
           extraction => extraction.Name,
           extraction => extraction
         );
+      this.Log(
+        "extracted Extractions: " +
+          string.Join(",", this.Extractions.Select(x => x.Key))
+      );
     }
 
     // Properties and ParseActions Extraction methods
@@ -392,6 +396,7 @@ namespace HumanParserGenerator.Generator {
                                                          Entity     entity,
                                                          bool       optional=false)
     {
+      this.Log("extracting from " + exp.GetType().ToString());
       try {
         return new Dictionary<string, Func<Expression,Entity,bool,ParseAction>>() {
           { "SequentialExpression",   this.ExtractSequentialExpression   },

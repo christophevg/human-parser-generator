@@ -356,7 +356,7 @@ using System.Diagnostics;
     // e.g. rule ::= something [ rule ]
     private string GeneratePropertyName(Generator.Property property) {
       if(property.Name.Equals(property.Entity.Name)) {
-        Console.Error.WriteLine("@@@@@@@ rewriting property name: " + property.Name);
+        this.Warn("rewriting property name: " + property.Name);
         return "next-" + property.Name;
       }
       return property.Name;
@@ -375,6 +375,10 @@ using System.Diagnostics;
     private string CamelCase(string text) {
       var x = this.PascalCase(text);
       return x.First().ToString().ToLower() + x.Substring(1);
+    }
+
+    private void Warn(string msg) {
+      Console.Error.WriteLine("~~~ C# Emitter Warning: " + msg);
     }
 
   }

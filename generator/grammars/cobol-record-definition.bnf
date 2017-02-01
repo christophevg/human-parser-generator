@@ -10,7 +10,7 @@ identifier-range ::= ( identifier "THRU" identifier )
 
 values-record    ::= "88" level-name "VALUES" ["IS" | "ARE"] { value } ;
 value            ::= literal | variable ;
-literal          ::= number | float | string ;
+literal          ::= int | float | string ;
 variable         ::= identifier [ "(" subset ")" ];
 subset           ::= numeric [ ":" subset ];
 numeric          ::= int | identifier;

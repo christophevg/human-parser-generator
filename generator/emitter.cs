@@ -286,6 +286,12 @@ using System.Diagnostics;
         );
         
       }
+      if(action is Generator.ConsumeOptional) {
+        return "try {\n" +
+          this.GenerateParseAction(
+            ((Generator.ConsumeOptional)action).Optional) +
+           "\n} catch(ParseException) {}\n";
+      }
 
       throw new NotImplementedException("ParseAction<" + action.GetType().ToString() + ">");
     }

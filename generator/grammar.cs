@@ -403,13 +403,15 @@ public class IdentifierExpression : TerminalExpression {
   }
 }
 
-// string-expression ::= string ;
+// string-expression ::= [ identifier "@" ] string ;
 public class StringExpression : TerminalExpression {
-  public string String;
+  public string Identifier { get; set; }
+  public string String     { get; set; }
   public override string ToString() {
     return
       "StringExpression(" +
-        "String=" + this.String +
+        "Identifier=" + this.Identifier + "," +
+        "String="     + this.String +
       ")";
   }
 }

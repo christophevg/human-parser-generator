@@ -34,7 +34,7 @@ terminal-expression       ::= identifier-expression
                             ;
 
 identifier-expression     ::= identifier ;
-string-expression         ::= string ;
+string-expression         ::= [ identifier "@" ] string;
 
 extractor-expression      ::= "/" regex "/" ;
 

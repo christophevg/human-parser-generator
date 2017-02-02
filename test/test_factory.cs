@@ -447,4 +447,102 @@ public class GeneratorModelFactoryTests {
       model.ToString()
     );
   }
+
+  [Test]
+  public void testRepeatedString() {
+    // rule ::= { "a" }
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rule",
+          Expression = new RepetitionExpression() {
+            Expression = new StringExpression() { String = "a" }
+          }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
+
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           VirtualEntity(
+             Name=rule,Type=,Supers=[],Referrers=[],
+             Properties=[],
+             ParseAction=Consume(a*)
+           )
+        ],
+        Root=rule
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );
+  }
+
+  [Test]
+  public void testRepeatedIdentifier() {
+    // rules ::= { rule }
+    // rule  ::= id "x" id = id
+    // id    ::= /[a-z]+/
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rules",
+          Expression = new RepetitionExpression() {
+            Expression = new IdentifierExpression() { Identifier = "rule" }
+          }
+        },
+        new Rule() {
+          Identifier = "rule",
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new IdentifierExpression() { Identifier = "id" },
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() { String = "x" },
+              Expression = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "id" },
+                Expression = new SequentialExpression() {
+                  NonSequentialExpression = new StringExpression() { String = "=" },
+                  Expression = new IdentifierExpression() { Identifier = "id" }
+                }
+              }
+            }
+          }
+        },
+        new Rule() {
+          Identifier = "id",
+          Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
+
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           VirtualEntity(
+             Name=rules,Type=rule,Supers=[],Referrers=[],
+             Properties=[
+               Property(Name=rule,Type=rule,IsPlural=True,IsOptional=False,Source=Consume(rule->rule))
+             ],
+             ParseAction=Consume(rule->rule)
+           ),
+           Entity(
+             Name=rule,Type=rule,Supers=[rules],Referrers=[rules.rule],
+             Properties=[
+               Property(Name=id0,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id0)),
+               Property(Name=id1,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id1)),
+               Property(Name=id2,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id2))
+             ],
+             ParseAction=Consume([Consume(id->id0),Consume(x),Consume(id->id1),Consume(=),Consume(id->id2)])
+           ),
+           VirtualEntity(
+             Name=id,Type=,Supers=[],Referrers=[rule.id0,rule.id1,rule.id2],
+             Properties=[],
+             ParseAction=Consume([a-z]+)
+           )
+        ],
+        Root=rules
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );
+  }
 }

@@ -175,12 +175,15 @@ namespace HumanParserGenerator.Generator {
     // the Parsing is optional
     public bool IsOptional { get; set; }
 
+    // the Parsing should be repeated as much as possible
+    public bool IsPlural { get; set; }
+
     // Label can be used for external string representation, other than ToString
     public abstract string Label { get; }
 
     public override string ToString() {
       return "Consume" + (this.IsOptional ? "Optional" : "")+ "(" +
-        this.Label +
+        this.Label + (this.IsPlural ? "*" : "") +
       ")";
     }
   }
@@ -209,9 +212,6 @@ namespace HumanParserGenerator.Generator {
     // Type indicates what type of result this ParseAction will provide to the
     // Property
     public abstract string Type  { get; }
-    
-    // the ParseAction returns a list of parsed property values
-    public bool IsPlural { get; set; }
 
     public override string ToString() {
       return "Consume(" + this.Label + "->" + this.Property.Name + ")";
@@ -370,7 +370,7 @@ namespace HumanParserGenerator.Generator {
           { "SequentialExpression",   this.ImportSequentialExpression   },
           { "AlternativesExpression", this.ImportAlternativesExpression },
           { "OptionalExpression",     this.ImportOptionalExpression     },
-          // { "RepetitionExpression",   this.ExtractRepetitionExpression   },
+          { "RepetitionExpression",   this.ImportRepetitionExpression   },
           { "GroupExpression",        this.ImportGroupExpression        },
           { "IdentifierExpression",   this.ImportIdentifierExpression   },
           { "StringExpression",       this.ImportStringExpression       },
@@ -529,6 +529,22 @@ namespace HumanParserGenerator.Generator {
       return this.ImportPropertiesAndParseActions(
         ((GroupExpression)exp).Expression, entity
       );
+    }
+
+    private ParseAction ImportRepetitionExpression(Expression exp,
+                                                   Entity     entity,
+                                                   bool       opt=false)
+    {
+      RepetitionExpression repetition = ((RepetitionExpression)exp);
+      // recurse down
+      ParseAction action = this.ImportPropertiesAndParseActions(
+        repetition.Expression,
+        entity
+      );
+      // mark Plural
+      action.IsPlural = true;
+
+      return action;
     }
 
     // Factory helper methods

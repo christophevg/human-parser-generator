@@ -372,4 +372,40 @@ public class GeneratorModelFactoryTests {
       model.ToString()
     );
   }
+
+  [Test]
+  public void testAlternativeCharacters() {
+    // rule ::= "a" | "b" | "c"
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rule",
+          Expression = new AlternativesExpression() {
+            AtomicExpression = new StringExpression() { String = "a" },
+            NonSequentialExpression = new AlternativesExpression() {
+              AtomicExpression = new StringExpression() { String = "b" },
+              NonSequentialExpression = new StringExpression() { String = "c" }
+            }
+          }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
+
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           VirtualEntity(
+             Name=rule,Type=,Supers=[],Referrers=[],
+             Properties=[],
+             ParseAction=Consume(a|b|c)
+           )
+        ],
+        Root=rule
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );
+  }
+
+
 }

@@ -278,7 +278,7 @@ namespace HumanParserGenerator.Generator {
   public class ConsumeAny : ConsumeAll {
     public override string Label {
       get {
-        return string.Join( " | ", this.Actions.Select(x => x.Label) );
+        return string.Join( "|", this.Actions.Select(x => x.Label) );
       }
     }
   }
@@ -368,7 +368,7 @@ namespace HumanParserGenerator.Generator {
       try {
         return new Dictionary<string, Func<Expression,Entity,bool,ParseAction>>() {
           { "SequentialExpression",   this.ImportSequentialExpression   },
-          // { "AlternativesExpression", this.ExtractAlternativesExpression },
+          { "AlternativesExpression", this.ImportAlternativesExpression },
           { "OptionalExpression",     this.ImportOptionalExpression     },
           // { "RepetitionExpression",   this.ExtractRepetitionExpression   },
           // { "GroupExpression",        this.ExtractGroupExpression        },
@@ -490,6 +490,37 @@ namespace HumanParserGenerator.Generator {
       }
       return consume;
     }
+
+    private ParseAction ImportAlternativesExpression(Expression exp,
+                                                     Entity entity,
+                                                     bool opt=false)
+    {
+      AlternativesExpression alternative = ((AlternativesExpression)exp);
+
+      ConsumeAny consume = new ConsumeAny();
+
+      // AlternativesExpression is constructed recusively, unroll it...
+      while(true) {
+        // add first part
+        consume.Actions.Add(this.ImportPropertiesAndParseActions(
+          alternative.AtomicExpression, entity
+        ));
+        // add remaining parts
+        if(alternative.NonSequentialExpression is AtomicExpression) {
+          // last part
+          consume.Actions.Add(this.ImportPropertiesAndParseActions(
+            alternative.NonSequentialExpression, entity
+          ));
+          break;
+        } else {
+          // recurse
+          alternative =
+            (AlternativesExpression)alternative.NonSequentialExpression;
+        }
+      }
+      return consume;
+    }
+
 
     // Factory helper methods
 

@@ -223,4 +223,36 @@ public class GeneratorModelFactoryTests {
     );      
   }
 
+  [Test]
+  public void testOptionalString() {
+    // rule ::= [ "a" ]
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rule",
+          Expression = new OptionalExpression() {
+            Expression = new StringExpression() { String = "a" }
+          }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
+
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           VirtualEntity(
+             Name=rule,Type=bool,Supers=[],Referrers=[],
+             Properties=[
+               Property(Name=has-a,Type=bool,IsPlural=False,IsOptional=False,Source=Consume(ConsumeOptional(a)?->has-a))
+             ],
+             ParseAction=Consume(ConsumeOptional(a)?->has-a)
+           )
+        ],
+        Root=rule
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );
+  }
+
 }

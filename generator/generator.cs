@@ -179,7 +179,9 @@ namespace HumanParserGenerator.Generator {
     public abstract string Label { get; }
 
     public override string ToString() {
-      return "Consume(" + this.Label + ")";
+      return "Consume" + (this.IsOptional ? "Optional" : "")+ "(" +
+        this.Label +
+      ")";
     }
   }
 
@@ -244,6 +246,14 @@ namespace HumanParserGenerator.Generator {
     }
     public override string Label  { get { return this.Entity.Name; } }
     public override string Type   { get { return this.Entity.Type; } }
+  }
+
+  // ... to watch another ParseAction and inform the Property about the outcome
+  public class ConsumeOutcome : ParsePropertyAction {
+    public ParseAction Action { get; set; }
+
+    public override string Label  { get { return this.Action.ToString() + "?"; } }
+    public override string Type   { get { return "bool"; } }
   }
 
   public class ConsumeAll : ParseAction {
@@ -359,7 +369,7 @@ namespace HumanParserGenerator.Generator {
         return new Dictionary<string, Func<Expression,Entity,bool,ParseAction>>() {
           // { "SequentialExpression",   this.ExtractSequentialExpression   },
           // { "AlternativesExpression", this.ExtractAlternativesExpression },
-          // { "OptionalExpression",     this.ExtractOptionalExpression     },
+          { "OptionalExpression",     this.ImportOptionalExpression     },
           // { "RepetitionExpression",   this.ExtractRepetitionExpression   },
           // { "GroupExpression",        this.ExtractGroupExpression        },
           { "IdentifierExpression",   this.ImportIdentifierExpression   },
@@ -423,6 +433,33 @@ namespace HumanParserGenerator.Generator {
       }
       // the simplest case: just a string, not optional, just consume it
       return new ConsumePatternToken() { Token = extr.Regex };
+    }
+
+    private ParseAction ImportOptionalExpression(Expression exp,
+                                                 Entity     entity,
+                                                 bool       opt=false)
+    {
+      OptionalExpression optional = ((OptionalExpression)exp);
+      // recurse down
+      ParseAction action = this.ImportPropertiesAndParseActions(
+        optional.Expression,
+        entity
+      );
+      // mark optional
+      action.IsOptional = true;
+
+      // if the action isn't a ParsePropertyAction, there is no Property for it
+      // yet, so we create one to store the positive or negative outcome of this
+      // parse attempt
+      if( ! (action is ParsePropertyAction) ) {
+        Property property = new Property() { Name = "has-" + action.Label };
+        entity.Add(property);
+        return new ConsumeOutcome() {
+          Action   = action,
+          Property = property
+        };
+      }
+      return action;
     }
 
     // Factory helper methods

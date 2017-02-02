@@ -1,63 +1,66 @@
-// Parser Model Generator: transforms the BNF-like Grammar-AST into a Parser-AST
+// Parser Model Generator: transforms the Grammar AST into a Parser AST
 // author: Christophe VG <contact@christophe.vg>
 
 using System;
 using System.IO;
+
 using System.Collections.Generic;
+
 using System.Text.RegularExpressions;
+
 using System.Linq;
+
 using System.Diagnostics;
 
 namespace HumanParserGenerator.Generator {
 
-  // Parser Model classes
-  // 
-  // The Parser Model (PM) consists of
-  // - "Entities"
-  // - "Extractions"
-  // Both are "Referable"
-  //
-  // Entities have Properties and a ParseAction
-  // Extractions have a Name and Pattern to extract tokens
-  //
-  // Properties have a Name, Type and IsPlural indication
-  // ParseParseActions are a tree structure of steps to parse into Properties
-
-  // Entities and Extractions are distinct concepts, but both can be referred to
-  // by Properties.
-  public abstract class Referable {
-    public          string Name { get; set; }
-    public abstract string Type { get; }
-  }
-
-  public class Entity : Referable {
-    // original rule as it was parsed
+  public class Entity {
+    // the (original) Rule this Entity was constructed from
     public Rule Rule { get; set; }
-
-    // a property accepts the parsing result of another Referable
-    // setting should be done using that Add() method
-    public Dictionary<string,Property> Properties { get; }
-
-    // to populate the Properties, ParseActions have to be generated
-    public ParseAction ParseAction { get; set; }
-
-    // all ParseActions of type ConsumeEntity that refer to us
-    public List<ConsumeEntity> Referrers { get; set; }
     
-    // if an entity's RULE's EXPRESSION IS A AlternativesExpression, it is 
-    // VIRTUAL, which means it can be referred to, but doesn't show up in 
-    // the AST
-    public bool IsVirtual {
-      get {
-        // TODO generalize: can we make this depent on something else ?
-        // e.g. # properties.Count == 1
-        //      property.Referred.Count > 1 ?
-        return Rule.Expression is AlternativesExpression;     
+    public string Name { get; set; }
+
+    private Dictionary<string,Property> properties;
+    public List<Property> Properties {
+      get { return this.properties.Values.ToList(); }
+      set {
+        this.properties.Clear();
+        foreach(var property in value) {
+          this.Add(property);
+        }
       }
     }
 
-    // Entities can "be" other Virtual Entities it is referenced by from their
-    // (only) Property.
+    // to populate the Properties, ParseActions have to be generated
+    // ParseActions are a tree-structure with a single top-level ParseAction
+    public ParseAction ParseAction { get; set; }
+
+    // all ParseActions of type ConsumeEntity that refer to us
+    private List<ConsumeEntity> referrers;
+    public List<ConsumeEntity> Referrers {
+      get {
+        if( this.referrers == null ) {
+          this.referrers = new List<ConsumeEntity>();
+        }
+        return this.referrers;
+      }
+      set { this.referrers = value; }
+    }
+    
+    // an Entity that has a single Property is Virtual, since it can simply
+    // pass on this Property.
+    // TODO refine
+    public bool IsVirtual {
+      get {
+        return this.Properties.Count < 2;
+      }
+    }
+
+    // the Entity can be optional, if its top-level ParseAction is Optional
+    public bool IsOptional { get { return this.ParseAction.IsOptional; } }
+
+    // Entities can "be" (implement) other Virtual Entities it is referenced by 
+    // from those Entities (only) Property.
     public bool HasSupers { get { return this.Supers.Count > 0; } }
     public List<Entity> Supers {
       get {
@@ -69,20 +72,27 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
-    // the type of an Entity is always its own Name
-    public override string Type { get { return this.Name; } }
+    // be default, an Entity "is" its own Type
+    // when an Entity is Virtual, its Type is that of its only Property
+    public string Type {
+      get {
+        if( this.IsVirtual ) {
+          return this.Properties.Count == 1 ? this.Properties[0].Type : null;
+        }
+        return this.Name;
+      }
+    }
 
     // helper dictionary to track property.Names with the last given index
     private Dictionary<string, int> propertyIndices;
 
     public Entity() {
-      this.Referrers       = new List<ConsumeEntity>();
-      this.Properties      = new Dictionary<string,Property>();
+      this.properties      = new Dictionary<string,Property>();
       this.propertyIndices = new Dictionary<string, int>();
     }
 
     public void Add(Property property) {
-      // set the Entity reference to point to us
+      // set the Entity reference to point to us (back-reference)
       property.Entity = this;
 
       // make sure the name of the property is unique
@@ -93,15 +103,15 @@ namespace HumanParserGenerator.Generator {
         // this is (at least) the second occurence, start using indices
         if(this.propertyIndices[property.Name] == 0) {
           // update the first property to match the naming scheme
-          Property firstProperty = this.Properties[property.Name]; // get
-          this.Properties.Remove(property.Name);                   // remove
+          Property firstProperty = this.properties[property.Name]; // get
+          this.properties.Remove(property.Name);                   // remove
           firstProperty.Name += "0";                               // update
-          this.Properties.Add(firstProperty.Name, firstProperty);  // re-add
+          this.properties.Add(firstProperty.Name, firstProperty);  // re-add
         }
         this.propertyIndices[property.Name]++;
         property.Name += this.propertyIndices[property.Name].ToString();
       }
-      this.Properties.Add(property.Name, property);
+      this.properties.Add(property.Name, property);
     }
 
     public override string ToString() {
@@ -116,114 +126,111 @@ namespace HumanParserGenerator.Generator {
             string.Join(",", this.Referrers.Select(x => x.Property.Label)) +
           "]," +
           "Properties=" + "[" +
-            string.Join(",", this.Properties.Select(x => x.Value.ToString())) +
+            string.Join(",", this.Properties.Select(x => x.ToString())) +
           "]" + "," +
           "ParseAction=" + this.ParseAction.ToString() +
         ")";
     }
 
     public bool HasPluralProperty() {
-      return this.Properties.Where(x => x.Value.IsPlural).ToList().Count > 0;
-    }
-  }
-
-  public class Extraction : Referable {
-    public override string Type { get { return "string"; } }
-    public string Pattern { get; set; }
-    public override string ToString() {
-      return"Extraction(" + 
-        "Name="   + this.Name    + "," +
-        "Pattern" + this.Pattern +
-      ")";
+      return this.Properties.Where(x => x.IsPlural).ToList().Count > 0;
     }
   }
 
   public class Property {
+    // a unique name to identify the property, used for variable emission
+    public string Name { get; set; }
+
     // a (back-)reference to the Entity this property belongs to
     public Entity Entity { get; set; }
 
     // a property is populated by a ParseAction
-    public List<ParseAction> Sources { get; set; }
+    public ParsePropertyAction Source { get; set; }
 
-    // a unique name to identify the property, used for variable emission
-    public string Name { get; set; }
+    // the Type of a Property is defined by the ParseAction
+    public string Type { get { return this.Source.Type; } }
 
-    // the type is by default the type of the entity it accepts the parsed 
-    // result for. 
-    // if the Entity, this Property belongs to, is Virtual, there can only be
-    // one property of the type of that Entity, because that is the only thing
-    // that is passed to upper-layer Properties.
-    // a setter is therefore not available, as it is deduceable
-    public string Type {
-      get {
-        if(this.Entity.IsVirtual) {
-          return this.Entity.Type;
-        }
-        // TODO: this can't be zero :-)
-        return this.Sources.Count > 0 ? this.Sources[0].Type : "UNKNOWN";
-      }
-    }
+    // a Property can me marked as Plural, meaning that it will contain a list
+    // of Type parsing results, which depends on the ParseAction
+    public bool IsPlural { get { return this.Source.IsPlural; } }
 
-    // a property can me marked as Plural, meaning that it will contain a list
-    // of Type parsing results
-    public bool IsPlural { get; set; }
+    // a Property can be Optional, which depends on the ParseAction
+    public bool IsOptional { get { return this.Source.IsOptional; } }
 
-    public Property() {
-      this.Sources = new List<ParseAction>();
-    }
-
+    // a Label is a FQN for this Property
     public string Label { get { return this.Entity.Name + "." + this.Name; } }
 
     public override string ToString() {
       return "Property(" +
-        "Name="     + this.Name     + "," + 
-        "Type="     + this.Type     + "," + 
-        "IsPlural=" + this.IsPlural + "," +
-        "Sources="  + "[" + 
-          string.Join(",", this.Sources.Select(x => x.Label)) +
-        "]" +
+        "Name="       + this.Name       + "," + 
+        "Type="       + this.Type       + "," + 
+        "IsPlural="   + this.IsPlural   + "," +
+        "IsOptional=" + this.IsOptional + "," +
+        "Source="     + this.Source     +
       ")";
     }
   }
 
-  // a ParseAction parses into a Property
   public abstract class ParseAction {
+    // the Parsing is optional
+    public bool IsOptional { get; set; }
+
+    // Label can be used for external string representation, other than ToString
+    public abstract string Label { get; }
+
+    public override string ToString() {
+      return "Consume(" + this.Label + ")";
+    }
+  }
+
+  // just consume a Token
+  public class ConsumeToken : ParseAction {
+    public string Token { get; set; }
+    public override string Label { get { return this.Token; } }
+  }
+
+  // a ParseAction parses text into a Property
+  public abstract class ParsePropertyAction : ParseAction {
+    // Property that receives parsing result from this ParseAction
     private Property property;
-    public virtual  Property Property {
+    public Property Property {
       get { return this.property; }
       set {
         this.property = value;
-        this.property.Sources.Add(this);
+        this.property.Source = this; // back-reference
       }
     }
-    public abstract string   Label    { get; }
-    public abstract string   Type     { get; }
+
+    // Type indicates what type of result this ParseAction will provide to the
+    // Property
+    public abstract string Type  { get; }
+    
+    // the ParseAction returns a list of parsed property values
+    public bool IsPlural { get; set; }
+
+    public override string ToString() {
+      return "Consume(" + this.Label + "->" + this.Property.Name + ")";
+    }
   }
 
   // ... to consume a literal sequence of characters, aka a string ;-)
-  public class ConsumeLiteral : ParseAction {
-    public          string Literal { get; set; }
-    public override string Label   { get { return this.Literal; } }
-    public override string Type    { get { return "string";     } }
-    public override string ToString() {
-      return "Consume(" + this.Literal + ")";
-    }
+  public class ConsumeString : ParsePropertyAction {
+    public          string String { get; set; }
+    public override string Label  { get { return this.String; } }
+    public override string Type   { get { return "string";     } }
   }
 
   // ... to consume a sequence of characters according to a regular expression
-  public class ConsumeExtraction : ParseAction {
-    public Extraction Extraction { get; set; }
-    public override string Label { get { return this.Extraction.Name; } }
-    public override string Type  { get { return "string";     } }
-    public override string ToString() {
-      return "Consume(" +
-        this.Property.Name + ",Extraction=" + this.Extraction.Name +
-      ")";
-    }    
+  public class ConsumePattern : ConsumeString {
+    // alias for String
+    public string Pattern {
+      get { return this.String; }
+      set { this.String = value; }
+    }
   }
 
   // ... to consume an Entity
-  public class ConsumeEntity : ParseAction {
+  public class ConsumeEntity : ParsePropertyAction {
     private Entity entity;
     public Entity Entity {
       get { return this.entity; }
@@ -234,182 +241,128 @@ namespace HumanParserGenerator.Generator {
     }
     public override string Label  { get { return this.Entity.Name; } }
     public override string Type   { get { return this.Entity.Type; } }
-    public override string ToString() {
-      return "Consume(" +
-        this.Property.Name + ",Entity=" + this.Entity.Name +
-      ")";
-    }
   }
 
   public class ConsumeAll : ParseAction {
     public List<ParseAction> Actions { get; set; }
-    public override string   Type   { get { return "ALL"; } }
 
     public override string Label {
       get {
-        return string.Join( " ", this.Actions.Select(x => x.Label ));
+        return
+          "[" +
+          string.Join( ", ", this.Actions.Select(x => x.Label) ) +
+          "]";
       }
     }
 
     public ConsumeAll() {
       this.Actions = new List<ParseAction>();
     }
-
-    public override string ToString() {
-      return "Consume([" + 
-        string.Join(",", this.Actions.Select(x => x.ToString())) +
-      "]);";
-    }
   }
 
   // given a set of possible ParseActions, this tries each of these ParseActions
   // and passes on the first that parses
-  public class ConsumeAny : ParseAction {
-
-    public List<ParseAction> Options { get; set; }
-
+  public class ConsumeAny : ConsumeAll {
     public override string Label {
       get {
-        return string.Join( " | ", this.Options.Select(x => x.Label ));
+        return string.Join( " | ", this.Actions.Select(x => x.Label) );
       }
-    }
-
-    // TODO reverse the dependency and make child-actions check their parent
-    public override Property Property {
-      get {
-        if(this.Options.Count > 0) {
-          return this.Options[0].Property;
-        } else {
-          return null;
-        }
-      }
-      set {
-        foreach(var option in this.Options) {
-          option.Property = value;
-        }
-      }
-    }
-
-    public ConsumeAny() {
-      this.Options = new List<ParseAction>();
-    }
-
-    public override string   Type   { get { return "ANY"; } }
-
-    public override string ToString() {
-      return "Consume([" + 
-        string.Join("|", this.Options.Select(x => x.ToString())) +
-      "]);";
-    }
-
-  }
-
-  public class ConsumeOptional : ParseAction {
-
-    public ParseAction Optional { get; set; }
-
-    public override string Label {
-      get {
-        return "Optional(" + this.Optional.Label + ")";
-      }
-    }
-
-    public override string   Type   { get { return "OPT"; } }
-
-    public override string ToString() {
-      return "Consume?(" + this.Optional.ToString() + ");";
     }
   }
 
   // the Model can be considered a Parser-AST on steroids. it contains all info
   // in such a way that a recursive descent parser can be constructed with ease
   public class Model {
-    // the original rules from the Grammar
-    public List<Rule> Rules;
 
-    // the entities and extractions that are
-    public Dictionary<string,Entity>       Entities;
-    public Dictionary<string,Extraction>   Extractions;
+    // the list of entities in the Model
+    public List<Entity> Entities { get; set; }
 
-    // the first entity to start parsing, which is the Entity of the first Rule
-    public Entity Root;
-
-    // factory method to import a HPG-BNF-like grammar, extract Extractions,
-    // Entities and their properties and ParseActions
-    public Model Import(Grammar grammar) {
-      this.ImportRules(grammar);
-      this.ExtractExtractions();
-      this.ExtractEntities();
-      this.ExtractPropertiesAndActions();
-      return this;
-    }
-
-    // just import the rules as-is
-    private void ImportRules(Grammar grammar) {
-      if(grammar.Rules.Count < 1) {
-        throw new ArgumentException("grammar contains no rules");
-      }
-      this.Rules = grammar.Rules;
-    }
-
-    private void ExtractEntities() {
-      this.Entities = this.Rules
-        .Where(rule => !( rule.Expression is ExtractorExpression) )
-        .Select(rule => new Entity() {
-          Name    = rule.Identifier,
-          Rule    = rule
-        })
-        .ToDictionary(
+    // derived dictionary mapping from Entity.Name to Entity
+    private Dictionary<string,Entity> entities {
+      get {
+        return this.Entities.ToDictionary(
           entity => entity.Name,
           entity => entity
         );
-        this.Root = this.Entities[this.Rules[0].Identifier];
+      }
     }
 
-    private void ExtractPropertiesAndActions() {
-      foreach(KeyValuePair<string, Entity> entity in this.Entities) {
-        entity.Value.ParseAction = this.ExtractPropertiesAndParseActions(
-          entity.Value.Rule.Expression, entity.Value
+    public bool Contains(string key) {
+      return this.entities.Keys.Contains(key);
+    }
+    
+    public Entity this[string key] {
+      get {
+        return this.Contains(key) ? this.entities[key] : null;
+      }
+    }
+
+    // the first entity to start parsing
+    public Entity Root {
+      get { return this.Entities.Count > 0 ? this.Entities[0] : null; }
+    }
+
+    public Model() {
+      this.Entities = new List<Entity>();
+    }
+
+    public override string ToString() {
+      return
+        "Model(" +
+          "Entities=[" +
+             string.Join(",", this.Entities.Select(x => x.ToString())) +
+          "]," +
+          "Root=" + (this.Root != null ? this.Root.Name : "") +
+        ")";
+    }
+  }
+
+  public class Factory {
+    public Model Model { get; set; }
+    
+    public Factory() {
+      this.Model = new Model();
+    }
+
+    public Factory Import(Grammar grammar) {
+      this.ImportEntities(grammar.Rules);
+      this.ImportPropertiesAndActions();
+
+      return this;
+    }
+
+    private void ImportEntities(List<Rule> rules) {
+      this.Model.Entities = rules
+        .Select(rule => new Entity() {
+          Name    = rule.Identifier,
+          Rule    = rule
+        }).ToList();
+    }
+
+    private void ImportPropertiesAndActions() {
+      foreach(Entity entity in this.Model.Entities) {
+        entity.ParseAction = this.ImportPropertiesAndParseActions(
+          entity.Rule.Expression, entity
         );
       }
     }
-    
-    private void ExtractExtractions() {
-      this.Extractions = this.Rules
-        .Where(rule => rule.Expression is ExtractorExpression)
-        .Select(rule => new Extraction() {
-          Name    = rule.Identifier,
-          Pattern = ((ExtractorExpression)rule.Expression).Regex
-        })
-       .ToDictionary(
-          extraction => extraction.Name,
-          extraction => extraction
-        );
-      this.Log(
-        "extracted Extractions: " +
-          string.Join(",", this.Extractions.Select(x => x.Key))
-      );
-    }
 
-    // Properties and ParseActions Extraction methods
-
-    private ParseAction ExtractPropertiesAndParseActions(Expression exp,
-                                                         Entity     entity,
-                                                         bool       optional=false)
+    private ParseAction ImportPropertiesAndParseActions(Expression exp,
+                                                        Entity     entity,
+                                                        bool       optional=false)
     {
-      this.Log("extracting from " + exp.GetType().ToString());
+      // this.Log("extracting from " + exp.GetType().ToString());
       try {
         return new Dictionary<string, Func<Expression,Entity,bool,ParseAction>>() {
-          { "SequentialExpression",   this.ExtractSequentialExpression   },
-          { "AlternativesExpression", this.ExtractAlternativesExpression },
-          { "OptionalExpression",     this.ExtractOptionalExpression     },
-          { "RepetitionExpression",   this.ExtractRepetitionExpression   },
-          { "GroupExpression",        this.ExtractGroupExpression        },
-          { "IdentifierExpression",   this.ExtractIdentifierExpression   },
-          { "StringExpression",       this.ExtractStringExpression       },
-          { "ExtractorExpression",    this.ExtractExtractorExpression    },
-        }[exp.GetType().ToString().Replace("HumanParserGenerator.Grammars.", "")]
-          (exp, entity, optional);
+          // { "SequentialExpression",   this.ExtractSequentialExpression   },
+          // { "AlternativesExpression", this.ExtractAlternativesExpression },
+          // { "OptionalExpression",     this.ExtractOptionalExpression     },
+          // { "RepetitionExpression",   this.ExtractRepetitionExpression   },
+          // { "GroupExpression",        this.ExtractGroupExpression        },
+          { "IdentifierExpression",   this.ImportIdentifierExpression   },
+          { "StringExpression",       this.ImportStringExpression       },
+          // { "ExtractorExpression",    this.ExtractExtractorExpression    },
+        }[exp.GetType().ToString()](exp, entity, optional);
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
           "extracting not implemented for " + exp.GetType().ToString(), e
@@ -417,262 +370,46 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
-    // an ID-Exp part of an Entity rule Expression requires the creation of a
-    // Property to store the Referred Entity or Extraction.
-    private ParseAction ExtractIdentifierExpression(Expression exp,
-                                                    Entity     entity,
-                                                    bool       optional=false)
-    {
-      IdentifierExpression id = (IdentifierExpression)exp;
-
-      Property property = this.CreatePropertyFor(id);
-      entity.Add(property);
-
-      return this.CreateConsumerFor(property, id);
-    }
-
-    private ParseAction ExtractStringExpression(Expression exp,
-                                                Entity     entity,
-                                                bool       optional=false)
-    {
-      // if a string is part of an optional expression, we generate a bool   
-      // flag propety to indicate _if_ this (literal) string expression has
-      // been parsed.
-      // TODO
-      // Property flag = new Property() {
-      //
-      // };
-
-      // if it's just a string that always needs to be parsed to match the rule,
-      // we just generate a ParseAction
-      return new ConsumeLiteral() { Literal = ((StringExpression)exp).String };
-    }
-    
-    private ParseAction ExtractExtractorExpression(Expression exp,
-                                                   Entity     entity,
-                                                   bool       optional=false)
-    {
-      // nothing TODO because they are already extracted at the beginning
-      return null;
-    }
-
-    private ParseAction ExtractOptionalExpression(Expression exp,
-                                                  Entity     entity,
-                                                  bool       optional=false)
-    {
-      // recurse further, now marking the scope "optional" explicitly
-      return new ConsumeOptional() {
-        Optional = this.ExtractPropertiesAndParseActions(
-          ((OptionalExpression)exp).Expression, entity, true
-        )
-      };
-    }
-    
-    private ParseAction ExtractRepetitionExpression(Expression exp,
-                                                    Entity     entity,
-                                                    bool       optional=false)
-    {
-      var repetition = (RepetitionExpression)exp;
-
-      // TODO: remove limitation to only single ID-Exp repetitions, currelty
-      //       because of the "naming" -> generalize so that an expression has
-      //       a (generated) name
-      if( repetition.Expression is IdentifierExpression) {
-        string id  = ((IdentifierExpression)repetition.Expression).Identifier;
-        Property property = new Property() {
-          Name     = id + "s",
-          IsPlural = true
-        };
-        entity.Add(property);
-
-        Referable referred = this.GetReferred(id);
-        if(referred is Entity) {
-          return new ConsumeEntity() {
-            Entity   = (Entity)referred,
-            Property = property
-          };
-        } else {
-          return new ConsumeExtraction() {
-            Extraction = (Extraction)referred,
-            Property   = property
-          };
-        }
-      } else {
-        throw new NotImplementedException("only single ID-exp can be repeated");
-      }
-    }
-
-    // just recurse and provide a ParseAction for the Expression inside the
-    // group
-    private ParseAction ExtractGroupExpression(Expression exp,
+    private ParseAction ImportStringExpression(Expression exp,
                                                Entity     entity,
                                                bool       optional=false)
     {
-      return this.ExtractPropertiesAndParseActions(
-        ((GroupExpression)exp).Expression, entity, optional
-      );
-    }
-    
-    private Referable GetReferred(string name) {
-      if( this.IsEntityName(name) ) {
-        return this.Entities[name];
-      } else if( this.IsExtractionName(name) ) {
-        return this.Extractions[name];
+      StringExpression str = ((StringExpression)exp);
+      // if a StringExpression has an explicit Name, we create a Property for it
+      // with that name
+      if(str.Identifier != null) {
+        Property property = new Property() { Name = str.Identifier };
+        entity.Add(property);
+        return new ConsumeString() { Property = property, String = str.String };
       }
-      throw new ArgumentException(
-        name + " doesn't refer to known Entity or Extraction."
-      );
-    }
+      // the simplest case: just a string, not optional, just consume it
+      return new ConsumeToken() { Token = str.String };
+    }    
 
-    private Property CreatePropertyFor(IdentifierExpression exp) {
-      return new Property() {
-        Name = exp.Identifier,
-        IsPlural = false
-      };
-    }
-
-    private ParseAction CreateConsumerFor(Property property,
-                                          IdentifierExpression exp)
+    private ParseAction ImportIdentifierExpression(Expression exp,
+                                                   Entity     entity,
+                                                   bool       optional=false)
     {
-      Referable referred = this.GetReferred(exp.Identifier);
-      if( referred is Entity ) {
-        return new ConsumeEntity() {
-          Property = property,
-          Entity   = (Entity)referred
-        };
-      } else if( referred is Extraction ) {
-        return new ConsumeExtraction() {
-          Property   = property,
-          Extraction = (Extraction)referred
-        };
+      IdentifierExpression id = ((IdentifierExpression)exp);
+
+      if( ! this.Model.Contains(id.Identifier) ) {
+        throw new ArgumentException("unknown Entity Identifier " + id.Identifier);
       }
-      throw new ArgumentException(
-        "IdentifierExpression doesn't refer to known Entity or Extraction."
-      );
-    }
 
-    private bool IsEntityName(string name) {
-      return this.Entities.Keys.Contains(name);
-    }
-
-    private bool IsExtractionName(string name) {
-      return this.Extractions.Keys.Contains(name);
-    }
-
-    private ParseAction ExtractAlternativesExpression(Expression exp,
-                                                      Entity     entity,
-                                                      bool       optional=false)
-    {
-      // Alternative expressions should all return the same type.
-      // We create a sigle property on the Entity to store the result.
-      // The Type of this property must be a superclass for all alternatives.
-      Property property = new Property() {
-        Name     = "alternative",
-        IsPlural = false
-      };
+      Property property = new Property() { Name = id.Identifier };
       entity.Add(property);
 
-      ConsumeAny consume = new ConsumeAny();
-
-      // AlternativesExpressions are recursively constructed -> unroll
-      // alternatives-expression ::=
-      //              atomic-expression "|" non-sequential-expression;
-      // non-sequential-expression ::= alternatives-expression
-      //                             | atomic-expression
-      //                             ;
-      // atomic-expression ::= nested-expression
-      //                     | terminal-expression
-      //                     ;
-      AlternativesExpression alternatives = (AlternativesExpression)exp;
-      ParseAction action; // temporary helper action
-      while(true) {
-        // add AtomicExpression option
-        action = this.ExtractPropertiesAndParseActions(
-          alternatives.AtomicExpression, entity, optional
-        );
-        // replace the action's property with the common property
-        // also remove the original action property from the entity
-        if(action == null) {
-          throw new NotImplementedException("BORK");
-        }
-        if(action.Property != null) {
-          entity.Properties.Remove(action.Property.Name);
-        } 
-        action.Property = property;
-        consume.Options.Add(action);
-        // recurse on the NonSequentialExpression part
-        // case AtomicExpression
-        if( alternatives.NonSequentialExpression is AtomicExpression) {
-          // add AtomicExpression option
-          action = this.ExtractPropertiesAndParseActions(
-            alternatives.NonSequentialExpression, entity, optional
-          );
-          // replace the action's property with the common property
-          // also remove the original action property from the entity
-          if(action.Property != null) {
-            entity.Properties.Remove(action.Property.Name);
-          }
-          action.Property = property;
-          consume.Options.Add(action);
-          break;
-        } else {
-          alternatives =
-            (AlternativesExpression)alternatives.NonSequentialExpression;
-        }
-      }
-      return consume;
+      return new ConsumeEntity() {
+        Property = property,
+        Entity   = this.Model[id.Identifier]
+      };
     }
 
-    // a sequence consists of one or more Expressions that all are consumed
-    // into properties of the entity
-    private ParseAction ExtractSequentialExpression(Expression exp,
-                                                    Entity     entity,
-                                                    bool       optional=false)
-    {
-      ConsumeAll consume = new ConsumeAll();
+    // Factory helper methods
 
-      // SequentialExpression are recursively constructed -> unroll
-      // sequential-expression ::= non-sequential-expression expression ;
-      // non-sequential-expression ::= alternatives-expression
-      //                             | atomic-expression
-      //                             ;
-      SequentialExpression sequence = (SequentialExpression)exp;
-      while(true) {
-        // add NonSequential sequence
-        consume.Actions.Add(this.ExtractPropertiesAndParseActions(
-          sequence.NonSequentialExpression, entity, optional
-        ));
-        // recurse on the Expression part
-        // case NonSequential
-        if( sequence.Expression is NonSequentialExpression) {
-          // add final NonSequentialExpression action
-          consume.Actions.Add(this.ExtractPropertiesAndParseActions(
-            sequence.Expression, entity, optional
-          ));
-          break;
-        } else {
-          sequence =
-            (SequentialExpression)sequence.Expression;
-        }
-      }
-
-      return consume;
-    }
-
-    public override string ToString() {
-      return
-        "Model(" +
-        "Entities=[" +
-        string.Join(",", this.Entities.Values.Select(x => x.ToString())) +
-        "]," +
-        "Extractions=[" +
-        string.Join(",", this.Extractions.Values.Select(x => x.ToString())) +
-        "]";
-    }
-  
     [ConditionalAttribute("DEBUG")]
     private void Log(string msg) {
-      Console.Error.WriteLine(">>> " + msg );
+      Console.Error.WriteLine("Factory: " + msg );
     }
   }
 }

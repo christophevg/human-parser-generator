@@ -25,7 +25,7 @@ $(PARSER):
 	@(cd ../generator; make clean generation2)
 	@cp ../generator/generation/generation/parser.cs .
 
-$(BUILD)/test.dll: *.cs $(PARSER)
+$(BUILD)/test.dll: *.cs # $(PARSER)
 	@echo "*** building unit tests"
 	@mkdir -p $(BUILD)
 	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^

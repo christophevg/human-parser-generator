@@ -367,7 +367,7 @@ namespace HumanParserGenerator.Generator {
       // this.Log("extracting from " + exp.GetType().ToString());
       try {
         return new Dictionary<string, Func<Expression,Entity,bool,ParseAction>>() {
-          // { "SequentialExpression",   this.ExtractSequentialExpression   },
+          { "SequentialExpression",   this.ImportSequentialExpression   },
           // { "AlternativesExpression", this.ExtractAlternativesExpression },
           { "OptionalExpression",     this.ImportOptionalExpression     },
           // { "RepetitionExpression",   this.ExtractRepetitionExpression   },
@@ -460,6 +460,35 @@ namespace HumanParserGenerator.Generator {
         };
       }
       return action;
+    }
+
+    private ParseAction ImportSequentialExpression(Expression exp,
+                                                   Entity entity,
+                                                   bool opt=false)
+    {
+      SequentialExpression sequence = ((SequentialExpression)exp);
+
+      ConsumeAll consume = new ConsumeAll();
+
+      // SequentialExpression is constructed recusively, unroll it...
+      while(true) {
+        // add first part
+        consume.Actions.Add(this.ImportPropertiesAndParseActions(
+          sequence.NonSequentialExpression, entity
+        ));
+        // add remaining parts
+        if(sequence.Expression is NonSequentialExpression) {
+          // last part
+          consume.Actions.Add(this.ImportPropertiesAndParseActions(
+            sequence.Expression, entity
+          ));
+          break;
+        } else {
+          // recurse
+          sequence = (SequentialExpression)sequence.Expression;
+        }
+      }
+      return consume;
     }
 
     // Factory helper methods

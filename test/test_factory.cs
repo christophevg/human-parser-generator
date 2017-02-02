@@ -255,4 +255,121 @@ public class GeneratorModelFactoryTests {
     );
   }
 
+  [Test]
+  public void testSimpleSequentialExpression() {
+    // rule1 ::= rule2 "." rule2
+    // rule2 ::= /[a-z]+/
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rule1",
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new IdentifierExpression() { Identifier = "rule2" },
+            Expression              = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() { String = "." },
+              Expression              = new IdentifierExpression() { Identifier = "rule2" }
+            }
+          }
+        },
+        new Rule() {
+          Identifier = "rule2",
+          Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
+
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           Entity(
+             Name=rule1,Type=rule1,Supers=[],Referrers=[],
+             Properties=[
+               Property(Name=rule20,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->rule20)),
+               Property(Name=rule21,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->rule21))
+             ],
+             ParseAction=Consume([
+                 Consume(rule2->rule20),
+                 Consume(.),
+                 Consume(rule2->rule21)
+             ])
+           ),
+           VirtualEntity(
+             Name=rule2,Type=,Supers=[],Referrers=[rule1.rule20,rule1.rule21],
+             Properties=[],
+             ParseAction=Consume([a-z]+)
+           )
+        ],
+        Root=rule1
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );
+  }
+
+  [Test]
+  public void testNamedIdentifierDefinition() {
+    // rule ::= [ name ] id
+    // name ::= id "@"
+    // id   ::= /[a-z]+/
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rule",
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new OptionalExpression() {
+              Expression = new IdentifierExpression() { Identifier = "name" }
+            },
+            Expression = new IdentifierExpression() { Identifier = "id" }
+          }
+        },
+        new Rule() {
+          Identifier = "name",
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new IdentifierExpression() { Identifier = "id" },
+            Expression = new StringExpression() { String = "@" }
+          }
+        },
+        new Rule() {
+          Identifier = "id",
+          Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
+
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
+             Properties=[
+               Property(Name=name,Type=,IsPlural=False,IsOptional=True,Source=Consume(name->name)),
+               Property(Name=id,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id))
+             ],
+             ParseAction=Consume([
+               Consume(name->name),
+               Consume(id->id)
+             ])
+           ),
+           VirtualEntity(
+             Name=name,Type=,Supers=[],Referrers=[rule.name],
+             Properties=[
+               Property(Name=id,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id))
+             ],
+             ParseAction=Consume([
+               Consume(id->id),
+               Consume(@)
+             ])
+           ),
+           VirtualEntity(
+             Name=id,Type=,Supers=[name],Referrers=[rule.id,name.id],
+             Properties=[],
+             ParseAction=Consume([a-z]+)
+           )
+        ],
+        Root=rule
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );
+  }
 }

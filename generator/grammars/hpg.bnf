@@ -36,7 +36,7 @@ terminal-expression       ::= identifier-expression
 identifier-expression     ::= identifier ;
 string-expression         ::= [ identifier "@" ] string;
 
-extractor-expression      ::= "/" regex "/" ;
+extractor-expression      ::= [ identifier "@" ] "/" regex "/" ;
 
 identifier                ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
 string                    ::= /"([^"]*)"|^'([^']*)'/ ;

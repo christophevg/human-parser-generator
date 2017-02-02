@@ -416,8 +416,9 @@ public class StringExpression : TerminalExpression {
   }
 }
 
-// extractor-expression ::= "/" regex "/" ;
+// extractor-expression ::= [ identifier "@" ] "/" regex "/" ;
 public class ExtractorExpression : TerminalExpression {
+  public string Identifier { get; set; }
   public string Regex { get; set; }
   public override string ToString() {
     return

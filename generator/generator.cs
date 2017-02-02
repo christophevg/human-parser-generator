@@ -189,6 +189,9 @@ namespace HumanParserGenerator.Generator {
     public override string Label { get { return this.Token; } }
   }
 
+  // just consume a Token, based on a pattern
+  public class ConsumePatternToken : ConsumeToken {}
+
   // a ParseAction parses text into a Property
   public abstract class ParsePropertyAction : ParseAction {
     // Property that receives parsing result from this ParseAction
@@ -361,7 +364,7 @@ namespace HumanParserGenerator.Generator {
           // { "GroupExpression",        this.ExtractGroupExpression        },
           { "IdentifierExpression",   this.ImportIdentifierExpression   },
           { "StringExpression",       this.ImportStringExpression       },
-          // { "ExtractorExpression",    this.ExtractExtractorExpression    },
+          { "ExtractorExpression",    this.ImportExtractorExpression    }
         }[exp.GetType().ToString()](exp, entity, optional);
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
@@ -403,6 +406,22 @@ namespace HumanParserGenerator.Generator {
         Property = property,
         Entity   = this.Model[id.Identifier]
       };
+    }
+
+    private ParseAction ImportExtractorExpression(Expression exp,
+                                                  Entity     entity,
+                                                  bool       optional=false)
+    {
+      ExtractorExpression extr = ((ExtractorExpression)exp);
+      // if an ExtractorExpression has an explicit Name, we create a Property
+      // for it with that name
+      if(extr.Identifier != null) {
+        Property property = new Property() { Name = extr.Identifier };
+        entity.Add(property);
+        return new ConsumePattern() { Property = property, Pattern = extr.Regex };
+      }
+      // the simplest case: just a string, not optional, just consume it
+      return new ConsumePatternToken() { Token = extr.Regex };
     }
 
     // Factory helper methods

@@ -263,7 +263,7 @@ namespace HumanParserGenerator.Generator {
       get {
         return
           "[" +
-          string.Join( ", ", this.Actions.Select(x => x.Label) ) +
+          string.Join( ",", this.Actions.Select(x => x.ToString()) ) +
           "]";
       }
     }

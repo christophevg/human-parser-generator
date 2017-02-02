@@ -407,5 +407,44 @@ public class GeneratorModelFactoryTests {
     );
   }
 
+  [Test]
+  public void testAlternativeGroupedCharacters() {
+    // rule ::= ( "a" "b" ) | ( "c" "d" )
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rule",
+          Expression = new AlternativesExpression() {
+            AtomicExpression = new GroupExpression() {
+              Expression = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() { String = "a" },
+                Expression = new StringExpression() { String = "b" }
+              }
+            },
+            NonSequentialExpression = new GroupExpression() {
+              Expression = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() { String = "c" },
+                Expression = new StringExpression() { String = "d" }
+              }
+            }
+          }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
 
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           VirtualEntity(
+             Name=rule,Type=,Supers=[],Referrers=[],
+             Properties=[],
+             ParseAction=Consume([Consume(a),Consume(b)]|[Consume(c),Consume(d)])
+           )
+        ],
+        Root=rule
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );
+  }
 }

@@ -371,7 +371,7 @@ namespace HumanParserGenerator.Generator {
           { "AlternativesExpression", this.ImportAlternativesExpression },
           { "OptionalExpression",     this.ImportOptionalExpression     },
           // { "RepetitionExpression",   this.ExtractRepetitionExpression   },
-          // { "GroupExpression",        this.ExtractGroupExpression        },
+          { "GroupExpression",        this.ImportGroupExpression        },
           { "IdentifierExpression",   this.ImportIdentifierExpression   },
           { "StringExpression",       this.ImportStringExpression       },
           { "ExtractorExpression",    this.ImportExtractorExpression    }
@@ -521,6 +521,15 @@ namespace HumanParserGenerator.Generator {
       return consume;
     }
 
+    // just recurse and provide a ParseAction for the nested Expression
+    private ParseAction ImportGroupExpression(Expression exp,
+                                              Entity     entity,
+                                              bool       optional=false)
+    {
+      return this.ImportPropertiesAndParseActions(
+        ((GroupExpression)exp).Expression, entity
+      );
+    }
 
     // Factory helper methods
 
@@ -529,4 +538,5 @@ namespace HumanParserGenerator.Generator {
       Console.Error.WriteLine("Factory: " + msg );
     }
   }
+
 }

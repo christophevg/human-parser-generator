@@ -1,16 +1,16 @@
 TARGET      = main
 BUILD       = .build
 
-ifdef DEBUG
-CFLAGS     += -define:DEBUG
-endif
+CC          = mcs
+RUN         = mono
+
+RUN        += --debug
+CFLAGS     += -define:DEBUG -debug
 
 ifdef CSHARP_VERSION
 CFLAGS     += -langversion:$(CSHARP_VERSION)
 endif
 
-CC          = mcs
-RUN         = mono
 ARGUMENTS  ?=
 NUNIT       = nunit-console -nologo
 

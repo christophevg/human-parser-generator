@@ -52,14 +52,14 @@ public class GeneratorModelFactoryTests {
 
   [Test]
   public void testMinimalModelWithProperty() {
-    // rule ::= "StringProperty"@"a"
+    // rule ::= StringProperty@"a"
     Grammar grammar = new Grammar() {
       Rules = new List<Rule>() {
         new Rule() {
           Identifier = "rule",
           Expression = new StringExpression() {
-            Identifier = "StringProperty",
-            String     = "a"
+            Name   = "StringProperty",
+            String = "a"
           }
         }
       }
@@ -151,14 +151,14 @@ public class GeneratorModelFactoryTests {
 
   [Test]
   public void testMinimalExtractorWithProperty() {
-    // rule ::= "PatternProperty"/[A-Za-z0-9-]*/
+    // rule ::= PatternProperty/[A-Za-z0-9-]*/
     Grammar grammar = new Grammar() {
       Rules = new List<Rule>() {
         new Rule() {
           Identifier = "rule",
           Expression = new ExtractorExpression() {
-            Identifier = "PatternProperty",
-            Regex      = "[A-Za-z0-9-]*"
+            Name  = "PatternProperty",
+            Regex = "[A-Za-z0-9-]*"
           }
         }
       }
@@ -181,4 +181,46 @@ public class GeneratorModelFactoryTests {
       model.ToString()
     );
   }
+
+  [Test]
+  public void testNamedIdentifierExpression() {
+    // rule1 ::= IdentifierProperty@rule2
+    // rule2 ::= "a"
+    Grammar grammar = new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "rule1",
+          Expression = new IdentifierExpression() {
+            Name       = "IdentifierProperty",
+            Identifier = "rule2"
+          }
+        },
+        new Rule() {
+          Identifier = "rule2",
+          Expression = new StringExpression() { String = "a" }
+        }
+      }
+    };
+    Model model = new Factory().Import(grammar).Model;
+
+    Assert.AreEqual(
+      @"Model(
+         Entities=[
+           VirtualEntity(
+             Name=rule1,Type=,Supers=[],Referrers=[],
+             Properties=[Property(Name=IdentifierProperty,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->IdentifierProperty))],
+             ParseAction=Consume(rule2->IdentifierProperty)
+           ),
+           VirtualEntity(
+             Name=rule2,Type=,Supers=[rule1],Referrers=[rule1.IdentifierProperty],
+             Properties=[],
+             ParseAction=Consume(a)
+           )
+        ],
+        Root=rule1
+      )".Replace(" ", "").Replace("\n",""),
+      model.ToString()
+    );      
+  }
+
 }

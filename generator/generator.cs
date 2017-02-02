@@ -380,8 +380,8 @@ namespace HumanParserGenerator.Generator {
       StringExpression str = ((StringExpression)exp);
       // if a StringExpression has an explicit Name, we create a Property for it
       // with that name
-      if(str.Identifier != null) {
-        Property property = new Property() { Name = str.Identifier };
+      if(str.Name != null) {
+        Property property = new Property() { Name = str.Name };
         entity.Add(property);
         return new ConsumeString() { Property = property, String = str.String };
       }
@@ -399,7 +399,8 @@ namespace HumanParserGenerator.Generator {
         throw new ArgumentException("unknown Entity Identifier " + id.Identifier);
       }
 
-      Property property = new Property() { Name = id.Identifier };
+      string name = id.Name != null ? id.Name : id.Identifier;
+      Property property = new Property() { Name = name };
       entity.Add(property);
 
       return new ConsumeEntity() {
@@ -415,8 +416,8 @@ namespace HumanParserGenerator.Generator {
       ExtractorExpression extr = ((ExtractorExpression)exp);
       // if an ExtractorExpression has an explicit Name, we create a Property
       // for it with that name
-      if(extr.Identifier != null) {
-        Property property = new Property() { Name = extr.Identifier };
+      if(extr.Name != null) {
+        Property property = new Property() { Name = extr.Name };
         entity.Add(property);
         return new ConsumePattern() { Property = property, Pattern = extr.Regex };
       }

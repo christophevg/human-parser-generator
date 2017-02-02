@@ -392,37 +392,43 @@ public class GroupExpression : NestedExpression {
 //                       ;
 public interface TerminalExpression : AtomicExpression {}
 
-// identifier-expression ::= identifier ;
+// identifier-expression ::= [ name ] identifier ;
+// name                  ::= identifier "@"
 public class IdentifierExpression : TerminalExpression {
+  public string Name { get; set; }  
   public string Identifier { get; set; }
   public override string ToString() {
     return
       "IdentifierExpression(" +
+        "Name="       + this.Name       + "," +   
         "Identifier=" + this.Identifier +
       ")";
   }
 }
 
-// string-expression ::= [ identifier "@" ] string ;
+// string-expression ::= [ name ] string ;
+// name                 ::= identifier "@";
 public class StringExpression : TerminalExpression {
-  public string Identifier { get; set; }
+  public string Name { get; set; }
   public string String     { get; set; }
   public override string ToString() {
     return
       "StringExpression(" +
-        "Identifier=" + this.Identifier + "," +
-        "String="     + this.String +
+        "Name="   + this.Name   + "," +
+        "String=" + this.String +
       ")";
   }
 }
 
-// extractor-expression ::= [ identifier "@" ] "/" regex "/" ;
+// extractor-expression ::= [ name ] "/" regex "/" ;
+// name                 ::= identifier "@";
 public class ExtractorExpression : TerminalExpression {
-  public string Identifier { get; set; }
+  public string Name { get; set; }
   public string Regex { get; set; }
   public override string ToString() {
     return
       "ExtractorExpression(" +
+        "Name="  + this.Name + "," +
         "Regex=" + this.Regex +
       ")";
   }

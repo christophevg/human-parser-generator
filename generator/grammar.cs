@@ -150,30 +150,53 @@ public class AsModel {
             }
           }
         },
-        // identifier-expression ::= identifier ;
+        // identifier-expression ::= [ name ] identifier ;
         new Rule() {
           Identifier = "identifier-expression",
-          Expression = new IdentifierExpression() { Identifier = "identifier" }
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new OptionalExpression() {
+              Expression = new IdentifierExpression() { Identifier = "name" }
+            },
+            Expression = new IdentifierExpression() { Identifier = "identifier" }
+          }
         },
-        // string-expression ::= string ;
+        // string-expression ::= [ name ] string ;
         new Rule() {
           Identifier = "string-expression",
-          Expression = new IdentifierExpression() { Identifier = "string" }
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new OptionalExpression() {
+              Expression = new IdentifierExpression() { Identifier = "name" }
+            },
+            Expression = new IdentifierExpression() { Identifier = "string" }
+          }
         },
-        // extractor-expression ::= "/" regex "/" ;
+        // extractor-expression ::= [ name ] "/" regex "/" ;
         new Rule() {
           Identifier = "extractor-expression",
           Expression = new SequentialExpression() {
-            NonSequentialExpression = new StringExpression() { String = "/" },
+            NonSequentialExpression = new OptionalExpression() {
+              Expression = new IdentifierExpression() { Identifier = "name" }
+            },
             Expression              = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "regex" },
-              Expression              = new StringExpression() { String = "/" }
+              NonSequentialExpression = new StringExpression() { String = "/" },
+              Expression              = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "regex" },
+                Expression              = new StringExpression() { String = "/" }
+              }
             }
+          }
+        },
+        // name ::= identifier "@" ;
+        new Rule() {
+          Identifier = "name",
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new IdentifierExpression() { Identifier = "identifier" },
+            Expression              = new StringExpression() { String = "@" }
           }
         },
         // identifier ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
         new Rule() {
-          Identifier  = "identifier",
+          Identifier = "identifier",
           Expression = new ExtractorExpression() { Regex = @"([A-Za-z][A-Za-z0-9-]*)" }
         },
         // string ::= /"([^"]*)"|^'([^']*)'/ ;

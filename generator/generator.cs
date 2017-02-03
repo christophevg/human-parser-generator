@@ -12,6 +12,8 @@ using System.Linq;
 
 using System.Diagnostics;
 
+using System.Collections.ObjectModel;
+
 namespace HumanParserGenerator.Generator {
 
   public class Entity {
@@ -272,8 +274,21 @@ namespace HumanParserGenerator.Generator {
   }
 
   public class ConsumeAll : ParseAction {
-    public List<ParseAction> Actions { get; set; }
-
+    protected List<ParseAction> actions = new List<ParseAction>();
+    public ReadOnlyCollection<ParseAction> Actions {
+      get { return this.actions.AsReadOnly(); }
+      set {
+        this.actions.Clear();
+        foreach(var action in value) {
+          this.Add(action);
+        }
+      }
+    }
+    public virtual void Add(ParseAction action) {
+      this.actions.Add(action);
+    }
+    
+    // TODO this shouldn't be possible, but we need to check ;-)
     public override string Type { get { return null; } }
 
     public override string Label {
@@ -284,15 +299,28 @@ namespace HumanParserGenerator.Generator {
           "]";
       }
     }
-
-    public ConsumeAll() {
-      this.Actions = new List<ParseAction>();
-    }
   }
 
   // given a set of possible ParseActions, this tries each of these ParseActions
   // and passes on the first that parses
-  public class ConsumeAny : ConsumeAll {}
+  // all of the alternatives MUST have the same type!
+  public class ConsumeAny : ConsumeAll {
+    public override void Add(ParseAction action) {
+      if(this.actions.Count > 1) {
+        if( ! action.Type.Equals(this.Type) ) {
+          throw new ArgumentException("all alternatives must have same type");
+        }
+      }
+      this.actions.Add(action);
+    }
+
+    public override string Type {
+      get {
+        if( this.actions.Count > 0 ) { return this.actions[0].Type; }
+        return null;
+      }
+    }
+  }
 
   // the Model can be considered a Parser-AST on steroids. it contains all info
   // in such a way that a recursive descent parser can be constructed with ease
@@ -491,13 +519,13 @@ namespace HumanParserGenerator.Generator {
       // SequentialExpression is constructed recusively, unroll it...
       while(true) {
         // add first part
-        consume.Actions.Add(this.ImportPropertiesAndParseActions(
+        consume.Add(this.ImportPropertiesAndParseActions(
           sequence.NonSequentialExpression, entity
         ));
         // add remaining parts
         if(sequence.Expression is NonSequentialExpression) {
           // last part
-          consume.Actions.Add(this.ImportPropertiesAndParseActions(
+          consume.Add(this.ImportPropertiesAndParseActions(
             sequence.Expression, entity
           ));
           break;
@@ -520,13 +548,13 @@ namespace HumanParserGenerator.Generator {
       // AlternativesExpression is constructed recusively, unroll it...
       while(true) {
         // add first part
-        consume.Actions.Add(this.ImportPropertiesAndParseActions(
+        consume.Add(this.ImportPropertiesAndParseActions(
           alternative.AtomicExpression, entity
         ));
         // add remaining parts
         if(alternative.NonSequentialExpression is AtomicExpression) {
           // last part
-          consume.Actions.Add(this.ImportPropertiesAndParseActions(
+          consume.Add(this.ImportPropertiesAndParseActions(
             alternative.NonSequentialExpression, entity
           ));
           break;
@@ -536,6 +564,7 @@ namespace HumanParserGenerator.Generator {
             (AlternativesExpression)alternative.NonSequentialExpression;
         }
       }
+
       return consume;
     }
 

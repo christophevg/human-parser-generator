@@ -526,4 +526,56 @@ public class GeneratorModelFactoryTests {
       )"
     );
   }
+
+  [Test]
+  public void testAlternativeCharactersIdentifier() {
+    // rule1 ::= { rule2 } ;
+    // rule2 ::= "a" | "b" | "c" ;
+    this.importAndCompare(
+      new Grammar() {
+        Rules = new List<Rule>() {
+          new Rule() {
+            Identifier = "rule1",
+            Expression = new RepetitionExpression() {
+              Expression = new IdentifierExpression() { Identifier = "rule2" }
+            }
+          },
+          new Rule() {
+            Identifier = "rule2",
+            Expression = new AlternativesExpression() {
+              AtomicExpression = new StringExpression() { String = "a" },
+              NonSequentialExpression = new AlternativesExpression() {
+                AtomicExpression = new StringExpression() { String = "b" },
+                NonSequentialExpression = new StringExpression() { String = "c" }
+              }
+            }
+          }
+        }
+      },
+      @"Model(
+         Entities=[
+           Entity(
+             Name=rule1,Type=rule1,
+             Properties=[
+               Property(
+                 Name=rule2,Type=string,IsPlural,
+                 Source=ConsumeEntity(rule2)*->rule2
+               )
+             ],
+             ParseAction=ConsumeEntity(rule2)*->rule2
+           ),
+           VirtualEntity(
+             Name=rule2,Type=string,Referrers=[rule1.rule2],
+             ParseAction=ConsumeAny([
+               ConsumeString(a),
+               ConsumeString(b),
+               ConsumeString(c)
+             ])
+           )
+        ],
+        Root=rule1
+      )"
+    );
+  }
+
 }

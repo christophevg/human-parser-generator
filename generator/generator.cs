@@ -17,7 +17,10 @@ namespace HumanParserGenerator.Generator {
   public class Entity {
     // the (original) Rule this Entity was constructed from
     public Rule Rule { get; set; }
-    
+
+    // a (back-)reference to the Model this Entity belongs to
+    public Model Model { get; set; }
+
     public string Name { get; set; }
 
     private Dictionary<string,Property> properties;
@@ -287,23 +290,31 @@ namespace HumanParserGenerator.Generator {
   // in such a way that a recursive descent parser can be constructed with ease
   public class Model {
 
-    // the list of entities in the Model
-    public List<Entity> Entities { get; set; }
-
-    // derived dictionary mapping from Entity.Name to Entity
-    private Dictionary<string,Entity> entities {
-      get {
-        return this.Entities.ToDictionary(
-          entity => entity.Name,
-          entity => entity
-        );
+    // the entities in the Model are stored in a Name->Entity Dictionary
+    private Dictionary<string,Entity> entities;
+    // public interface consists of a List of Entities
+    public List<Entity> Entities {
+      get { return this.entities.Values.ToList(); }
+      set {
+        this.entities.Clear();
+        foreach(var entity in value) {
+          this.Add(entity);
+        }
       }
+    }
+    // the model behaves as a mix between List and Dictionary to the outside 
+    // world offering access to the Entities in the actual underlying dictionary
+    public Model Add(Entity entity) {
+      entity.Model = this;
+      this.entities.Add(entity.Name, entity);
+      if(this.Entities.Count == 1) { this.Root = entity; } // First
+      return this;
     }
 
     public bool Contains(string key) {
       return this.entities.Keys.Contains(key);
     }
-    
+
     public Entity this[string key] {
       get {
         return this.Contains(key) ? this.entities[key] : null;
@@ -311,12 +322,10 @@ namespace HumanParserGenerator.Generator {
     }
 
     // the first entity to start parsing
-    public Entity Root {
-      get { return this.Entities.Count > 0 ? this.Entities[0] : null; }
-    }
+    public Entity Root { get; private set; }
 
     public Model() {
-      this.Entities = new List<Entity>();
+      this.entities = new Dictionary<string,Entity>();
     }
 
     public override string ToString() {

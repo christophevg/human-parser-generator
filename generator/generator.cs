@@ -98,7 +98,11 @@ namespace HumanParserGenerator.Generator {
           if( this.Properties.Count > 0 ) {
             return this.Properties[0].Type;
           } else {
-            return this.ParseAction.Type;
+            if( this.ParseAction != null ) {
+              return this.ParseAction.Type;
+            } else {
+              throw new ArgumentException("missing ParseAction on " + this.Name);
+            }
           }
         }
         return this.Name;

@@ -38,8 +38,7 @@ public class GeneratorModelTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
-             Properties=[],
+             Name=rule,Type=rule,
              ParseAction=Consume(a)
            )
         ],
@@ -67,7 +66,7 @@ public class GeneratorModelTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
+             Name=rule,Type=rule,
              Properties=[
                Property(Name=StringProperty,Type=string,IsPlural=False,IsOptional=False,Source=Consume(a->StringProperty))
              ],

@@ -39,8 +39,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
-             Properties=[],
+             Name=rule,Type=rule,
              ParseAction=Consume(a)
            )
         ],
@@ -70,7 +69,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
+             Name=rule,Type=rule,
              Properties=[
                Property(Name=StringProperty,Type=string,IsPlural=False,IsOptional=False,Source=Consume(a->StringProperty))
              ],
@@ -105,13 +104,12 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule1,Type=rule1,Supers=[],Referrers=[],
+             Name=rule1,Type=rule1,
              Properties=[Property(Name=rule2,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->rule2))],
              ParseAction=Consume(rule2->rule2)
            ),
            VirtualEntity(
-             Name=rule2,Type=,Supers=[],Referrers=[rule1.rule2],
-             Properties=[],
+             Name=rule2,Type=,Referrers=[rule1.rule2],
              ParseAction=Consume(a)
            )
         ],
@@ -138,8 +136,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
-             Properties=[],
+             Name=rule,Type=rule,
              ParseAction=Consume([A-Za-z0-9-]*)
            )
         ],
@@ -169,7 +166,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
+             Name=rule,Type=rule,
              Properties=[
                Property(Name=PatternProperty,Type=string,IsPlural=False,IsOptional=False,Source=Consume([A-Za-z0-9-]*->PatternProperty))
              ],
@@ -207,13 +204,12 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule1,Type=rule1,Supers=[],Referrers=[],
+             Name=rule1,Type=rule1,
              Properties=[Property(Name=IdentifierProperty,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->IdentifierProperty))],
              ParseAction=Consume(rule2->IdentifierProperty)
            ),
            VirtualEntity(
-             Name=rule2,Type=,Supers=[],Referrers=[rule1.IdentifierProperty],
-             Properties=[],
+             Name=rule2,Type=,Referrers=[rule1.IdentifierProperty],
              ParseAction=Consume(a)
            )
         ],
@@ -242,7 +238,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
+             Name=rule,Type=rule,
              Properties=[
                Property(Name=has-a,Type=bool,IsPlural=False,IsOptional=False,Source=Consume(ConsumeOptional(a)?->has-a))
              ],
@@ -283,7 +279,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule1,Type=rule1,Supers=[],Referrers=[],
+             Name=rule1,Type=rule1,
              Properties=[
                Property(Name=rule20,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->rule20)),
                Property(Name=rule21,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->rule21))
@@ -295,8 +291,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=rule2,Type=,Supers=[],Referrers=[rule1.rule20,rule1.rule21],
-             Properties=[],
+             Name=rule2,Type=,Referrers=[rule1.rule20,rule1.rule21],
              ParseAction=Consume([a-z]+)
            )
         ],
@@ -341,7 +336,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
+             Name=rule,Type=rule,
              Properties=[
                Property(Name=name,Type=,IsPlural=False,IsOptional=True,Source=Consume(name->name)),
                Property(Name=id,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id))
@@ -352,7 +347,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=name,Type=,Supers=[],Referrers=[rule.name],
+             Name=name,Type=,Referrers=[rule.name],
              Properties=[
                Property(Name=id,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id))
              ],
@@ -363,7 +358,6 @@ public class GeneratorModelFactoryTests {
            ),
            VirtualEntity(
              Name=id,Type=,Supers=[name],Referrers=[rule.id,name.id],
-             Properties=[],
              ParseAction=Consume([a-z]+)
            )
         ],
@@ -396,8 +390,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
-             Properties=[],
+             Name=rule,Type=rule,
              ParseAction=Consume(a|b|c)
            )
         ],
@@ -437,8 +430,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
-             Properties=[],
+             Name=rule,Type=rule,
              ParseAction=Consume([Consume(a),Consume(b)]|[Consume(c),Consume(d)])
            )
         ],
@@ -467,8 +459,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[],
-             Properties=[],
+             Name=rule,Type=rule,
              ParseAction=Consume(a*)
            )
         ],
@@ -519,14 +510,14 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rules,Type=rules,Supers=[],Referrers=[],
+             Name=rules,Type=rules,
              Properties=[
                Property(Name=rule,Type=rule,IsPlural=True,IsOptional=False,Source=Consume(rule->rule))
              ],
              ParseAction=Consume(rule->rule)
            ),
            Entity(
-             Name=rule,Type=rule,Supers=[],Referrers=[rules.rule],
+             Name=rule,Type=rule,Referrers=[rules.rule],
              Properties=[
                Property(Name=id0,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id0)),
                Property(Name=id1,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id1)),
@@ -535,8 +526,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=Consume([Consume(id->id0),Consume(x),Consume(id->id1),Consume(=),Consume(id->id2)])
            ),
            VirtualEntity(
-             Name=id,Type=,Supers=[],Referrers=[rule.id0,rule.id1,rule.id2],
-             Properties=[],
+             Name=id,Type=,Referrers=[rule.id0,rule.id1,rule.id2],
              ParseAction=Consume([a-z]+)
            )
         ],

@@ -129,18 +129,24 @@ namespace HumanParserGenerator.Generator {
     public override string ToString() {
       return
         (this.IsVirtual ? "Virtual": "") + "Entity(" +
-          "Name=" + this.Name + "," +
-          "Type=" + this.Type + "," +
-          "Supers=" + "[" +
-            string.Join(",", this.Supers.Select(x => x.Name)) +
-          "]," +
-          "Referrers=" + "[" +
-            string.Join(",", this.Referrers.Select(x => x.Property.Label)) +
-          "]," +
-          "Properties=" + "[" +
-            string.Join(",", this.Properties.Select(x => x.ToString())) +
-          "]" + "," +
-          "ParseAction=" + this.ParseAction.ToString() +
+          "Name=" + this.Name +
+          ",Type=" + this.Type +
+          ( this.Supers.Count == 0 ? "" :
+            ",Supers=" + "[" +
+              string.Join(",", this.Supers.Select(x => x.Name)) +
+            "]"
+          ) +
+          ( this.Referrers.Count == 0 ? "" :
+            ",Referrers=" + "[" +
+              string.Join(",", this.Referrers.Select(x => x.Property.Label)) +
+            "]"
+          ) +
+          ( this.Properties.Count == 0 ? "" :
+            ",Properties=" + "[" +
+              string.Join(",", this.Properties.Select(x => x.ToString())) +
+            "]"
+          ) +
+          ",ParseAction=" + this.ParseAction.ToString() +
         ")";
     }
 

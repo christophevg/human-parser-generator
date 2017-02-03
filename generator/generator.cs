@@ -267,9 +267,9 @@ namespace HumanParserGenerator.Generator {
 
   // ... to watch another ParseAction and inform the Property about the outcome
   public class ConsumeOutcome : ParseAction {
-    public ParseAction Action { get; set; }
+    public ParseAction Watching { get; set; }
 
-    public override string Label  { get { return this.Action.ToString(); } }
+    public override string Label  { get { return this.Watching.ToString(); } }
     public override string Type   { get { return "bool"; } }
   }
 
@@ -501,7 +501,7 @@ namespace HumanParserGenerator.Generator {
         Property property = new Property() { Name = "has-" + action.Label };
         entity.Add(property);
         return new ConsumeOutcome() {
-          Action   = action,
+          Watching = action,
           Property = property
         };
       }

@@ -49,7 +49,9 @@ using System.Diagnostics;
 
     private string GenerateEntities() {
       return string.Join( "\n\n",
-        this.Model.Entities.Values.Select(x => this.GenerateEntity(x))
+        this.Model.Entities
+            .Where(entity => !(entity.ParseAction is Generator.ConsumePattern))
+            .Select(x => this.GenerateEntity(x))
       );
     }
 
@@ -91,12 +93,12 @@ using System.Diagnostics;
 
     private string GenerateProperties(Generator.Entity entity) {
       return string.Join("\n",
-        entity.Properties.Values.Select(x => this.GenerateProperty(x))
+        entity.Properties.Select(x => this.GenerateProperty(x))
       );
     }
 
     private string GenerateProperty(Generator.Property property) {
-      return "  public " + this.GenerateType(property) + " " + 
+      return "public " + this.GenerateType(property) + " " + 
         this.PascalCase(this.GeneratePropertyName(property)) + " { get; set; }";
     }
 
@@ -113,7 +115,7 @@ using System.Diagnostics;
       if( ! entity.HasPluralProperty() ) { return null; }
       return "  public " + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
-          entity.Properties.Values.Where(x => x.IsPlural).Select(x => 
+          entity.Properties.Where(x => x.IsPlural).Select(x => 
             "    this." + this.PascalCase(this.GeneratePropertyName(x)) + " = new " + 
               this.GenerateType(x) + "();\n"
           )
@@ -126,7 +128,7 @@ using System.Diagnostics;
         "    return\n" +
         "      \"" + this.PascalCase(entity.Name) + "(\" +\n" + 
         string.Join(" + \",\" +\n",
-          entity.Properties.Values.Select(x => this.GenerateToString(x))
+          entity.Properties.Select(x => this.GenerateToString(x))
         ) + ( entity.Properties.Count > 0 ? " + \n" : "" ) +
         "      \")\";\n" +
         "  }";
@@ -152,14 +154,17 @@ using System.Diagnostics;
       return "}";
     }
 
+    // Extracting functionality is generated for all Entities that are "just"
+    // consuming a pattern.
     private string GenerateExtracting() {
       return
         "public class Extracting {\n" +
         string.Join("\n",
-          this.Model.Extractions.Values
-                    .Select(extraction =>
-                      "  public static Regex " + this.PascalCase(extraction.Name) +
-                        " = new Regex(@\"^" + extraction.Pattern.Replace("\"", "\"\"") + "\");"
+          this.Model.Entities
+                    .Where(entity => entity.ParseAction is Generator.ConsumePattern)
+                    .Select(entity => 
+                      "  public static Regex " + this.PascalCase(entity.Name) +
+                        " = new Regex(@\"^" + ((Generator.ConsumePattern)entity.ParseAction).Pattern.Replace("\"", "\"\"") + "\");"
                     )
         ) + "\n" +
         "}";
@@ -187,7 +192,9 @@ using System.Diagnostics;
   
     private string GenerateEntityParsers() {
       return string.Join("\n\n",
-        this.Model.Entities.Values.Select(x => this.GenerateEntityParser(x))
+        this.Model.Entities
+          .Where(entity => !(entity.ParseAction is Generator.ConsumePattern))
+          .Select(x => this.GenerateEntityParser(x))
       );
     }
 
@@ -200,22 +207,14 @@ using System.Diagnostics;
         }
       );
     }
-    
-    // TODO QnD mapping of reserved words
-    private string GenerateLocalVariable(string name) {
-      if( name.Equals("string") ) { return "text";     }
-      if( name.Equals("int")    ) { return "number";   }
-      if( name.Equals("float")  ) { return "floating"; }
-      return this.CamelCase(name);
-    }
 
     private string GenerateEntityParserHeader(Generator.Entity entity) {
       return "  public " + this.PascalCase(entity.Name) + 
         " Parse" + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
-          entity.Properties.Values.Select(x =>
+          entity.Properties.Select(x =>
             "    " + this.GenerateType(x) + " " + 
-              this.GenerateLocalVariable(x.Name.ToLower()) + 
+              this.GenerateLocalVariable(x) + 
             ( x.IsPlural ? " = new " + this.GenerateType(x) + "()" : " = null") +
             ";"
           )
@@ -226,84 +225,107 @@ using System.Diagnostics;
     }
 
     private string GenerateParseAction(Generator.ParseAction action) {
-      if(action is Generator.ConsumeLiteral) {
-        return "      this.source.Consume(\"" + ((Generator.ConsumeLiteral)action).Literal + "\");";
-      }
-      if(action is Generator.ConsumeExtraction) {
-        var extraction = (Generator.ConsumeExtraction)action;
-        var id         = this.GenerateLocalVariable(extraction.Property.Name);
-        var extractor  = extraction.Extraction.Name;
-        return "      " + this.GenerateConsumeExtraction(id, extractor);
-      }
-      if(action is Generator.ConsumeEntity) {
-        var consumption = (Generator.ConsumeEntity)action;
-        var id          = this.GenerateLocalVariable(consumption.Property.Name);
-        var entity      = consumption.Entity;
-        if(consumption.Property.IsPlural) {
-          return
-            "      " + this.PascalCase(entity.Type) + " temp;\n" +
-            "      while(true) {\n" +
-            "        try {\n" +
-            "          " + this.GenerateConsumeEntity("temp", entity) + "\n" +
-            "        } catch(ParseException) {\n" +
-            "          break;\n" +
-            "        }\n" +
-            "        " + this.GenerateLocalVariable(consumption.Property.Name) + ".Add(temp);\n" +
-            "      }";
-        } else {
-          return "      " + this.GenerateConsumeEntity(id, entity);
-        }
-      }
-      if(action is Generator.ConsumeAny)  {
-        var consumption = (Generator.ConsumeAny)action;
-        var id          = consumption.Property.Name;
-        var code        = "";
-        var indent      = "      ";
-
-        foreach(var option in consumption.Options) {
-          code +=
-            indent + "try {\n" +
-            indent + this.GenerateParseAction(option) + "\n" +
-            indent + "} catch(ParseException) {\n";
-          indent += "  ";
-        }
-        code +=
-          indent + "throw this.source.GenerateParseException(\n" +
-          indent + "  \"Expected: " + consumption.Label + "\"\n" +
-          indent + ");\n";
-
-        foreach(var option in consumption.Options) {
-          indent = indent.Substring(2);
-          code += indent + "}\n";
-        }
-        
-        return code;
-      }
-      if(action is Generator.ConsumeAll) {
-        return string.Join("\n\n",
-          (((Generator.ConsumeAll)action).Actions).Select(a =>
-            this.GenerateParseAction(a)
-          )
+      // this.Log("extracting from " + exp.GetType().ToString());
+      try {
+        string code = new Dictionary<string, Func<Generator.ParseAction,string>>() {
+          { "ConsumeString",  this.GenerateConsumeString  },
+          { "ConsumePattern", this.GenerateConsumePattern },
+          { "ConsumeEntity",  this.GenerateConsumeEntity  },
+          { "ConsumeAll",     this.GenerateConsumeAll     },
+          { "ConsumeAny",     this.GenerateConsumeAny     },
+          { "ConsumeOutcome", this.GenerateConsumeOutcome }
+        }[action.GetType().ToString().Replace("HumanParserGenerator.Generator.","")](action);
+        return this.WrapOptional(action, code);
+      } catch(KeyNotFoundException e) {
+        throw new NotImplementedException(
+          "extracting not implemented for " + action.GetType().ToString(), e
         );
-        
       }
-      if(action is Generator.ConsumeOptional) {
-        return "try {\n" +
-          this.GenerateParseAction(
-            ((Generator.ConsumeOptional)action).Optional) +
-           "\n} catch(ParseException) {}\n";
-      }
-
-      throw new NotImplementedException("ParseAction<" + action.GetType().ToString() + ">");
     }
 
-    private string GenerateConsumeExtraction(string id, string extractor) {
-      return id + " = this.source.Consume(Extracting." + 
-        this.PascalCase(extractor) + ");";
+    private string GenerateConsumeString(Generator.ParseAction action) {
+      Generator.ConsumeString consume = (Generator.ConsumeString)action;
+      return this.GenerateAssignment(action) +
+        "this.source.Consume(\"" + consume.String + "\");";
     }
 
-    private string GenerateConsumeEntity(string id, Generator.Entity entity) {
-      return id + " = this.Parse" + this.PascalCase(entity.Name) + "();";
+    private string GenerateConsumePattern(Generator.ParseAction action) {
+      Generator.ConsumePattern consume = (Generator.ConsumePattern)action;
+      return this.GenerateAssignment(action) +
+        "this.source.Consume(Extracting." + this.PascalCase(consume.Type) + ");";
+    }
+
+    private string GenerateConsumeEntity(Generator.ParseAction action) {
+      Generator.ConsumeEntity consume = (Generator.ConsumeEntity)action;
+      if(consume.Property.IsPlural) {
+        return
+          "{" +
+            this.PascalCase(consume.Entity.Type) + " temp;\n" +
+          "  while(true) {\n" +
+          "    try {\n" +
+          "      temp = this.Parse" + this.PascalCase(consume.Entity.Name) + "();\n" +
+          "    } catch(ParseException) {\n" +
+          "      break;\n" +
+          "    }\n" +
+               this.GenerateLocalVariable(consume.Property) + ".Add(temp);\n" +
+          "  }" +
+          "}";
+      }
+      return this.GenerateAssignment(action) +
+        "this.Parse" + this.PascalCase(consume.Entity.Name) + "();";
+    }
+
+    private string GenerateConsumeAll(Generator.ParseAction action) {
+      Generator.ConsumeAll consume = (Generator.ConsumeAll)action;
+      return string.Join("\n\n",
+        consume.Actions.Select(next => this.GenerateParseAction(next))
+      );
+    }
+
+    private string GenerateConsumeAny(Generator.ParseAction action) {
+      Generator.ConsumeAny consume = (Generator.ConsumeAny)action;
+
+      string code = "";
+      string closing = "";
+      foreach(var option in consume.Actions) {
+        code +=
+          "try {\n" +
+            this.GenerateParseAction(option) + "\n" +
+          "} catch(ParseException) {\n";
+        closing += "}\n";
+      }
+      code +=
+        "throw this.source.GenerateParseException(\n" +
+        "  \"Expected: " + consume.Label + "\"\n" +
+        ");\n";
+
+      return code + closing;
+    }
+
+    // TODO: add boolean setting
+    private string GenerateConsumeOutcome(Generator.ParseAction action) {
+      Generator.ConsumeOutcome consume = (Generator.ConsumeOutcome)action;
+      return this.GenerateParseAction(consume.Watching);
+    }
+
+    // TODO: probably add rollback of position !!!
+    private string WrapOptional(Generator.ParseAction action, string code) {
+      if( ! action.IsOptional ) { return code; }
+      return "try {\n" + code + "\n} catch(ParseException) {}\n";
+    }
+
+    private string GenerateAssignment(Generator.ParseAction action) {
+      if(action.Property == null) { return ""; }
+      return this.GenerateLocalVariable(action.Property) + " = ";
+    }
+
+    private string GenerateLocalVariable(Generator.Property property) {
+      string name = property.Name;
+      // QnD solution to reserved words
+      if( name.Equals("string") ) { return "text";     }
+      if( name.Equals("int")    ) { return "number";   }
+      if( name.Equals("float")  ) { return "floating"; }
+      return this.CamelCase(name);
     }
 
     private string GenerateEntityParserFooter(Generator.Entity entity) {
@@ -326,9 +348,9 @@ using System.Diagnostics;
     private string GenerateRealEntityParserReturn(Generator.Entity entity) {
       return "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
         string.Join( ",\n",
-          entity.Properties.Values.Select(x =>
+          entity.Properties.Select(x =>
             "      " + this.PascalCase(this.GeneratePropertyName(x)) + " = " + 
-              this.GenerateLocalVariable(x.Name.ToLower())
+              this.GenerateLocalVariable(x)
           )
         ) + "\n" +
         "    };\n" +
@@ -336,10 +358,11 @@ using System.Diagnostics;
     }
 
     private string GenerateVirtualEntityParserReturn(Generator.Entity entity) {
-      string name = entity.Properties.Keys.ToList()[0];
-      
-      return "    return " + this.CamelCase(name) + ";\n" +
-             "  }"; 
+      if(entity.Properties.Count > 0) {
+      return "return " + this.CamelCase(entity.Properties[0].Name) + ";\n" +
+             "}"; 
+      }
+      return "return;"; 
     }
 
     private string GenerateParserFooter() {
@@ -360,7 +383,7 @@ using System.Diagnostics;
         this.Warn("rewriting property name: " + property.Name);
         return "next-" + property.Name;
       }
-      return property.Name;
+      return property.Name + (property.IsPlural ? "s" : "");
     }
 
     // this function makes sure that text is correctly case'd ;-)

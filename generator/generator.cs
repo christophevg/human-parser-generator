@@ -62,8 +62,11 @@ namespace HumanParserGenerator.Generator {
     // created to create the object model hierarchy.
     public bool IsVirtual {
       get {
-        return this.Properties.Count < 2 // 1 Property can be passed on
-          && ! this.IsRoot;              // top-level Entity _must_ be there
+        return
+          ( this.ParseAction.Type != null || this.Properties.Count < 2 )
+          // ParseAction returns Type     || 1 Property can be passed on
+          &&
+            ! this.IsRoot;              // top-level Entity _must_ be there
       }
     }
     

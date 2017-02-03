@@ -188,11 +188,11 @@ namespace HumanParserGenerator.Generator {
 
     public override string ToString() {
       return "Property(" +
-        "Name="       + this.Name       + "," + 
-        "Type="       + this.Type       + "," + 
-        "IsPlural="   + this.IsPlural   + "," +
-        "IsOptional=" + this.IsOptional + "," +
-        "Source="     + this.Source     +
+        "Name="        + this.Name             +
+        ",Type="       + this.Type             +
+        (this.IsPlural   ? ",IsPlural"   : "") +
+        (this.IsOptional ? ",IsOptional" : "") +
+        ",Source="     + this.Source           +
       ")";
     }
   }

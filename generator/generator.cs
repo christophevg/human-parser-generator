@@ -85,12 +85,20 @@ namespace HumanParserGenerator.Generator {
 
     // be default, an Entity "is" its own Type
     // when an Entity is Virtual, its Type is that of its only Property
-    // BUT since this (only) Property is populated by our ParseAction, we can
-    // directly look at that, because in the case of NO Properties, we will have
-    // a ParseAction
+    // BUT in some cases, there isn't a Property, e.g. when just parsing Strings
+    // or patterns to parse fixed structure that doesn't need to be extracted.
+    // in that case there isn't a local Property that catches that String, but
+    // Properties on other Entities can refer to it. In that case we need to
+    // retrieve the property of the Action directly.
     public string Type {
       get {
-        if( this.IsVirtual ) { return this.ParseAction.Type; }
+        if( this.IsVirtual ) {
+          if( this.Properties.Count > 0 ) {
+            return this.Properties[0].Type;
+          } else {
+            return this.ParseAction.Type;
+          }
+        }
         return this.Name;
       }
     }

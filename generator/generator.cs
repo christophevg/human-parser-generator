@@ -306,11 +306,13 @@ namespace HumanParserGenerator.Generator {
   // all of the alternatives MUST have the same type!
   public class ConsumeAny : ConsumeAll {
     public override void Add(ParseAction action) {
-      if(this.actions.Count > 1) {
-        if( ! action.Type.Equals(this.Type) ) {
-          throw new ArgumentException("all alternatives must have same type");
-        }
-      }
+      // TODO can't do this always, since sometimes an Entity that's being
+      //      referred to, isn't imported yet, causing failure on Type detection
+      // if(this.actions.Count > 1) {
+      //   if( ! action.Type.Equals(this.Type) ) {
+      //     throw new ArgumentException("all alternatives must have same type");
+      //   }
+      // }
       this.actions.Add(action);
     }
 

@@ -578,4 +578,66 @@ public class GeneratorModelFactoryTests {
     );
   }
 
+  [Test]
+  public void testAlternativeIdentifiers() {
+    // assign ::= exp ;
+    // exp ::= a | b ;
+    // a ::= "aa";
+    // b ::= "bb";
+    this.importAndCompare(
+      new Grammar() {
+        Rules = new List<Rule>() {
+          new Rule() {
+            Identifier = "assign",
+            Expression = new IdentifierExpression() { Identifier = "exp" }
+          },
+          new Rule() {
+            Identifier = "exp",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "a" },
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "b"}
+            }
+          },
+          new Rule() {
+            Identifier = "a",
+            Expression = new StringExpression() { String = "aa" }
+          },
+          new Rule() {
+            Identifier = "b",
+            Expression = new StringExpression() { String = "bb" }
+          }
+        }
+      },
+      @"Model(
+         Entities=[
+           Entity(
+             Name=assign,Type=assign,Properties=[
+               Property(Name=exp,Type=string,Source=ConsumeEntity(exp)->exp)
+             ],
+             ParseAction=ConsumeEntity(exp)->exp
+           ),
+           VirtualEntity(
+             Name=exp,Type=string,Referrers=[assign.exp],Properties=[
+               Property(Name=a,Type=string,Source=ConsumeEntity(a)->a),
+               Property(Name=b,Type=string,Source=ConsumeEntity(b)->b)
+             ],
+             ParseAction=ConsumeAny([
+               ConsumeEntity(a)->a,
+               ConsumeEntity(b)->b
+             ])
+           ),
+           VirtualEntity(
+             Name=a,Type=string,Supers=[exp],Referrers=[exp.a],
+             ParseAction=ConsumeString(aa)
+           ),
+           VirtualEntity(
+             Name=b,Type=string,Supers=[exp],Referrers=[exp.b],
+             ParseAction=ConsumeString(bb)
+           )
+         ],
+         Root=assign
+       )"
+    );
+  }
+
 }

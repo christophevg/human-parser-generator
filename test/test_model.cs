@@ -29,7 +29,7 @@ public class GeneratorModelTests {
       Entities = new List<Entity> {
         new Entity() {
           Name        = "rule",
-          ParseAction = new ConsumeToken() { Token = "a" }
+          ParseAction = new ConsumeString() { String = "a" }
         }
       }
     };
@@ -37,13 +37,10 @@ public class GeneratorModelTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             ParseAction=Consume(a)
-           )
-        ],
-        Root=rule
-      )".Replace(" ", "").Replace("\n",""),
+           Entity(Name=rule,Type=rule,ParseAction=ConsumeString(a))
+         ],
+         Root=rule
+       )".Replace(" ", "").Replace("\n",""),
       model.ToString()
     );
   }
@@ -68,9 +65,9 @@ public class GeneratorModelTests {
            Entity(
              Name=rule,Type=rule,
              Properties=[
-               Property(Name=StringProperty,Type=string,IsPlural=False,IsOptional=False,Source=Consume(a->StringProperty))
+               Property(Name=StringProperty,Type=string,Source=ConsumeString(a)->StringProperty)
              ],
-             ParseAction=Consume(a->StringProperty)
+             ParseAction=ConsumeString(a)->StringProperty
            )
         ],
         Root=rule

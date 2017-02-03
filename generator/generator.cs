@@ -171,7 +171,7 @@ namespace HumanParserGenerator.Generator {
     public Entity Entity { get; set; }
 
     // a property is populated by a ParseAction
-    public ParsePropertyAction Source { get; set; }
+    public ParseAction Source { get; set; }
 
     // the Type of a Property is defined by the ParseAction
     public string Type { get { return this.Source.Type; } }
@@ -197,6 +197,9 @@ namespace HumanParserGenerator.Generator {
     }
   }
 
+  // ParseActions implement the steps that are taken to parse all information
+  // needed to construct an Entity.
+
   public abstract class ParseAction {
     // the Parsing is optional
     public bool IsOptional { get; set; }
@@ -210,26 +213,7 @@ namespace HumanParserGenerator.Generator {
     // Type indicates what type of result this ParseAction will expose
     public abstract string Type  { get; }
 
-    public override string ToString() {
-      return "Consume" + (this.IsOptional ? "Optional" : "")+ "(" +
-        this.Label + (this.IsPlural ? "*" : "") +
-      ")";
-    }
-  }
-
-  // just consume a Token
-  public class ConsumeToken : ParseAction {
-    public string Token { get; set; }
-    public override string Type { get { return null; } }
-    public override string Label { get { return this.Token; } }
-  }
-
-  // just consume a Token, based on a pattern
-  public class ConsumePatternToken : ConsumeToken {}
-
-  // a ParseAction parses text into a Property
-  public abstract class ParsePropertyAction : ParseAction {
-    // Property that receives parsing result from this ParseAction
+    // (Optional) Property that receives parsing result from this ParseAction
     private Property property;
     public Property Property {
       get { return this.property; }
@@ -250,7 +234,7 @@ namespace HumanParserGenerator.Generator {
   }
 
   // ... to consume a literal sequence of characters, aka a string ;-)
-  public class ConsumeString : ParsePropertyAction {
+  public class ConsumeString : ParseAction {
     public          string String { get; set; }
     public override string Label  { get { return this.String; } }
     public override string Type   { get { return "string";    } }
@@ -265,8 +249,8 @@ namespace HumanParserGenerator.Generator {
     }
   }
 
-  // ... to consume an Entity
-  public class ConsumeEntity : ParsePropertyAction {
+  // ... to consume another Entity
+  public class ConsumeEntity : ParseAction {
     private Entity entity;
     public Entity Entity {
       get { return this.entity; }
@@ -280,10 +264,10 @@ namespace HumanParserGenerator.Generator {
   }
 
   // ... to watch another ParseAction and inform the Property about the outcome
-  public class ConsumeOutcome : ParsePropertyAction {
+  public class ConsumeOutcome : ParseAction {
     public ParseAction Action { get; set; }
 
-    public override string Label  { get { return this.Action.ToString() + "?"; } }
+    public override string Label  { get { return this.Action.ToString(); } }
     public override string Type   { get { return "bool"; } }
   }
 
@@ -308,16 +292,11 @@ namespace HumanParserGenerator.Generator {
 
   // given a set of possible ParseActions, this tries each of these ParseActions
   // and passes on the first that parses
-  public class ConsumeAny : ConsumeAll {
-    public override string Label {
-      get {
-        return string.Join( "|", this.Actions.Select(x => x.Label) );
-      }
-    }
-  }
+  public class ConsumeAny : ConsumeAll {}
 
   // the Model can be considered a Parser-AST on steroids. it contains all info
   // in such a way that a recursive descent parser can be constructed with ease
+
   public class Model {
 
     // the entities in the Model are stored in a Name->Entity Dictionary
@@ -435,7 +414,7 @@ namespace HumanParserGenerator.Generator {
         return new ConsumeString() { Property = property, String = str.String };
       }
       // the simplest case: just a string, not optional, just consume it
-      return new ConsumeToken() { Token = str.String };
+      return new ConsumeString() { String = str.String };
     }    
 
     private ParseAction ImportIdentifierExpression(Expression exp,
@@ -471,7 +450,7 @@ namespace HumanParserGenerator.Generator {
         return new ConsumePattern() { Property = property, Pattern = extr.Regex };
       }
       // the simplest case: just a string, not optional, just consume it
-      return new ConsumePatternToken() { Token = extr.Regex };
+      return new ConsumePattern() { Pattern = extr.Regex };
     }
 
     private ParseAction ImportOptionalExpression(Expression exp,
@@ -487,10 +466,10 @@ namespace HumanParserGenerator.Generator {
       // mark optional
       action.IsOptional = true;
 
-      // if the action isn't a ParsePropertyAction, there is no Property for it
-      // yet, so we create one to store the positive or negative outcome of this
-      // parse attempt
-      if( ! (action is ParsePropertyAction) ) {
+      // if the action doesn't have a Property reference, we create one now.
+      // this is possible in case of simple String extraction without the need
+      // to store it, aka Token consumption.
+      if( action.Property == null ) {
         Property property = new Property() { Name = "has-" + action.Label };
         entity.Add(property);
         return new ConsumeOutcome() {

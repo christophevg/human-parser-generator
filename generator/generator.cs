@@ -240,7 +240,12 @@ namespace HumanParserGenerator.Generator {
     }
 
     public override string ToString() {
-      return "Consume(" + this.Label + "->" + this.Property.Name + ")";
+      return
+        this.GetType().ToString().Replace("HumanParserGenerator.Generator.", "") +
+        "(" + this.Label + ")" +
+        (this.IsPlural   ? "*" : "") +
+        (this.IsOptional ? "?" : "") +
+        (this.Property != null ? "->" + this.Property.Name : "");
     }
   }
 

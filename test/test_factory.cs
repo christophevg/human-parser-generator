@@ -38,8 +38,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[],
              ParseAction=Consume(a)
            )
@@ -69,8 +69,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=string,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[
                Property(Name=StringProperty,Type=string,IsPlural=False,IsOptional=False,Source=Consume(a->StringProperty))
              ],
@@ -104,13 +104,13 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule1,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule1,Type=rule1,Supers=[],Referrers=[],
              Properties=[Property(Name=rule2,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->rule2))],
              ParseAction=Consume(rule2->rule2)
            ),
            VirtualEntity(
-             Name=rule2,Type=,Supers=[rule1],Referrers=[rule1.rule2],
+             Name=rule2,Type=,Supers=[],Referrers=[rule1.rule2],
              Properties=[],
              ParseAction=Consume(a)
            )
@@ -137,8 +137,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[],
              ParseAction=Consume([A-Za-z0-9-]*)
            )
@@ -168,8 +168,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=string,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[
                Property(Name=PatternProperty,Type=string,IsPlural=False,IsOptional=False,Source=Consume([A-Za-z0-9-]*->PatternProperty))
              ],
@@ -206,13 +206,13 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule1,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule1,Type=rule1,Supers=[],Referrers=[],
              Properties=[Property(Name=IdentifierProperty,Type=,IsPlural=False,IsOptional=False,Source=Consume(rule2->IdentifierProperty))],
              ParseAction=Consume(rule2->IdentifierProperty)
            ),
            VirtualEntity(
-             Name=rule2,Type=,Supers=[rule1],Referrers=[rule1.IdentifierProperty],
+             Name=rule2,Type=,Supers=[],Referrers=[rule1.IdentifierProperty],
              Properties=[],
              ParseAction=Consume(a)
            )
@@ -241,8 +241,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=bool,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[
                Property(Name=has-a,Type=bool,IsPlural=False,IsOptional=False,Source=Consume(ConsumeOptional(a)?->has-a))
              ],
@@ -395,8 +395,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[],
              ParseAction=Consume(a|b|c)
            )
@@ -436,8 +436,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[],
              ParseAction=Consume([Consume(a),Consume(b)]|[Consume(c),Consume(d)])
            )
@@ -466,8 +466,8 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[],
              ParseAction=Consume(a*)
            )
@@ -518,15 +518,15 @@ public class GeneratorModelFactoryTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rules,Type=rule,Supers=[],Referrers=[],
+           Entity(
+             Name=rules,Type=rules,Supers=[],Referrers=[],
              Properties=[
                Property(Name=rule,Type=rule,IsPlural=True,IsOptional=False,Source=Consume(rule->rule))
              ],
              ParseAction=Consume(rule->rule)
            ),
            Entity(
-             Name=rule,Type=rule,Supers=[rules],Referrers=[rules.rule],
+             Name=rule,Type=rule,Supers=[],Referrers=[rules.rule],
              Properties=[
                Property(Name=id0,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id0)),
                Property(Name=id1,Type=,IsPlural=False,IsOptional=False,Source=Consume(id->id1)),

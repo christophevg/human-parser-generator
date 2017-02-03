@@ -37,8 +37,8 @@ public class GeneratorModelTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[],
              ParseAction=Consume(a)
            )
@@ -66,8 +66,8 @@ public class GeneratorModelTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           VirtualEntity(
-             Name=rule,Type=string,Supers=[],Referrers=[],
+           Entity(
+             Name=rule,Type=rule,Supers=[],Referrers=[],
              Properties=[
                Property(Name=StringProperty,Type=string,IsPlural=False,IsOptional=False,Source=Consume(a->StringProperty))
              ],

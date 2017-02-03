@@ -50,14 +50,22 @@ namespace HumanParserGenerator.Generator {
       set { this.referrers = value; }
     }
     
-    // an Entity that has a single Property is Virtual, since it can simply
-    // pass on this Property.
-    // TODO refine
+    // A Virtual Entity, implements structure from the Grammar, but shouldn't
+    // be part of the Entities that can actually be constructed to build the
+    // Model. In general the rule boils down to the fact if the Entity would be
+    // a Simple one or a Complex one. If its Properties can simply be passed on
+    // to a incorporating Entity (e.g. only 1 Property), the Entity becomes
+    // Virtual. Entities with multiple Properties, aka structures, can't be
+    // simply passed on, as in a return value, and require actual Entities to be
+    // created to create the object model hierarchy.
     public bool IsVirtual {
       get {
-        return this.Properties.Count < 2;
+        return this.Properties.Count < 2 // 1 Property can be passed on
+          && ! this.IsRoot;              // top-level Entity _must_ be there
       }
     }
+    
+    public bool IsRoot { get { return this == this.Model.Root; } }
 
     // the Entity can be optional, if its top-level ParseAction is Optional
     public bool IsOptional { get { return this.ParseAction.IsOptional; } }
@@ -77,11 +85,12 @@ namespace HumanParserGenerator.Generator {
 
     // be default, an Entity "is" its own Type
     // when an Entity is Virtual, its Type is that of its only Property
+    // BUT since this (only) Property is populated by our ParseAction, we can
+    // directly look at that, because in the case of NO Properties, we will have
+    // a ParseAction
     public string Type {
       get {
-        if( this.IsVirtual ) {
-          return this.Properties.Count == 1 ? this.Properties[0].Type : null;
-        }
+        if( this.IsVirtual ) { return this.ParseAction.Type; }
         return this.Name;
       }
     }
@@ -184,6 +193,9 @@ namespace HumanParserGenerator.Generator {
     // Label can be used for external string representation, other than ToString
     public abstract string Label { get; }
 
+    // Type indicates what type of result this ParseAction will expose
+    public abstract string Type  { get; }
+
     public override string ToString() {
       return "Consume" + (this.IsOptional ? "Optional" : "")+ "(" +
         this.Label + (this.IsPlural ? "*" : "") +
@@ -194,6 +206,7 @@ namespace HumanParserGenerator.Generator {
   // just consume a Token
   public class ConsumeToken : ParseAction {
     public string Token { get; set; }
+    public override string Type { get { return null; } }
     public override string Label { get { return this.Token; } }
   }
 
@@ -212,10 +225,6 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
-    // Type indicates what type of result this ParseAction will provide to the
-    // Property
-    public abstract string Type  { get; }
-
     public override string ToString() {
       return "Consume(" + this.Label + "->" + this.Property.Name + ")";
     }
@@ -225,7 +234,7 @@ namespace HumanParserGenerator.Generator {
   public class ConsumeString : ParsePropertyAction {
     public          string String { get; set; }
     public override string Label  { get { return this.String; } }
-    public override string Type   { get { return "string";     } }
+    public override string Type   { get { return "string";    } }
   }
 
   // ... to consume a sequence of characters according to a regular expression
@@ -261,6 +270,8 @@ namespace HumanParserGenerator.Generator {
 
   public class ConsumeAll : ParseAction {
     public List<ParseAction> Actions { get; set; }
+
+    public override string Type { get { return null; } }
 
     public override string Label {
       get {

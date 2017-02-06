@@ -111,7 +111,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=ConsumeEntity(rule2)->rule2
            ),
            VirtualEntity(
-             Name=rule2,Type=string,Supers=[rule1],Referrers=[rule1.rule2],
+             Name=rule2,Type=string,Supers=[rule1],
              Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern(a)->rule2)],
              ParseAction=ConsumePattern(a)->rule2
            )
@@ -209,7 +209,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=ConsumeEntity(rule2)->IdentifierProperty
            ),
            VirtualEntity(
-             Name=rule2,Type=string,Supers=[rule1],Referrers=[rule1.IdentifierProperty],
+             Name=rule2,Type=string,Supers=[rule1],
              Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern(a)->rule2)],
              ParseAction=ConsumePattern(a)->rule2
            )
@@ -289,7 +289,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=rule2,Type=string,Referrers=[rule1.rule20,rule1.rule21],
+             Name=rule2,Type=string,
              Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern([a-z]+)->rule2)],
              ParseAction=ConsumePattern([a-z]+)->rule2
            )
@@ -343,7 +343,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=name,Type=string,Subs=[id],Referrers=[rule.name],
+             Name=name,Type=string,Subs=[id],
              Properties=[
                Property(Name=id,Type=string,Source=ConsumeEntity(id)->id)
              ],
@@ -353,7 +353,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=id,Type=string,Supers=[name],Referrers=[rule.id,name.id],
+             Name=id,Type=string,Supers=[name],
              Properties=[Property(Name=id,Type=string,Source=ConsumePattern([a-z]+)->id)],
              ParseAction=ConsumePattern([a-z]+)->id
            )
@@ -521,7 +521,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=ConsumeEntity(rule)*->rule
            ),
            Entity(
-             Name=rule,Type=rule,Referrers=[rules.rule],
+             Name=rule,Type=rule,
              Properties=[
                Property(Name=id0,Type=string,Source=ConsumeEntity(id)->id0),
                Property(Name=id1,Type=string,Source=ConsumeEntity(id)->id1),
@@ -536,7 +536,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=id,Type=string,Referrers=[rule.id0,rule.id1,rule.id2],
+             Name=id,Type=string,
              Properties=[Property(Name=id,Type=string,Source=ConsumePattern([a-z]+)->id)],
              ParseAction=ConsumePattern([a-z]+)->id
            )
@@ -584,7 +584,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=ConsumeEntity(rule2)*->rule2
            ),
            Entity(
-             Name=rule2,Type=rule2,Referrers=[rule1.rule2],
+             Name=rule2,Type=rule2,
              Properties=[Property(Name=alternative,Type=string,Source=ConsumeAny([
                ConsumeString(a),
                ConsumeString(b),
@@ -641,7 +641,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=ConsumeEntity(exp)->exp
            ),
            VirtualEntity(
-             Name=exp,Type=string,Supers=[assign],Subs=[a,b],Referrers=[assign.exp],Properties=[
+             Name=exp,Type=string,Supers=[assign],Subs=[a,b],Properties=[
                Property(Name=alternative,Type=string,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
              ],
              ParseAction=ConsumeAny([
@@ -650,12 +650,12 @@ public class GeneratorModelFactoryTests {
              ])->alternative
            ),
            VirtualEntity(
-             Name=a,Type=string,Supers=[exp],Referrers=[exp.alternative],
+             Name=a,Type=string,Supers=[exp],
              Properties=[Property(Name=a,Type=string,Source=ConsumePattern(aa)->a)],
              ParseAction=ConsumePattern(aa)->a
            ),
            VirtualEntity(
-             Name=b,Type=string,Supers=[exp],Referrers=[exp.alternative],
+             Name=b,Type=string,Supers=[exp],
              Properties=[Property(Name=b,Type=string,Source=ConsumePattern(bb)->b)],
              ParseAction=ConsumePattern(bb)->b
            )
@@ -720,7 +720,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=ConsumeEntity(exp)->exp
            ),
            VirtualEntity(
-             Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Referrers=[assign.exp,a.exp],Properties=[
+             Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Properties=[
                Property(Name=alternative,Type=exp,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
              ],
              ParseAction=ConsumeAny([
@@ -729,7 +729,7 @@ public class GeneratorModelFactoryTests {
              ])->alternative
            ),
            Entity(
-             Name=a,Type=a,Supers=[exp],Referrers=[exp.alternative],
+             Name=a,Type=a,Supers=[exp],
              Properties=[
                Property(Name=b,Type=string,Source=ConsumeEntity(b)->b),
                Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
@@ -740,7 +740,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=b,Type=string,Supers=[exp],Subs=[x,y],Referrers=[exp.alternative,a.b],
+             Name=b,Type=string,Supers=[exp],Subs=[x,y],
              Properties=[
                Property(Name=alternative,Type=string,Source=ConsumeAny([ConsumeEntity(x)->alternative,ConsumeEntity(y)->alternative])->alternative)
              ],
@@ -750,12 +750,12 @@ public class GeneratorModelFactoryTests {
              ])->alternative
            ),
            VirtualEntity(
-             Name=x,Type=string,Supers=[b],Referrers=[b.alternative],
+             Name=x,Type=string,Supers=[b],
              Properties=[Property(Name=x,Type=string,Source=ConsumePattern(xx)->x)],
              ParseAction=ConsumePattern(xx)->x
            ),
            VirtualEntity(
-             Name=y,Type=string,Supers=[b],Referrers=[b.alternative],
+             Name=y,Type=string,Supers=[b],
              Properties=[Property(Name=y,Type=string,Source=ConsumePattern(yy)->y)],
              ParseAction=ConsumePattern(yy)->y
            )
@@ -833,7 +833,7 @@ public class GeneratorModelFactoryTests {
              ParseAction=ConsumeEntity(value)*->value
            ),
            VirtualEntity(
-             Name=value,Type=value,Subs=[literal,variable],Referrers=[record.value],
+             Name=value,Type=value,Subs=[literal,variable],
              Properties=[
                Property(Name=alternative,Type=value,Source=ConsumeAny([
                  ConsumeEntity(literal)->alternative,
@@ -847,7 +847,7 @@ public class GeneratorModelFactoryTests {
            ),
            Entity(
              Name=literal,Type=literal,Supers=[value],Subs=[number,string],
-             Referrers=[value.alternative],Properties=[
+             Properties=[
                Property(Name=number,Type=string,Source=ConsumeEntity(number)->number),
                Property(Name=string,Type=string,Source=ConsumeEntity(string)->string)
              ],
@@ -858,7 +858,7 @@ public class GeneratorModelFactoryTests {
            ),
            Entity(
              Name=variable,Type=variable,Supers=[value],
-             Referrers=[value.alternative],Properties=[
+             Properties=[
                Property(Name=identifier,Type=string,Source=ConsumeEntity(identifier)->identifier),
                Property(Name=number,Type=string,Source=ConsumeEntity(number)->number)
              ],
@@ -870,21 +870,21 @@ public class GeneratorModelFactoryTests {
            ),
            VirtualEntity(
              Name=number,Type=string,Supers=[literal],
-             Referrers=[literal.number,variable.number],Properties=[
+             Properties=[
                Property(Name=number,Type=string,Source=ConsumePattern([0-9]+)->number)
              ],
              ParseAction=ConsumePattern([0-9]+)->number
            ),
            VirtualEntity(
              Name=string,Type=string,Supers=[literal],
-             Referrers=[literal.string],Properties=[
+             Properties=[
                Property(Name=string,Type=string,Source=ConsumePattern([a-z]+)->string)
              ],
              ParseAction=ConsumePattern([a-z]+)->string
            ),
            VirtualEntity(
              Name=identifier,Type=string,
-             Referrers=[variable.identifier],Properties=[
+             Properties=[
                Property(Name=identifier,Type=string,Source=ConsumePattern([a-z]+)->identifier)
              ],
              ParseAction=ConsumePattern([a-z]+)->identifier

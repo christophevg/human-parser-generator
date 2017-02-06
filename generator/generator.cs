@@ -39,18 +39,6 @@ namespace HumanParserGenerator.Generator {
     // to populate the Properties, ParseActions have to be generated
     // ParseActions are a tree-structure with a single top-level ParseAction
     public ParseAction ParseAction { get; set; }
-
-    // all ParseActions of type ConsumeEntity that refer to us
-    private List<ConsumeEntity> referrers;
-    public List<ConsumeEntity> Referrers {
-      get {
-        if( this.referrers == null ) {
-          this.referrers = new List<ConsumeEntity>();
-        }
-        return this.referrers;
-      }
-      set { this.referrers = value; }
-    }
     
     public bool IsVirtual {
       get {
@@ -164,11 +152,6 @@ namespace HumanParserGenerator.Generator {
               string.Join(",", this.Subs.Select(x => x.Name)) +
             "]"
           ) +
-          ( this.Referrers.Count == 0 ? "" :
-            ",Referrers=" + "[" +
-              string.Join(",", this.Referrers.Select(x => x.Property.Label)) +
-            "]"
-          ) +
           ( this.Properties.Count == 0 ? "" :
             ",Properties=" + "[" +
               string.Join(",", this.Properties.Select(x => x.ToString())) +
@@ -279,14 +262,7 @@ namespace HumanParserGenerator.Generator {
 
   // ... to consume another Entity
   public class ConsumeEntity : ParseAction {
-    private Entity entity;
-    public Entity Entity {
-      get { return this.entity; }
-      set {
-        this.entity = value;
-        this.entity.Referrers.Add(this);
-      }
-    }
+    public Entity Entity { get; set; }
     public override string Label  { get { return this.Entity.Name; } }
     public override string Type   {
       get { return this.ReportSuccess ? "bool" : this.Entity.Type; }

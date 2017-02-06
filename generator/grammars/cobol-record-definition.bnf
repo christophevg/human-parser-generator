@@ -31,7 +31,7 @@ option           ::= redefines-option
                    | value-option
                    ;
 
-redefines-option ::= "REDEFINES" identifier ;
+redefines-option ::= redefines @ "REDEFINES" identifier ;
 external-option  ::= [ "IS" ] "EXTERNAL" ;
 internal-option  ::= [ "IS" ] "INTERNAL" ;
 picture-option   ::= picture ;

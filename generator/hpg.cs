@@ -26,7 +26,6 @@ namespace HumanParserGenerator {
         return;
       }
 
-
       new Runner().Generate(args[0]);
     }
     

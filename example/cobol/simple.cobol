@@ -1,0 +1,3 @@
+01 TOP.
+  05 SUB.
+    10 FIELD   PIC S9(05) COMP-5.

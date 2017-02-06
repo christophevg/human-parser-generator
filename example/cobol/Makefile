@@ -13,10 +13,12 @@ GRAMMAR    ?= grammars/cobol-record-definition.bnf
 
 PARSER     ?= cobol-parser.cs
 
+INPUT      ?= simple.cobol
+
 all: clean run
 
 run: $(BUILD)/$(TARGET).exe
-	$(RUN) $< $(INPUT)
+	@$(RUN) $< $(INPUT)
 
 $(BUILD)/%.exe: $(PARSER) *.cs
 	@echo "*** building $@ from $^"

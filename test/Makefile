@@ -4,8 +4,10 @@ BUILD       = .build
 CC          = mcs
 RUN         = mono
 
+ifdef DEBUG
 RUN        += --debug
 CFLAGS     += -define:DEBUG -debug
+endif
 
 ifdef CSHARP_VERSION
 CFLAGS     += -langversion:$(CSHARP_VERSION)

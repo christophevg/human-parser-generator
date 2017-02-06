@@ -284,18 +284,10 @@ namespace HumanParserGenerator.Generator {
   }
 
   public class ConsumeAll : ParseAction {
-    protected List<ParseAction> actions = new List<ParseAction>();
-    public ReadOnlyCollection<ParseAction> Actions {
-      get { return this.actions.AsReadOnly(); }
-      set {
-        this.actions.Clear();
-        foreach(var action in value) {
-          this.Add(action);
-        }
-      }
-    }
-    public virtual void Add(ParseAction action) {
-      this.actions.Add(action);
+    public List<ParseAction> Actions { get; set; }
+
+    public ConsumeAll() {
+      this.Actions = new List<ParseAction>();
     }
     
     // TODO if this All consists of one actual ConsumeEntity, we should behave
@@ -308,18 +300,13 @@ namespace HumanParserGenerator.Generator {
 
     public override string Label {
       get {
-        return
-          "[" +
-          string.Join( ",", this.Actions.Select(x => x.Label) ) +
-          "]";
+        return "[" + string.Join(",", this.Actions.Select(x => x.Label)) + "]";
       }
     }
     public override string Representation {
       get {
         return
-          "[" +
-          string.Join( ",", this.Actions.Select(x => x.ToString()) ) +
-          "]";
+          "[" + string.Join(",", this.Actions.Select(x => x.ToString())) + "]";
       }
     }
   }
@@ -328,11 +315,6 @@ namespace HumanParserGenerator.Generator {
   // and passes on the first that parses
   // all of the alternatives MUST have the same type!
   public class ConsumeAny : ConsumeAll {
-    // TODO deprecate
-    public override void Add(ParseAction action) {
-      this.actions.Add(action);
-    }
-
     public override string Name   { get { return "any"; } }
 
     public override string Type {
@@ -356,9 +338,7 @@ namespace HumanParserGenerator.Generator {
     }
 
     public override string Label {
-      get {
-        return string.Join( " | ", this.Actions.Select(x => x.Label) );
-      }
+      get { return string.Join( " | ", this.Actions.Select(x => x.Label) ); }
     }
   }
 
@@ -473,7 +453,7 @@ namespace HumanParserGenerator.Generator {
       // ConsumeAll that actually is a single ConsumeEntity and otherwise only
       // none-Property related Consumes
       if(entity.ParseAction is ConsumeAll) {
-        ReadOnlyCollection<ParseAction> actions = ((ConsumeAll)entity.ParseAction).Actions;
+        List<ParseAction> actions = ((ConsumeAll)entity.ParseAction).Actions;
         if( actions.OfType<ConsumeEntity>().Count() == 1 ) {
           int other = actions.Where(action => action.Property == null).Count();
           if(actions.Count() == other + 1) {
@@ -498,7 +478,6 @@ namespace HumanParserGenerator.Generator {
                                                         Entity     entity,
                                                         bool       optional=false)
     {
-      // this.Log("extracting from " + exp.GetType().ToString());
       try {
         return new Dictionary<string, Func<Expression,Entity,bool,ParseAction>>() {
           { "SequentialExpression",   this.ImportSequentialExpression   },
@@ -614,13 +593,13 @@ namespace HumanParserGenerator.Generator {
       // SequentialExpression is constructed recusively, unroll it...
       while(true) {
         // add first part
-        consume.Add(this.ImportPropertiesAndParseActions(
+        consume.Actions.Add(this.ImportPropertiesAndParseActions(
           sequence.NonSequentialExpression, entity
         ));
         // add remaining parts
         if(sequence.Expression is NonSequentialExpression) {
           // last part
-          consume.Add(this.ImportPropertiesAndParseActions(
+          consume.Actions.Add(this.ImportPropertiesAndParseActions(
             sequence.Expression, entity
           ));
           break;
@@ -643,13 +622,13 @@ namespace HumanParserGenerator.Generator {
       // AlternativesExpression is constructed recusively, unroll it...
       while(true) {
         // add first part
-        consume.Add(this.ImportPropertiesAndParseActions(
+        consume.Actions.Add(this.ImportPropertiesAndParseActions(
           alternative.AtomicExpression, entity
         ));
         // add remaining parts
         if(alternative.NonSequentialExpression is AtomicExpression) {
           // last part
-          consume.Add(this.ImportPropertiesAndParseActions(
+          consume.Actions.Add(this.ImportPropertiesAndParseActions(
             alternative.NonSequentialExpression, entity
           ));
           break;

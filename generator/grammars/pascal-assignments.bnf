@@ -6,14 +6,10 @@ program               ::= "PROGRAM" identifier
 
 assignment            ::= identifier ":=" expression ";" ;
 
-expression            ::= identifier-expression
-                        | string-expression
-                        | number-expression
+expression            ::= identifier
+                        | string
+                        | number
                         ;
-
-identifier-expression ::= identifier;
-string-expression     ::= string;
-number-expression     ::= number;
 
 identifier            ::= /([A-Z][A-Z0-9]*)/ ;
 string                ::= /"([^"]*)"|'([^']*)'/ ;

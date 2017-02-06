@@ -230,6 +230,9 @@ namespace HumanParserGenerator.Generator {
     // Label can be used for external string representation, other than ToString
     public abstract string Label { get; }
 
+    // Name can be used for code-level representation, e.g. a variable name
+    public abstract string Name { get; }
+
     // Type indicates what type of result this ParseAction will expose
     public abstract string Type  { get; }
 
@@ -250,7 +253,10 @@ namespace HumanParserGenerator.Generator {
   public class ConsumeString : ParseAction {
     public          string String { get; set; }
     public override string Label  { get { return this.String; } }
-    public override string Type   { get { return "string";    } }
+    public override string Type   {
+      get { return  this.ReportSuccess ? "bool" : "string"; }
+    }
+    public override string Name   { get { return this.String.Replace(" ", "-"); }}
   }
 
   // ... to consume a sequence of characters according to a regular expression
@@ -273,15 +279,10 @@ namespace HumanParserGenerator.Generator {
       }
     }
     public override string Label  { get { return this.Entity.Name; } }
-    public override string Type   { get { return this.Entity.Type; } }
-  }
-
-  // ... to watch another ParseAction and inform the Property about the outcome
-  public class ConsumeOutcome : ParseAction {
-    public ParseAction Watching { get; set; }
-
-    public override string Label  { get { return this.Watching.ToString(); } }
-    public override string Type   { get { return "bool"; } }
+    public override string Type   {
+      get { return this.ReportSuccess ? "bool" : this.Entity.Type; }
+    }
+    public override string Name   { get { return this.Entity.Name; } }
   }
 
   public class ConsumeAll : ParseAction {
@@ -299,8 +300,13 @@ namespace HumanParserGenerator.Generator {
       this.actions.Add(action);
     }
     
-    // TODO this shouldn't be possible, but we need to check ;-)
-    public override string Type { get { return null; } }
+    // TODO if this All consists of one actual ConsumeEntity, we should behave
+    //      as it was only that.
+    public override string Type {
+      get { return this.ReportSuccess ? "bool" : null; }
+    }
+
+    public override string Name   { get { return "all"; } }
 
     public override string Label {
       get {

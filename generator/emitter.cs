@@ -228,7 +228,6 @@ using System.Diagnostics;
     }
 
     private string GenerateParseAction(Generator.ParseAction action) {
-      // this.Log("extracting from " + exp.GetType().ToString());
       try {
         string code = new Dictionary<string, Func<Generator.ParseAction,string>>() {
           { "ConsumeString",  this.GenerateConsumeString  },

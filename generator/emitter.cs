@@ -307,12 +307,12 @@ using System.Diagnostics;
           "try {\n" +
             this.GenerateParseAction(option) + "\n" +
           "} catch(ParseException) {\n";
-        closing += "}\n";
+        closing += "}";
       }
       code +=
         "throw this.source.GenerateParseException(\n" +
         "  \"Expected: " + consume.Label + "\"\n" +
-        ");\n";
+        ");";
 
       return code + closing;
     }
@@ -320,7 +320,9 @@ using System.Diagnostics;
     // TODO: probably add rollback of position !!!
     private string WrapOptional(Generator.ParseAction action, string code) {
       if( ! action.IsOptional ) { return code; }
-      return "try {\n" + code + "\n} catch(ParseException) {}\n";
+      return "try {\n" + code + "\n} catch(ParseException) {}";
+    }
+
     private string AddSuccessReporting(Generator.ParseAction action, string code) {
       if( ! action.ReportSuccess ) { return code; }
       return code + "\n" +

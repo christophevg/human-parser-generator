@@ -677,7 +677,8 @@ namespace HumanParserGenerator.Generator {
       int all = entity.Properties.Count();
       int props = consume.Actions.Where(action => action.Property != null).Count();
       int strings = consume.Actions.Where(action => (action.Type != null && action.Type.Equals("string"))).Count();
-      // Console.Error.WriteLine("# all: " + all.ToString() + " = # strings: " + strings.ToString() + " / # props: " + props.ToString() );
+      this.Log(entity.Name + " : # all: " + all.ToString() + " = # strings: " + strings.ToString() + " / # props: " + props.ToString() );
+      this.Log("    - " + string.Join("   \n    - ", consume.Actions.Select(action=>action.Type)));
       if(all == 0 || props == all && (strings == all || strings == 0)) {
         // Add a new Property to the Entity that holds the outcome of the
         // Consumption

@@ -77,7 +77,6 @@ namespace HumanParserGenerator.Generator {
 
     // Entities can "be" (implement) other Virtual Entities it is referenced by 
     // from those Entities (only) Property.
-    public bool HasSupers { get { return this.Supers.Count > 0; } }
     public List<Entity> Supers {
       get {
         return this.Referrers

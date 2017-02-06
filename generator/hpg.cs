@@ -38,7 +38,7 @@ namespace HumanParserGenerator {
       this.Log(grammar.ToString());
 
       // Grammar Model -> Generator/Parser Model
-      Generator.Model model = new Generator.Model().Import(grammar);
+      Generator.Model model = new Generator.Factory().Import(grammar).Model;
 
       this.Log(model.ToString());
 

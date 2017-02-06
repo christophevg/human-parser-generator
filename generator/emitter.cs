@@ -233,9 +233,8 @@ using System.Diagnostics;
           { "ConsumeEntity",  this.GenerateConsumeEntity  },
           { "ConsumeAll",     this.GenerateConsumeAll     },
           { "ConsumeAny",     this.GenerateConsumeAny     },
-          { "ConsumeOutcome", this.GenerateConsumeOutcome }
         }[action.GetType().ToString().Replace("HumanParserGenerator.Generator.","")](action);
-        return this.WrapOptional(action, code);
+        return this.WrapOptional(action, this.AddSuccessReporting(action, code));
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
           "extracting not implemented for " + action.GetType().ToString(), e
@@ -302,20 +301,19 @@ using System.Diagnostics;
       return code + closing;
     }
 
-    // TODO: add boolean setting
-    private string GenerateConsumeOutcome(Generator.ParseAction action) {
-      Generator.ConsumeOutcome consume = (Generator.ConsumeOutcome)action;
-      return this.GenerateParseAction(consume.Watching);
-    }
-
     // TODO: probably add rollback of position !!!
     private string WrapOptional(Generator.ParseAction action, string code) {
       if( ! action.IsOptional ) { return code; }
       return "try {\n" + code + "\n} catch(ParseException) {}\n";
+    private string AddSuccessReporting(Generator.ParseAction action, string code) {
+      if( ! action.ReportSuccess ) { return code; }
+      return code + "\n" +
+        this.GenerateLocalVariable(action.Property) + " = true;";
     }
 
     private string GenerateAssignment(Generator.ParseAction action) {
       if(action.Property == null) { return ""; }
+      if(action.ReportSuccess)    { return ""; }
       return this.GenerateLocalVariable(action.Property) + " = ";
     }
 

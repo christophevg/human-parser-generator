@@ -188,7 +188,10 @@ namespace HumanParserGenerator.Generator {
     public ParseAction Source { get; set; }
 
     // the Type of a Property is defined by the ParseAction
-    public string Type { get { return this.Source.Type; } }
+    public string Type { get {
+      if(this.Source == null) { throw new ArgumentException(this.Entity.Name + "." + this.Name + " has no Source! "); }
+      return this.Source.Type;
+    } }
 
     // a Property can me marked as Plural, meaning that it will contain a list
     // of Type parsing results, which depends on the ParseAction
@@ -217,6 +220,9 @@ namespace HumanParserGenerator.Generator {
   public abstract class ParseAction {
     // the Parsing is optional
     public bool IsOptional { get; set; }
+    
+    // don't pass on the result, but the successfull outcome
+    public bool ReportSuccess { get; set; }
 
     // the Parsing should be repeated as much as possible
     public bool IsPlural { get; set; }
@@ -228,14 +234,7 @@ namespace HumanParserGenerator.Generator {
     public abstract string Type  { get; }
 
     // (Optional) Property that receives parsing result from this ParseAction
-    private Property property;
-    public Property Property {
-      get { return this.property; }
-      set {
-        this.property = value;
-        this.property.Source = this; // back-reference
-      }
-    }
+    public Property Property { get; set; }
 
     public override string ToString() {
       return
@@ -453,7 +452,12 @@ namespace HumanParserGenerator.Generator {
       if(str.Name != null) {
         Property property = new Property() { Name = str.Name };
         entity.Add(property);
-        return new ConsumeString() { Property = property, String = str.String };
+        ParseAction consume = new ConsumeString() {
+          Property = property,
+          String   = str.String
+        };
+        property.Source = consume;
+        return consume;
       }
       // the simplest case: just a string, not optional, just consume it
       return new ConsumeString() { String = str.String };
@@ -473,10 +477,12 @@ namespace HumanParserGenerator.Generator {
       Property property = new Property() { Name = name };
       entity.Add(property);
 
-      return new ConsumeEntity() {
+      ParseAction consume = new ConsumeEntity() {
         Property = property,
         Entity   = this.Model[id.Identifier]
       };
+      property.Source = consume;
+      return consume;
     }
 
     private ParseAction ImportExtractorExpression(Expression exp,
@@ -484,15 +490,16 @@ namespace HumanParserGenerator.Generator {
                                                   bool       optional=false)
     {
       ExtractorExpression extr = ((ExtractorExpression)exp);
-      // if an ExtractorExpression has an explicit Name, we create a Property
-      // for it with that name
-      if(extr.Name != null) {
-        Property property = new Property() { Name = extr.Name };
-        entity.Add(property);
-        return new ConsumePattern() { Property = property, Pattern = extr.Regex };
-      }
-      // the simplest case: just a string, not optional, just consume it
-      return new ConsumePattern() { Pattern = extr.Regex };
+      Property property = new Property() {
+        Name = extr.Name != null ? extr.Name : entity.Name
+      };
+      entity.Add(property);
+      ParseAction consume = new ConsumePattern() {
+        Property = property,
+        Pattern = extr.Regex
+      };
+      property.Source = consume;
+      return consume;
     }
 
     private ParseAction ImportOptionalExpression(Expression exp,
@@ -501,25 +508,24 @@ namespace HumanParserGenerator.Generator {
     {
       OptionalExpression optional = ((OptionalExpression)exp);
       // recurse down
-      ParseAction action = this.ImportPropertiesAndParseActions(
+      ParseAction consume = this.ImportPropertiesAndParseActions(
         optional.Expression,
         entity
       );
       // mark optional
-      action.IsOptional = true;
+      consume.IsOptional = true;
 
       // if the action doesn't have a Property reference, we create one now.
       // this is possible in case of simple String extraction without the need
       // to store it, aka Token consumption.
-      if( action.Property == null ) {
-        Property property = new Property() { Name = "has-" + action.Label };
+      if( consume.Property == null ) {
+        Property property = new Property() { Name = "has-" + consume.Name };
         entity.Add(property);
-        return new ConsumeOutcome() {
-          Watching = action,
-          Property = property
-        };
+        property.Source = consume;
+        consume.Property = property;
+        consume.ReportSuccess = true;
       }
-      return action;
+      return consume;
     }
 
     private ParseAction ImportSequentialExpression(Expression exp,

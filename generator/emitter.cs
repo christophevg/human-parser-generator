@@ -348,7 +348,7 @@ using System.Diagnostics;
       if( name.Equals("string") ) { return "text";     }
       if( name.Equals("int")    ) { return "number";   }
       if( name.Equals("float")  ) { return "floating"; }
-      return this.CamelCase(name);
+      return this.CamelCase(name + (property.IsPlural ? "s" : "") );
     }
 
     private string GenerateEntityParserFooter(Generator.Entity entity) {

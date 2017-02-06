@@ -260,11 +260,11 @@ using System.Diagnostics;
       Generator.ConsumeEntity consume = (Generator.ConsumeEntity)action;
       if(consume.Property.IsPlural) {
         return
-          "{" +
+          "{\n" +
             this.PascalCase(consume.Entity.Type) + " temp;\n" +
           "  while(true) {\n" +
           "    try {\n" +
-          "      temp = this.Parse" + this.PascalCase(consume.Entity.Name) + "();\n" +
+          "      temp = " + this.GenerateConsumeSingleEntity(consume, true) + ";\n" +
           "    } catch(ParseException) {\n" +
           "      break;\n" +
           "    }\n" +
@@ -272,7 +272,21 @@ using System.Diagnostics;
           "  }" +
           "}";
       }
-      return this.GenerateAssignment(action) +
+
+      return this.GenerateConsumeSingleEntity(consume);
+    }
+
+    private string GenerateConsumeSingleEntity(Generator.ConsumeEntity consume,
+                                               bool withoutAssignment = false)
+    {
+      // if the referenced Entity is an Extractor, consume it directly
+      if(consume.Entity.ParseAction is Generator.ConsumePattern) {
+        return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
+          "this.source.Consume(Extracting." + this.PascalCase(consume.Entity.Name) + ");";
+      }
+
+      // simple case, dispatch to Parse<Entity>
+      return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
         "this.Parse" + this.PascalCase(consume.Entity.Name) + "();";
     }
 

@@ -52,62 +52,61 @@ namespace HumanParserGenerator.Generator {
       set { this.referrers = value; }
     }
     
-    // A Virtual Entity, implements structure from the Grammar, but shouldn't
-    // be part of the Entities that can actually be constructed to build the
-    // Model. In general the rule boils down to the fact if the Entity would be
-    // a Simple one or a Complex one. If its Properties can simply be passed on
-    // to a incorporating Entity (e.g. only 1 Property), the Entity becomes
-    // Virtual. Entities with multiple Properties, aka structures, can't be
-    // simply passed on, as in a return value, and require actual Entities to be
-    // created to create the object model hierarchy.
     public bool IsVirtual {
       get {
-        return
-          ( this.ParseAction.Type != null || this.Properties.Count < 2 )
-          // ParseAction returns Type     || 1 Property can be passed on
-          &&
-            ! this.IsRoot;              // top-level Entity _must_ be there
+        // the Root can never be Virtual
+        if( this.IsRoot ) { return false; }
+        
+        // entities without sub-classes, are "leafs" and cannot be Virtual
+        // unless their ParseAction is ConsumePattern
+        if( this.Subs.Count == 0 && ! (this.ParseAction is ConsumePattern) ) { return false; }
+        
+        // if this Entity has only one Property, it is Virtual
+        if( this.Properties.Count() == 1) { return true; }
+
+        return false;
       }
     }
-    
+
     public bool IsRoot { get { return this == this.Model.Root; } }
 
     // the Entity can be optional, if its top-level ParseAction is Optional
     public bool IsOptional { get { return this.ParseAction.IsOptional; } }
 
-    // Entities can "be" (implement) other Virtual Entities it is referenced by 
-    // from those Entities (only) Property.
-    public List<Entity> Supers {
+    // Inheritance Model  Super <|-- Sub
+    public List<Entity> Supers { get; set; }
+    public List<Entity> Subs { get; set; }
+
+    public bool IsA(Entity super) {
+      if(this.Supers.Contains(super)) { return true; }
+      foreach(Entity parent in this.Supers) {
+        if(parent.IsA(super)) { return true; }
+      }
+      return false;
+    }
+
+    public string DefaultType {
       get {
-        return this.Referrers
-          .Where (x => x.Property.Entity.IsVirtual)
-          .Select(x => x.Property.Entity)
-          .Cast<Entity>()
-          .ToList();
+        return this.Name;
       }
     }
 
-    // be default, an Entity "is" its own Type
-    // when an Entity is Virtual, its Type is that of its only Property
-    // BUT in some cases, there isn't a Property, e.g. when just parsing Strings
-    // or patterns to parse fixed structure that doesn't need to be extracted.
-    // in that case there isn't a local Property that catches that String, but
-    // Properties on other Entities can refer to it. In that case we need to
-    // retrieve the property of the Action directly.
     public string Type {
       get {
         if( this.IsVirtual ) {
-          if( this.Properties.Count > 0 ) {
+          if( this.Properties.Count == 1 ) {
             return this.Properties[0].Type;
           } else {
             if( this.ParseAction != null ) {
-              return this.ParseAction.Type;
+              if( this.ParseAction.Type != null ) {
+                return this.ParseAction.Type;
+              }
             } else {
               throw new ArgumentException("missing ParseAction on " + this.Name);
             }
           }
         }
-        return this.Name;
+        return this.DefaultType;
       }
     }
 
@@ -117,6 +116,8 @@ namespace HumanParserGenerator.Generator {
     public Entity() {
       this.properties      = new Dictionary<string,Property>();
       this.propertyIndices = new Dictionary<string, int>();
+      this.Supers          = new List<Entity>();
+      this.Subs            = new List<Entity>();
     }
 
     public void Add(Property property) {
@@ -156,6 +157,11 @@ namespace HumanParserGenerator.Generator {
           ( this.Supers.Count == 0 ? "" :
             ",Supers=" + "[" +
               string.Join(",", this.Supers.Select(x => x.Name)) +
+            "]"
+          ) +
+          ( this.Subs.Count == 0 ? "" :
+            ",Subs=" + "[" +
+              string.Join(",", this.Subs.Select(x => x.Name)) +
             "]"
           ) +
           ( this.Referrers.Count == 0 ? "" :
@@ -322,20 +328,29 @@ namespace HumanParserGenerator.Generator {
   // and passes on the first that parses
   // all of the alternatives MUST have the same type!
   public class ConsumeAny : ConsumeAll {
+    // TODO deprecate
     public override void Add(ParseAction action) {
-      // TODO can't do this always, since sometimes an Entity that's being
-      //      referred to, isn't imported yet, causing failure on Type detection
-      // if(this.actions.Count > 1) {
-      //   if( ! action.Type.Equals(this.Type) ) {
-      //     throw new ArgumentException("all alternatives must have same type");
-      //   }
-      // }
       this.actions.Add(action);
     }
 
+    public override string Name   { get { return "any"; } }
+
     public override string Type {
       get {
-        if( this.actions.Count > 0 ) { return this.actions[0].Type; }
+        if( this.ReportSuccess ) { return "bool"; }
+        
+        // case 1: if all alternatives expose the same Type (string or null
+        // probably), we take on that type
+        if( this.Actions.Select(a => a.Type).Distinct().Count() == 1) {
+          return this.Actions[0].Type;
+        }
+        
+        // default is simply the Default Entity Type, referring to Type would
+        // cause an endless recursion ;-)
+        if(this.Property != null) {
+          return this.Property.Entity.DefaultType;
+        }
+        
         return null;
       }
     }
@@ -405,6 +420,7 @@ namespace HumanParserGenerator.Generator {
     public Factory Import(Grammar grammar) {
       this.ImportEntities(grammar.Rules);
       this.ImportPropertiesAndActions();
+      this.DetectInheritance();
 
       return this;
     }
@@ -419,10 +435,57 @@ namespace HumanParserGenerator.Generator {
 
     private void ImportPropertiesAndActions() {
       foreach(Entity entity in this.Model.Entities) {
-        entity.ParseAction = this.ImportPropertiesAndParseActions(
-          entity.Rule.Expression, entity
-        );
+        this.ImportPropertiesAndParseActions(entity);
       }
+    }
+
+    private void DetectInheritance() {
+      foreach(Entity entity in this.Model.Entities) {
+        this.DetectInheritance(entity);
+      }
+    }
+
+    private void ImportPropertiesAndParseActions(Entity entity) {
+      entity.ParseAction = this.ImportPropertiesAndParseActions(
+        entity.Rule.Expression, entity
+      );
+    }
+
+    private void DetectInheritance(Entity entity) {
+      // 1-on-1 (TODO: actually in use/usefull?)
+      if(entity.ParseAction is ConsumeEntity && ! entity.ParseAction.IsPlural) {
+        this.AddInheritance(entity, ((ConsumeEntity)entity.ParseAction).Entity);
+      }
+      // Alternatives, 1-on-n
+      if(entity.ParseAction is ConsumeAny) {
+        foreach(ParseAction action in ((ConsumeAny)entity.ParseAction).Actions) {
+          if(action is ConsumeEntity) {
+            this.AddInheritance(entity, ((ConsumeEntity)action).Entity);
+          }
+        }
+      }
+      // ConsumeAll that actually is a single ConsumeEntity and otherwise only
+      // none-Property related Consumes
+      if(entity.ParseAction is ConsumeAll) {
+        ReadOnlyCollection<ParseAction> actions = ((ConsumeAll)entity.ParseAction).Actions;
+        if( actions.OfType<ConsumeEntity>().Count() == 1 ) {
+          int other = actions.Where(action => action.Property == null).Count();
+          if(actions.Count() == other + 1) {
+            Entity sub = actions.OfType<ConsumeEntity>().ToList()[0].Entity;
+            this.AddInheritance(entity, sub);
+          }
+        }
+        
+      }
+    }
+
+    private void AddInheritance(Entity parent, Entity child) {
+      // avoid recursive inheritance relationships
+      if( parent.IsA(child) ) { return; }
+      // connect
+      parent.Subs.Add(child);
+      child.Supers.Add(parent);
+      this.Log(parent.Name + " <|-- " + child.Name);
     }
 
     private ParseAction ImportPropertiesAndParseActions(Expression exp,
@@ -591,6 +654,30 @@ namespace HumanParserGenerator.Generator {
         }
       }
 
+      // If all Properties result from the ParseActions Alternatives, we can
+      // replace them with a single one...
+      int alternativeProperties =
+        consume.Actions.Where(action => action.Property != null).Count();
+      if(alternativeProperties == entity.Properties.Count()) {
+        // Add a new Property to the Entity that holds the outcome of the
+        // Consumption
+        Property property = new Property() {
+          Name   = "alternative",
+          Source = consume
+        };
+        consume.Property = property;
+        property.Source  = consume;
+
+        entity.Add(property);
+      
+        // make all original consumers point to the new alternative property
+        foreach(ParseAction action in consume.Actions) {
+          if(action.Property != null) {
+            action.Property.Entity.Remove(action.Property);
+            action.Property = property;          
+          }
+        }
+      }
       return consume;
     }
 

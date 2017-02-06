@@ -49,11 +49,17 @@ public class GeneratorModelTests {
   public void testMinimalModelWithProperty() {
     // e.g. rule ::= "StringProperty"@"a"
     Property property = new Property() { Name = "StringProperty" };
+    ParseAction consume = new ConsumeString() {
+      Property = property,
+      String = "a"
+    };
+    property.Source = consume;
     Model model = new Model() {
       Entities = new List<Entity> {
         new Entity() {
           Name        = "rule",
           Properties  = (new List<Property>  { property }).AsReadOnly(),
+          ParseAction = consume
         }
       }
     };

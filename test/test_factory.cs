@@ -89,7 +89,7 @@ public class GeneratorModelFactoryTests {
   [Test]
   public void testSimpleIdentifierExpressionIndirection() {
     // rule1 ::= rule2
-    // rule2 ::= "a"
+    // rule2 ::= /a/
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -99,25 +99,26 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "rule2",
-            Expression = new StringExpression() { String = "a" }
+            Expression = new ExtractorExpression() { Regex = "a" }
           }
         }
       },
       @"Model(
          Entities=[
            Entity(
-             Name=rule1,Type=rule1,
+             Name=rule1,Type=rule1,Subs=[rule2],
              Properties=[Property(Name=rule2,Type=string,Source=ConsumeEntity(rule2)->rule2)],
              ParseAction=ConsumeEntity(rule2)->rule2
            ),
            VirtualEntity(
-             Name=rule2,Type=string,Referrers=[rule1.rule2],
-             ParseAction=ConsumeString(a)
+             Name=rule2,Type=string,Supers=[rule1],Referrers=[rule1.rule2],
+             Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern(a)->rule2)],
+             ParseAction=ConsumePattern(a)->rule2
            )
         ],
         Root=rule1
       )"
-    );      
+    );
   }
 
   [Test]
@@ -136,7 +137,8 @@ public class GeneratorModelFactoryTests {
          Entities=[
            Entity(
              Name=rule,Type=rule,
-             ParseAction=ConsumePattern([A-Za-z0-9-]*)
+             Properties=[Property(Name=rule,Type=string,Source=ConsumePattern([A-Za-z0-9-]*)->rule)],
+             ParseAction=ConsumePattern([A-Za-z0-9-]*)->rule
            )
         ],
         Root=rule
@@ -180,7 +182,7 @@ public class GeneratorModelFactoryTests {
   [Test]
   public void testNamedIdentifierExpression() {
     // rule1 ::= IdentifierProperty@rule2
-    // rule2 ::= "a"
+    // rule2 ::= /a/
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -193,27 +195,28 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "rule2",
-            Expression = new StringExpression() { String = "a" }
+            Expression = new ExtractorExpression() { Regex = "a" }
           }
         }
       },
       @"Model(
          Entities=[
            Entity(
-             Name=rule1,Type=rule1,
+             Name=rule1,Type=rule1,Subs=[rule2],
              Properties=[
                Property(Name=IdentifierProperty,Type=string,Source=ConsumeEntity(rule2)->IdentifierProperty)
              ],
              ParseAction=ConsumeEntity(rule2)->IdentifierProperty
            ),
            VirtualEntity(
-             Name=rule2,Type=string,Referrers=[rule1.IdentifierProperty],
-             ParseAction=ConsumeString(a)
+             Name=rule2,Type=string,Supers=[rule1],Referrers=[rule1.IdentifierProperty],
+             Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern(a)->rule2)],
+             ParseAction=ConsumePattern(a)->rule2
            )
         ],
         Root=rule1
       )"
-    );      
+    );
   }
 
   [Test]
@@ -235,10 +238,12 @@ public class GeneratorModelFactoryTests {
            Entity(
              Name=rule,Type=rule,
              Properties=[
-               Property(Name=has-a,Type=bool,
-               Source=ConsumeOutcome(ConsumeString(a)?)->has-a)
+               Property(
+                 Name=has-a,Type=bool,IsOptional,
+                 Source=ConsumeString(a)?->has-a
+               )
              ],
-             ParseAction=ConsumeOutcome(ConsumeString(a)?)->has-a
+             ParseAction=ConsumeString(a)?->has-a
            )
         ],
         Root=rule
@@ -285,7 +290,8 @@ public class GeneratorModelFactoryTests {
            ),
            VirtualEntity(
              Name=rule2,Type=string,Referrers=[rule1.rule20,rule1.rule21],
-             ParseAction=ConsumePattern([a-z]+)
+             Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern([a-z]+)->rule2)],
+             ParseAction=ConsumePattern([a-z]+)->rule2
            )
         ],
         Root=rule1
@@ -337,7 +343,7 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=name,Type=string,Referrers=[rule.name],
+             Name=name,Type=string,Subs=[id],Referrers=[rule.name],
              Properties=[
                Property(Name=id,Type=string,Source=ConsumeEntity(id)->id)
              ],
@@ -348,7 +354,8 @@ public class GeneratorModelFactoryTests {
            ),
            VirtualEntity(
              Name=id,Type=string,Supers=[name],Referrers=[rule.id,name.id],
-             ParseAction=ConsumePattern([a-z]+)
+             Properties=[Property(Name=id,Type=string,Source=ConsumePattern([a-z]+)->id)],
+             ParseAction=ConsumePattern([a-z]+)->id
            )
         ],
         Root=rule
@@ -378,11 +385,18 @@ public class GeneratorModelFactoryTests {
          Entities=[
            Entity(
              Name=rule,Type=rule,
+             Properties=[
+               Property(Name=alternative,Type=string,Source=ConsumeAny([
+               ConsumeString(a),
+               ConsumeString(b),
+               ConsumeString(c)
+             ])->alternative)
+             ],
              ParseAction=ConsumeAny([
                ConsumeString(a),
                ConsumeString(b),
                ConsumeString(c)
-             ])
+             ])->alternative
            )
         ],
         Root=rule
@@ -419,10 +433,14 @@ public class GeneratorModelFactoryTests {
          Entities=[
            Entity(
              Name=rule,Type=rule,
+             Properties=[Property(Name=alternative,Type=,Source=ConsumeAny([
+               ConsumeAll([ConsumeString(a), ConsumeString(b)]),
+               ConsumeAll([ConsumeString(c), ConsumeString(d)])
+             ])->alternative)],
              ParseAction=ConsumeAny([
                ConsumeAll([ConsumeString(a), ConsumeString(b)]),
                ConsumeAll([ConsumeString(c), ConsumeString(d)])
-             ])
+             ])->alternative
            )
         ],
         Root=rule
@@ -519,7 +537,8 @@ public class GeneratorModelFactoryTests {
            ),
            VirtualEntity(
              Name=id,Type=string,Referrers=[rule.id0,rule.id1,rule.id2],
-             ParseAction=ConsumePattern([a-z]+)
+             Properties=[Property(Name=id,Type=string,Source=ConsumePattern([a-z]+)->id)],
+             ParseAction=ConsumePattern([a-z]+)->id
            )
         ],
         Root=rules
@@ -558,19 +577,24 @@ public class GeneratorModelFactoryTests {
              Name=rule1,Type=rule1,
              Properties=[
                Property(
-                 Name=rule2,Type=string,IsPlural,
+                 Name=rule2,Type=rule2,IsPlural,
                  Source=ConsumeEntity(rule2)*->rule2
                )
              ],
              ParseAction=ConsumeEntity(rule2)*->rule2
            ),
-           VirtualEntity(
-             Name=rule2,Type=string,Referrers=[rule1.rule2],
+           Entity(
+             Name=rule2,Type=rule2,Referrers=[rule1.rule2],
+             Properties=[Property(Name=alternative,Type=string,Source=ConsumeAny([
+               ConsumeString(a),
+               ConsumeString(b),
+               ConsumeString(c)
+             ])->alternative)],
              ParseAction=ConsumeAny([
                ConsumeString(a),
                ConsumeString(b),
                ConsumeString(c)
-             ])
+             ])->alternative
            )
         ],
         Root=rule1
@@ -582,8 +606,8 @@ public class GeneratorModelFactoryTests {
   public void testAlternativeIdentifiers() {
     // assign ::= exp ;
     // exp ::= a | b ;
-    // a ::= "aa";
-    // b ::= "bb";
+    // a ::= /aa/;
+    // b ::= /bb/;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -600,39 +624,140 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "a",
-            Expression = new StringExpression() { String = "aa" }
+            Expression = new ExtractorExpression() { Regex = "aa" }
           },
           new Rule() {
             Identifier = "b",
-            Expression = new StringExpression() { String = "bb" }
+            Expression = new ExtractorExpression() { Regex = "bb" }
           }
         }
       },
       @"Model(
          Entities=[
            Entity(
-             Name=assign,Type=assign,Properties=[
+             Name=assign,Type=assign,Subs=[exp],Properties=[
                Property(Name=exp,Type=string,Source=ConsumeEntity(exp)->exp)
              ],
              ParseAction=ConsumeEntity(exp)->exp
            ),
            VirtualEntity(
-             Name=exp,Type=string,Referrers=[assign.exp],Properties=[
-               Property(Name=a,Type=string,Source=ConsumeEntity(a)->a),
-               Property(Name=b,Type=string,Source=ConsumeEntity(b)->b)
+             Name=exp,Type=string,Supers=[assign],Subs=[a,b],Referrers=[assign.exp],Properties=[
+               Property(Name=alternative,Type=string,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
              ],
              ParseAction=ConsumeAny([
-               ConsumeEntity(a)->a,
-               ConsumeEntity(b)->b
+               ConsumeEntity(a)->alternative,
+               ConsumeEntity(b)->alternative
+             ])->alternative
+           ),
+           VirtualEntity(
+             Name=a,Type=string,Supers=[exp],Referrers=[exp.alternative],
+             Properties=[Property(Name=a,Type=string,Source=ConsumePattern(aa)->a)],
+             ParseAction=ConsumePattern(aa)->a
+           ),
+           VirtualEntity(
+             Name=b,Type=string,Supers=[exp],Referrers=[exp.alternative],
+             Properties=[Property(Name=b,Type=string,Source=ConsumePattern(bb)->b)],
+             ParseAction=ConsumePattern(bb)->b
+           )
+         ],
+         Root=assign
+       )"
+    );
+  }
+
+  [Test]
+  public void testPropertyTypesWithInheritance() {
+    // assign ::= exp ;
+    // exp ::= a | b ;
+    // a ::= b exp ;
+    // b ::= x | y ;
+    // x ::= /xx/ ;
+    // y ::= /yy/ ;
+    this.importAndCompare(
+      new Grammar() {
+        Rules = new List<Rule>() {
+          new Rule() {
+            Identifier = "assign",
+            Expression = new IdentifierExpression() { Identifier = "exp" }
+          },
+          new Rule() {
+            Identifier = "exp",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "a" },
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "b"}
+            }
+          },
+          new Rule() {
+            Identifier = "a",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "b"   },
+              Expression              = new IdentifierExpression() { Identifier = "exp" }
+            }
+          },
+          new Rule() {
+            Identifier = "b",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "x" },
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "y"}
+            }
+          },
+          new Rule() {
+            Identifier = "x",
+            Expression = new ExtractorExpression() { Regex = "xx" }
+          },
+          new Rule() {
+            Identifier = "y",
+            Expression = new ExtractorExpression() { Regex = "yy" }
+          }
+        }
+      },
+      @"Model(
+         Entities=[
+           Entity(
+             Name=assign,Type=assign,Subs=[exp],Properties=[
+               Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
+             ],
+             ParseAction=ConsumeEntity(exp)->exp
+           ),
+           VirtualEntity(
+             Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Referrers=[assign.exp,a.exp],Properties=[
+               Property(Name=alternative,Type=exp,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
+             ],
+             ParseAction=ConsumeAny([
+               ConsumeEntity(a)->alternative,
+               ConsumeEntity(b)->alternative
+             ])->alternative
+           ),
+           Entity(
+             Name=a,Type=a,Supers=[exp],Referrers=[exp.alternative],
+             Properties=[
+               Property(Name=b,Type=string,Source=ConsumeEntity(b)->b),
+               Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
+             ],
+             ParseAction=ConsumeAll([
+               ConsumeEntity(b)->b,
+               ConsumeEntity(exp)->exp
              ])
            ),
            VirtualEntity(
-             Name=a,Type=string,Supers=[exp],Referrers=[exp.a],
-             ParseAction=ConsumeString(aa)
+             Name=b,Type=string,Supers=[exp],Subs=[x,y],Referrers=[exp.alternative,a.b],
+             Properties=[
+               Property(Name=alternative,Type=string,Source=ConsumeAny([ConsumeEntity(x)->alternative,ConsumeEntity(y)->alternative])->alternative)
+             ],
+             ParseAction=ConsumeAny([
+               ConsumeEntity(x)->alternative,
+               ConsumeEntity(y)->alternative
+             ])->alternative
            ),
            VirtualEntity(
-             Name=b,Type=string,Supers=[exp],Referrers=[exp.b],
-             ParseAction=ConsumeString(bb)
+             Name=x,Type=string,Supers=[b],Referrers=[b.alternative],
+             Properties=[Property(Name=x,Type=string,Source=ConsumePattern(xx)->x)],
+             ParseAction=ConsumePattern(xx)->x
+           ),
+           VirtualEntity(
+             Name=y,Type=string,Supers=[b],Referrers=[b.alternative],
+             Properties=[Property(Name=y,Type=string,Source=ConsumePattern(yy)->y)],
+             ParseAction=ConsumePattern(yy)->y
            )
          ],
          Root=assign

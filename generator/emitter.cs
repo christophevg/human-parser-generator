@@ -102,6 +102,13 @@ using System.Diagnostics;
         this.PascalCase(this.GeneratePropertyName(property)) + " { get; set; }";
     }
 
+    private string GenerateType(Generator.Entity entity) {
+      if( entity.Type == null ) { return "Object"; }
+      if( entity.Type.Equals("string") ) { return "string"; }
+      if( entity.Type.Equals("bool") ) { return "bool"; }
+      return this.PascalCase(entity.Type);
+    }
+
     private string GenerateType(Generator.Property property) {
       if(property.IsPlural) {
         return "List<" + this.PascalCase(property.Type) + ">";
@@ -210,7 +217,7 @@ using System.Diagnostics;
     }
 
     private string GenerateEntityParserHeader(Generator.Entity entity) {
-      return "  public " + this.PascalCase(entity.Type) + 
+      return "  public " + this.GenerateType(entity) + 
         " Parse" + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
           entity.Properties.Select(x =>
@@ -261,7 +268,7 @@ using System.Diagnostics;
       if(consume.Property.IsPlural) {
         return
           "{\n" +
-            this.PascalCase(consume.Entity.Type) + " temp;\n" +
+            this.GenerateType(consume.Entity) + " temp;\n" +
           "  while(true) {\n" +
           "    try {\n" +
           "      temp = " + this.GenerateConsumeSingleEntity(consume, true) + ";\n" +

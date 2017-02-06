@@ -210,7 +210,7 @@ using System.Diagnostics;
     }
 
     private string GenerateEntityParserHeader(Generator.Entity entity) {
-      return "  public " + this.PascalCase(entity.Name) + 
+      return "  public " + this.PascalCase(entity.Type) + 
         " Parse" + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
           entity.Properties.Select(x =>

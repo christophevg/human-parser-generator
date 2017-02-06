@@ -108,6 +108,7 @@ using System.Diagnostics;
       }
       if( property.Type == null ) { return "Object"; }
       if( property.Type.Equals("string") ) { return "string"; }
+      if( property.Type.Equals("bool") ) { return "bool"; }
       return this.PascalCase(property.Type);
     }
 

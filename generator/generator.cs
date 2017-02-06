@@ -153,8 +153,13 @@ namespace HumanParserGenerator.Generator {
   }
 
   public class Property {
+    // a (back-)reference to the Entity this property belongs to, managed by
+    // the Entity
+    public Entity Entity { get; set; }
+    
     // a unique name to identify the property, used for variable emission
     private string rawname;
+    // to make sure the name is unique, an index is added - if needed
     public string Name {
       get {
         return this.rawname + (this.IsIndexed ? this.Index.ToString() : "");
@@ -164,6 +169,7 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
+    // is this property indexed?
     public bool IsIndexed {
       get {
         return this.Entity.Properties
@@ -171,6 +177,12 @@ namespace HumanParserGenerator.Generator {
           .ToList().Count() > 1;
       }
     }
+
+    // a Fully Qualified Name, including the Entity
+    public string FQN { get { return this.Entity.Name + "." + this.Name; } }
+
+    // a Label is an alias for the FQN for this Property
+    public string Label { get { return this.FQN; } }
 
     // if multiple properties on an Entity have the same name, an index is 
     // computed to differentiate between them
@@ -183,17 +195,22 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
-    // a (back-)reference to the Entity this property belongs to
-    public Entity Entity { get; set; }
-
     // a property is populated by a ParseAction
-    public ParseAction Source { get; set; }
+    private ParseAction source;
+    public ParseAction Source {
+      get {
+        if(this.source == null) {
+          throw new ArgumentException(this.FQN + " has no Source! ");
+        }
+        return this.source;
+      }
+      set {
+        this.source = value;
+      }
+    }
 
     // the Type of a Property is defined by the ParseAction
-    public string Type { get {
-      if(this.Source == null) { throw new ArgumentException(this.Entity.Name + "." + this.Name + " has no Source! "); }
-      return this.Source.Type;
-    } }
+    public string Type { get { return this.Source.Type; } }
 
     // a Property can me marked as Plural, meaning that it will contain a list
     // of Type parsing results, which depends on the ParseAction
@@ -201,9 +218,6 @@ namespace HumanParserGenerator.Generator {
 
     // a Property can be Optional, which depends on the ParseAction
     public bool IsOptional { get { return this.Source.IsOptional; } }
-
-    // a Label is a FQN for this Property
-    public string Label { get { return this.Entity.Name + "." + this.Name; } }
 
     public override string ToString() {
       return "Property(" +

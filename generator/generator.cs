@@ -236,6 +236,9 @@ namespace HumanParserGenerator.Generator {
     // Label can be used for external string representation, other than ToString
     public abstract string Label { get; }
 
+    // Representation can be used for a more elaborate/technical label
+    public virtual string Representation { get { return this.Label; } }
+
     // Name can be used for code-level representation, e.g. a variable name
     public abstract string Name { get; }
 
@@ -248,7 +251,7 @@ namespace HumanParserGenerator.Generator {
     public override string ToString() {
       return
         this.GetType().ToString().Replace("HumanParserGenerator.Generator.", "") +
-        "(" + this.Label + ")" +
+        "(" + this.Representation + ")" +
         (this.IsPlural   ? "*" : "") +
         (this.IsOptional ? "?" : "") +
         (this.Property != null ? "->" + this.Property.Name : "");
@@ -318,6 +321,14 @@ namespace HumanParserGenerator.Generator {
       get {
         return
           "[" +
+          string.Join( ",", this.Actions.Select(x => x.Label) ) +
+          "]";
+      }
+    }
+    public override string Representation {
+      get {
+        return
+          "[" +
           string.Join( ",", this.Actions.Select(x => x.ToString()) ) +
           "]";
       }
@@ -352,6 +363,12 @@ namespace HumanParserGenerator.Generator {
         }
         
         return null;
+      }
+    }
+
+    public override string Label {
+      get {
+        return string.Join( " | ", this.Actions.Select(x => x.Label) );
       }
     }
   }

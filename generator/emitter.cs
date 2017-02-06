@@ -280,7 +280,7 @@ using System.Diagnostics;
           "}";
       }
 
-      return this.GenerateConsumeSingleEntity(consume);
+      return this.GenerateConsumeSingleEntity(consume) + ";";
     }
 
     private string GenerateConsumeSingleEntity(Generator.ConsumeEntity consume,
@@ -289,12 +289,12 @@ using System.Diagnostics;
       // if the referenced Entity is an Extractor, consume it directly
       if(consume.Entity.ParseAction is Generator.ConsumePattern) {
         return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
-          "this.source.Consume(Extracting." + this.PascalCase(consume.Entity.Name) + ");";
+          "this.source.Consume(Extracting." + this.PascalCase(consume.Entity.Name) + ")";
       }
 
       // simple case, dispatch to Parse<Entity>
       return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
-        "this.Parse" + this.PascalCase(consume.Entity.Name) + "();";
+        "this.Parse" + this.PascalCase(consume.Entity.Name) + "()";
     }
 
     private string GenerateConsumeAll(Generator.ParseAction action) {

@@ -44,7 +44,7 @@ OUTPUT      = > $(OUT)
 OUTPUT_LBL  = " to $(OUT)"
 endif
 
-ASTYLE      = | astyle -s2
+ASTYLE      = | LC_ALL="C" astyle -s2
 
 all: clean pascal-demo
 	

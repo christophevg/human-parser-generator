@@ -671,11 +671,14 @@ namespace HumanParserGenerator.Generator {
         }
       }
 
-      // If all Properties result from the ParseActions Alternatives, we can
-      // replace them with a single one...
-      int alternativeProperties =
-        consume.Actions.Where(action => action.Property != null).Count();
-      if(alternativeProperties == entity.Properties.Count()) {
+      // If all Properties result from the ParseActions Alternatives, AND they 
+      // are not a mix of strings and other Types, we can replace 
+      // them by a single one...
+      int all = entity.Properties.Count();
+      int props = consume.Actions.Where(action => action.Property != null).Count();
+      int strings = consume.Actions.Where(action => (action.Type != null && action.Type.Equals("string"))).Count();
+      // Console.Error.WriteLine("# all: " + all.ToString() + " = # strings: " + strings.ToString() + " / # props: " + props.ToString() );
+      if(all == 0 || props == all && (strings == all || strings == 0)) {
         // Add a new Property to the Entity that holds the outcome of the
         // Consumption
         Property property = new Property() {

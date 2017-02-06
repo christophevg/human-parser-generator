@@ -142,6 +142,12 @@ namespace HumanParserGenerator.Generator {
       this.properties.Add(property.Name, property);
     }
 
+    public void Remove(Property property) {
+      // TODO take into account index
+      this.properties.Remove(property.Name);
+      // TODO clean up other indices
+    }
+
     public override string ToString() {
       return
         (this.IsVirtual ? "Virtual": "") + "Entity(" +

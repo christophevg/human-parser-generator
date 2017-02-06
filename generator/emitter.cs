@@ -324,10 +324,16 @@ using System.Diagnostics;
       return code + closing;
     }
 
-    // TODO: probably add rollback of position !!!
+    private static readonly Random getrandom = new Random();
+
     private string WrapOptional(Generator.ParseAction action, string code) {
       if( ! action.IsOptional ) { return code; }
-      return "try {\n" + code + "\n} catch(ParseException) {}";
+      string positionName = "pos" + getrandom.Next(999).ToString();
+      return "{\n" +
+        "int " + positionName + " = this.source.position;\n" +
+        "try {\n" + code + "\n} catch(ParseException) {\n" +
+        "this.source.position = " + positionName + ";\n" +
+        "}\n}";
     }
 
     private string AddSuccessReporting(Generator.ParseAction action, string code) {

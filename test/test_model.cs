@@ -53,8 +53,7 @@ public class GeneratorModelTests {
       Entities = new List<Entity> {
         new Entity() {
           Name        = "rule",
-          Properties  = new List<Property>  { property },
-          ParseAction = new ConsumeString() { Property = property, String = "a" }
+          Properties  = (new List<Property>  { property }).AsReadOnly(),
         }
       }
     };

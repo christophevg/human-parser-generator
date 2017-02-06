@@ -26,12 +26,12 @@ namespace HumanParserGenerator.Generator {
     public string Name { get; set; }
 
     private Dictionary<string,Property> properties;
-    public List<Property> Properties {
-      get { return this.properties.Values.ToList(); }
+    public ReadOnlyCollection<Property> Properties {
+      get { return this.properties.Values.ToList().AsReadOnly(); }
       set {
         this.properties.Clear();
         foreach(var property in value) {
-          this.Add(property);
+          this.Add((Property)property);
         }
       }
     }

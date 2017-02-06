@@ -23,35 +23,58 @@ namespace HumanParserGenerator.Generator {
     // a (back-)reference to the Model this Entity belongs to
     public Model Model { get; set; }
 
+    // the name of the rule/Entity
     public string Name { get; set; }
 
-    private Dictionary<string,Property> properties;
+    // properties on the Entity that have been created to hold information
+    // extracted by the parsing rule's ParsActions
+    private List<Property> properties;
     public ReadOnlyCollection<Property> Properties {
-      get { return this.properties.Values.ToList().AsReadOnly(); }
+      get { return this.properties.AsReadOnly(); }
       set {
         this.properties.Clear();
-        foreach(var property in value) {
-          this.Add((Property)property);
+        foreach(Property property in value) {
+          this.Add(property);
         }
       }
     }
+
+    public void Add(Property property) {
+      this.properties.Add(property);
+      // manage back-reference
+      property.Entity = this;
+    }
+
+    public void Remove(Property property) {
+      this.properties.Remove(property);
+    }
+    
 
     // to populate the Properties, ParseActions have to be generated
     // ParseActions are a tree-structure with a single top-level ParseAction
     public ParseAction ParseAction { get; set; }
     
+    // a Virtual Entity is suppressed from the resulting AST
+    // the general rule is that this is possible for entities with only 1 prop
+    // exceptions to this rule are:
+    // - the Root entity can never be Virtual
+    // - leaf Entities (without subEntities) also can't be Virtual
+    //   except for Extractors that are always Virtual Entities (of type string)
     public bool IsVirtual {
       get {
         // the Root can never be Virtual
         if( this.IsRoot ) { return false; }
+
+        // Extractors are always Virtual
+        if( this.ParseAction is ConsumePattern ) { return true; }
         
         // entities without sub-classes, are "leafs" and cannot be Virtual
-        // unless their ParseAction is ConsumePattern
-        if( this.Subs.Count == 0 && ! (this.ParseAction is ConsumePattern) ) { return false; }
+        if( this.Subs.Count == 0 ) { return false; }
         
-        // if this Entity has only one Property, it is Virtual
+        // if this Entity has only one Property, it is Virtual (DEFAULT RULE)
         if( this.Properties.Count() == 1) { return true; }
 
+        // everything else is an Entity that will appear in the AST
         return false;
       }
     }
@@ -73,11 +96,7 @@ namespace HumanParserGenerator.Generator {
       return false;
     }
 
-    public string DefaultType {
-      get {
-        return this.Name;
-      }
-    }
+    public string DefaultType { get { return this.Name; } }
 
     public string Type {
       get {
@@ -98,43 +117,10 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
-    // helper dictionary to track property.Names with the last given index
-    private Dictionary<string, int> propertyIndices;
-
     public Entity() {
-      this.properties      = new Dictionary<string,Property>();
-      this.propertyIndices = new Dictionary<string, int>();
-      this.Supers          = new List<Entity>();
-      this.Subs            = new List<Entity>();
-    }
-
-    public void Add(Property property) {
-      // set the Entity reference to point to us (back-reference)
-      property.Entity = this;
-
-      // make sure the name of the property is unique
-      if( ! this.propertyIndices.Keys.Contains(property.Name) ) {
-        this.propertyIndices.Add(property.Name, 0);
-        // for first one, just use it's name
-      } else {
-        // this is (at least) the second occurence, start using indices
-        if(this.propertyIndices[property.Name] == 0) {
-          // update the first property to match the naming scheme
-          Property firstProperty = this.properties[property.Name]; // get
-          this.properties.Remove(property.Name);                   // remove
-          firstProperty.Name += "0";                               // update
-          this.properties.Add(firstProperty.Name, firstProperty);  // re-add
-        }
-        this.propertyIndices[property.Name]++;
-        property.Name += this.propertyIndices[property.Name].ToString();
-      }
-      this.properties.Add(property.Name, property);
-    }
-
-    public void Remove(Property property) {
-      // TODO take into account index
-      this.properties.Remove(property.Name);
-      // TODO clean up other indices
+      this.properties = new List<Property>();
+      this.Supers     = new List<Entity>();
+      this.Subs       = new List<Entity>();
     }
 
     public override string ToString() {
@@ -168,7 +154,34 @@ namespace HumanParserGenerator.Generator {
 
   public class Property {
     // a unique name to identify the property, used for variable emission
-    public string Name { get; set; }
+    private string rawname;
+    public string Name {
+      get {
+        return this.rawname + (this.IsIndexed ? this.Index.ToString() : "");
+      }
+      set {
+        this.rawname = value;
+      }
+    }
+
+    public bool IsIndexed {
+      get {
+        return this.Entity.Properties
+          .Where(property => property.rawname.Equals(this.rawname))
+          .ToList().Count() > 1;
+      }
+    }
+
+    // if multiple properties on an Entity have the same name, an index is 
+    // computed to differentiate between them
+    public int Index {
+      get {
+        return this.Entity.Properties
+          .Where(property => property.rawname.Equals(this.rawname))
+          .ToList()
+          .IndexOf(this);
+      }
+    }
 
     // a (back-)reference to the Entity this property belongs to
     public Entity Entity { get; set; }

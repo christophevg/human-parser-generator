@@ -765,4 +765,134 @@ public class GeneratorModelFactoryTests {
     );
   }
 
+  [Test]
+  public void testMixedStringIdentifierAlternatives() {
+    // record     ::= { value } ;
+    // value      ::= literal | variable ;
+    // literal    ::= number | string;
+    // variable   ::= identifier "x" number
+    // number     ::= /[0-9]+/
+    // string     ::= /[a-z]+/
+    // identifier ::= /[a-z]+/
+    this.importAndCompare(
+      new Grammar() {
+        Rules = new List<Rule>() {
+          new Rule() {
+            Identifier = "record",
+            Expression = new RepetitionExpression() {
+              Expression = new IdentifierExpression() { Identifier = "value" }
+            }
+          },
+          new Rule() {
+            Identifier = "value",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "literal" },
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "variable"}
+            }
+          },
+          new Rule() {
+            Identifier = "literal",
+            Expression = new AlternativesExpression() {
+              AtomicExpression        = new IdentifierExpression() { Identifier = "number" },
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "string"}
+            }
+          },
+          new Rule() {
+            Identifier = "variable",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() { Identifier = "identifier"},
+              Expression = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() { String = "x" },
+                Expression = new IdentifierExpression() { Identifier = "number" }
+              }
+            }
+          },
+          new Rule() {
+            Identifier = "number",
+            Expression = new ExtractorExpression() { Regex = "[0-9]+" }
+          },
+          new Rule() {
+            Identifier = "string",
+            Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+          },
+          new Rule() {
+            Identifier = "identifier",
+            Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+          }
+        }
+      },
+      @"Model(
+         Entities=[
+           Entity(
+             Name=record,Type=record,Properties=[
+               Property(
+                 Name=value,Type=value,IsPlural,
+                 Source=ConsumeEntity(value)*->value
+               )
+             ],
+             ParseAction=ConsumeEntity(value)*->value
+           ),
+           VirtualEntity(
+             Name=value,Type=value,Subs=[literal,variable],Referrers=[record.value],
+             Properties=[
+               Property(Name=alternative,Type=value,Source=ConsumeAny([
+                 ConsumeEntity(literal)->alternative,
+                 ConsumeEntity(variable)->alternative
+               ])->alternative)
+             ],
+             ParseAction=ConsumeAny([
+               ConsumeEntity(literal)->alternative,
+               ConsumeEntity(variable)->alternative
+             ])->alternative
+           ),
+           Entity(
+             Name=literal,Type=literal,Supers=[value],Subs=[number,string],
+             Referrers=[value.alternative],Properties=[
+               Property(Name=number,Type=string,Source=ConsumeEntity(number)->number),
+               Property(Name=string,Type=string,Source=ConsumeEntity(string)->string)
+             ],
+             ParseAction=ConsumeAny([
+               ConsumeEntity(number)->number,
+               ConsumeEntity(string)->string
+             ])
+           ),
+           Entity(
+             Name=variable,Type=variable,Supers=[value],
+             Referrers=[value.alternative],Properties=[
+               Property(Name=identifier,Type=string,Source=ConsumeEntity(identifier)->identifier),
+               Property(Name=number,Type=string,Source=ConsumeEntity(number)->number)
+             ],
+             ParseAction=ConsumeAll([
+               ConsumeEntity(identifier)->identifier,
+               ConsumeString(x),
+               ConsumeEntity(number)->number
+             ])
+           ),
+           VirtualEntity(
+             Name=number,Type=string,Supers=[literal],
+             Referrers=[literal.number,variable.number],Properties=[
+               Property(Name=number,Type=string,Source=ConsumePattern([0-9]+)->number)
+             ],
+             ParseAction=ConsumePattern([0-9]+)->number
+           ),
+           VirtualEntity(
+             Name=string,Type=string,Supers=[literal],
+             Referrers=[literal.string],Properties=[
+               Property(Name=string,Type=string,Source=ConsumePattern([a-z]+)->string)
+             ],
+             ParseAction=ConsumePattern([a-z]+)->string
+           ),
+           VirtualEntity(
+             Name=identifier,Type=string,
+             Referrers=[variable.identifier],Properties=[
+               Property(Name=identifier,Type=string,Source=ConsumePattern([a-z]+)->identifier)
+             ],
+             ParseAction=ConsumePattern([a-z]+)->identifier
+           )
+         ],
+         Root=record
+       )"
+    );
+  }
+
 }

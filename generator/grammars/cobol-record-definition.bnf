@@ -71,7 +71,7 @@ figurative       ::= "ZEROS"
                    | "NULL"
                    ;
 
-picture-type     ::= /(9AXVSP)+/;
+picture-type     ::= /[9AXVSP]+/;
 
 identifier       ::= /([A-Z][A-Z0-9]*)/;
 digit            ::= /([0-9])/;

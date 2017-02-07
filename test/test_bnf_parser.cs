@@ -12,23 +12,31 @@ using HumanParserGenerator.Generator;
 [TestFixture]
 public class BNFParserTests {
 
-  private void parseAndCompare(string input, string grammar, string parser ) {
-    Grammar g = new Parser().Parse(input).AST;
+  private Grammar parse(string input) {
+    return new Parser().Parse(input).AST;
+  }
+
+  private Model transform(Grammar grammar) {
+    return new Factory().Import(grammar).Model;
+  }
+
+  private void compare(string result, string expected) {
     Assert.AreEqual(
-      grammar.Replace(" ", "").Replace("\n", ""),
-      g.ToString()
+      expected.Replace(" ", "").Replace("\n", ""),
+      result
     );
-    
-    Model p = new Factory().Import(g).Model;
-    Assert.AreEqual(
-      parser.Replace(" ", "").Replace("\n", ""),
-      p.ToString()
-    );
+  }
+
+  private void processAndCompare(string input, string grammar, string model ) {
+    Grammar g = this.parse(input);
+    if(grammar != null) { this.compare(g.ToString(), grammar); }
+    Model m = this.transform(g);
+    if(model != null) { this.compare(m.ToString(), model); }
   }
 
   [Test]
   public void testPascalGrammar() {
-    this.parseAndCompare(
+    this.processAndCompare(
       @"
 program     ::= ""PROGRAM"" identifier
                 ""BEGIN""

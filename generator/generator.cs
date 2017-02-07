@@ -310,7 +310,15 @@ namespace HumanParserGenerator.Generator {
       get { return this.ReportSuccess ? "bool" : null; }
     }
 
-    public override string Name   { get { return "all"; } }
+    public override string Name {
+      get {
+        // construct a name based on the names of the sub-Actions
+        List<string> parts =
+          this.Actions.Where(a => a is ConsumeEntity).Select(a=>a.Name).ToList();
+        string name = parts.Count() > 0 ? string.Join("-", parts) : "all";
+        return name;
+      }
+    }
 
     public override string Label {
       get {

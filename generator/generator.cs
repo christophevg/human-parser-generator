@@ -412,7 +412,14 @@ namespace HumanParserGenerator.Generator {
 
   public class Factory {
     public Model Model { get; set; }
-    
+
+    public Entity GetEntity(string name) {
+      if( ! this.Model.Contains(name) ) {
+        throw new ArgumentException("unknown Rule " + name);
+      }
+      return this.Model[name];
+    }
+
     public Factory() {
       this.Model = new Model();
     }
@@ -420,6 +427,7 @@ namespace HumanParserGenerator.Generator {
     public Factory Import(Grammar grammar) {
       this.ImportEntities(grammar.Rules);
       this.ImportPropertiesAndActions();
+      this.CollapseAlternatives();
       this.DetectInheritance();
 
       return this;
@@ -433,12 +441,6 @@ namespace HumanParserGenerator.Generator {
         }).ToList();
     }
 
-    public Entity GetEntity(string name) {
-      if( ! this.Model.Contains(name) ) {
-        throw new ArgumentException("unknown Rule " + name);
-      }
-      return this.Model[name];
-    }
 
     private void ImportPropertiesAndActions() {
       foreach(Entity entity in this.Model.Entities) {
@@ -456,43 +458,6 @@ namespace HumanParserGenerator.Generator {
       entity.ParseAction = this.ImportPropertiesAndParseActions(
         entity.Rule.Expression, entity
       );
-    }
-
-    private void DetectInheritance(Entity entity) {
-      // 1-on-1 (TODO: actually in use/usefull?)
-      if(entity.ParseAction is ConsumeEntity && ! entity.ParseAction.IsPlural) {
-        this.AddInheritance(entity, ((ConsumeEntity)entity.ParseAction).Entity);
-      }
-      // Alternatives, 1-on-n
-      if(entity.ParseAction is ConsumeAny) {
-        foreach(ParseAction action in ((ConsumeAny)entity.ParseAction).Actions) {
-          if(action is ConsumeEntity) {
-            this.AddInheritance(entity, ((ConsumeEntity)action).Entity);
-          }
-        }
-      }
-      // ConsumeAll that actually is a single ConsumeEntity and otherwise only
-      // none-Property related Consumes
-      if(entity.ParseAction is ConsumeAll) {
-        List<ParseAction> actions = ((ConsumeAll)entity.ParseAction).Actions;
-        if( actions.OfType<ConsumeEntity>().Count() == 1 ) {
-          int other = actions.Where(action => action.Property == null).Count();
-          if(actions.Count() == other + 1) {
-            Entity sub = actions.OfType<ConsumeEntity>().ToList()[0].Entity;
-            this.AddInheritance(entity, sub);
-          }
-        }
-        
-      }
-    }
-
-    private void AddInheritance(Entity parent, Entity child) {
-      // avoid recursive inheritance relationships
-      if( parent.IsA(child) ) { return; }
-      // connect
-      parent.Subs.Add(child);
-      child.Supers.Add(parent);
-      this.Log(parent.Name + " <|-- " + child.Name);
     }
 
     private ParseAction ImportPropertiesAndParseActions(Expression exp,
@@ -652,34 +617,6 @@ namespace HumanParserGenerator.Generator {
         }
       }
 
-      // if all Properties result from the ParseActions Alternatives, AND they 
-      // are not a mix of strings and other Types, we can replace 
-      // them by a single one...
-      int all     = entity.Properties.Count();
-      int props   = consume.Actions.Where(a => a.Property != null).Count();
-      int strings = consume.Actions.Where(a => (a.Type != null && a.Type.Equals("string"))).Count();
-      this.Log(entity.Name + " : # all: " + all.ToString() + " = # strings: " + strings.ToString() + " / # props: " + props.ToString() );
-      this.Log("    - " + string.Join("   \n    - ", consume.Actions.Select(action=>action.Type)));
-      if(all == 0 || props == all && (strings == all || strings == 0)) {
-        // Add a new Property to the Entity that holds the outcome of the
-        // Consumption
-        Property property = new Property() {
-          Name   = "alternative",
-          Source = consume
-        };
-        consume.Property = property;
-        property.Source  = consume;
-
-        entity.Add(property);
-      
-        // make all original consumers point to the new alternative property
-        foreach(ParseAction action in consume.Actions) {
-          if(action.Property != null) {
-            action.Property.Entity.Remove(action.Property);
-            action.Property = property;          
-          }
-        }
-      }
       return consume;
     }
 
@@ -705,6 +642,96 @@ namespace HumanParserGenerator.Generator {
       action.IsPlural = true;
 
       return action;
+    }
+
+
+    // After importing all Entitie, Properties and ParseActions, we apply our
+    // transformation rules:
+
+    // RULE 1: Alternatives that can be collapsed (e.g. multiple Properties can
+    //         be replaced by a single one) are collapsed.
+
+    private void CollapseAlternatives() {
+      foreach(Entity entity in this.Model.Entities) {
+        this.CollapseAlternatives(entity);
+      }
+    }
+    
+    private void CollapseAlternatives(Entity entity) {
+      if( ! (entity.ParseAction is ConsumeAny) ) { return; }
+
+      // if all Properties result from the ParseActions Alternatives, AND they 
+      // are not a mix of strings and other Types, we can replace 
+      // them by a single one...
+      ConsumeAny consume = (ConsumeAny)entity.ParseAction;
+      int all     = entity.Properties.Count();
+      int props   = consume.Actions.Where(a => a.Property != null).Count();
+      int strings = consume.Actions.Where(a => (a.Type != null && a.Type.Equals("string"))).Count();
+      this.Log(entity.Name + " : # all: " + all.ToString() + " = # strings: " + strings.ToString() + " / # props: " + props.ToString() );
+      this.Log("    - " + string.Join("   \n    - ", consume.Actions.Select(action=>action.Type)));
+      if(all == 0 || props == all && (strings == all || strings == 0)) {
+        // Add a new Property to the Entity that holds the outcome of the
+        // Consumption
+        Property property = new Property() {
+          Name   = "alternative",
+          Source = consume
+        };
+        consume.Property = property;
+        property.Source  = consume;
+
+        entity.Add(property);
+      
+        // make all original consumers point to the new alternative property
+        foreach(ParseAction action in consume.Actions) {
+          if(action.Property != null) {
+            action.Property.Entity.Remove(action.Property);
+            action.Property = property;          
+          }
+        }
+      }
+    }
+
+    // RULE 2: detect inheritance in 3 cases: 
+    //         1. Single reference to other NonPlural Entity
+    //         2. Alternatives of only Entity references push their type down
+    //         3. Sequences that contain only one Entity reference
+
+    private void DetectInheritance(Entity entity) {
+      // 1-on-1 (TODO: actually in use/usefull?)
+      if(entity.ParseAction is ConsumeEntity && ! entity.ParseAction.IsPlural) {
+        this.AddInheritance(entity, ((ConsumeEntity)entity.ParseAction).Entity);
+      }
+      // Alternatives, 1-on-n
+      if(entity.ParseAction is ConsumeAny) {
+        // TODO check for ONLY ConsumeEntities?
+        foreach(ParseAction action in ((ConsumeAny)entity.ParseAction).Actions) {
+          if(action is ConsumeEntity) {
+            this.AddInheritance(entity, ((ConsumeEntity)action).Entity);
+          }
+        }
+      }
+      // ConsumeAll that actually is a single ConsumeEntity and otherwise only
+      // none-Property related Consumes
+      if(entity.ParseAction is ConsumeAll) {
+        List<ParseAction> actions = ((ConsumeAll)entity.ParseAction).Actions;
+        if( actions.OfType<ConsumeEntity>().Count() == 1 ) {
+          int other = actions.Where(action => action.Property == null).Count();
+          if(actions.Count() == other + 1) {
+            Entity sub = actions.OfType<ConsumeEntity>().ToList()[0].Entity;
+            this.AddInheritance(entity, sub);
+          }
+        }
+        
+      }
+    }
+
+    private void AddInheritance(Entity parent, Entity child) {
+      // avoid recursive inheritance relationships
+      if( parent.IsA(child) ) { return; }
+      // connect
+      parent.Subs.Add(child);
+      child.Supers.Add(parent);
+      this.Log(parent.Name + " <|-- " + child.Name);
     }
 
     // Factory helper methods

@@ -845,16 +845,18 @@ public class GeneratorModelFactoryTests {
                ConsumeEntity(variable)->alternative
              ])->alternative
            ),
-           Entity(
-             Name=literal,Type=literal,Supers=[value],Subs=[number,string],
+           VirtualEntity(
+             Name=literal,Type=string,Supers=[value],Subs=[number,string],
              Properties=[
-               Property(Name=number,Type=string,Source=ConsumeEntity(number)->number),
-               Property(Name=string,Type=string,Source=ConsumeEntity(string)->string)
+               Property(Name=alternative,Type=string,Source=ConsumeAny([
+                 ConsumeEntity(number)->alternative,
+                 ConsumeEntity(string)->alternative
+               ])->alternative)
              ],
              ParseAction=ConsumeAny([
-               ConsumeEntity(number)->number,
-               ConsumeEntity(string)->string
-             ])
+               ConsumeEntity(number)->alternative,
+               ConsumeEntity(string)->alternative
+             ])->alternative
            ),
            Entity(
              Name=variable,Type=variable,Supers=[value],

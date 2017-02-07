@@ -83,9 +83,9 @@ using System.Diagnostics;
       return "public " +
         ( entity.IsVirtual ? "interface" : "class" ) + " " +
         this.PascalCase(entity.Name) + 
-        (entity.Supers.Count > 0 ?
+        (entity.Supers.Where(s=>s.IsVirtual).Count() > 0 ?
           " : " + string.Join( ", ",
-            entity.Supers.Select(x => this.PascalCase(x.Name))
+            entity.Supers.Where(s=> s.IsVirtual).Select(x => this.PascalCase(x.Name))
           )
           : "") +
         " {";

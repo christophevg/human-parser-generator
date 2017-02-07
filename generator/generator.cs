@@ -427,6 +427,8 @@ namespace HumanParserGenerator.Generator {
     public Factory Import(Grammar grammar) {
       this.ImportEntities(grammar.Rules);
       this.ImportPropertiesAndActions();
+
+      this.DetectInheritance();   // to temporary detect Leafs
       this.CollapseAlternatives();
       this.DetectInheritance();
 
@@ -445,12 +447,6 @@ namespace HumanParserGenerator.Generator {
     private void ImportPropertiesAndActions() {
       foreach(Entity entity in this.Model.Entities) {
         this.ImportPropertiesAndParseActions(entity);
-      }
-    }
-
-    private void DetectInheritance() {
-      foreach(Entity entity in this.Model.Entities) {
-        this.DetectInheritance(entity);
       }
     }
 
@@ -652,18 +648,34 @@ namespace HumanParserGenerator.Generator {
     //         be replaced by a single one) are collapsed.
 
     private void CollapseAlternatives() {
+      // we need to do this bottom-up, because lower-level alternatives might
+      // collapse and change their Entity's type, causing a different decision
+      // higher up the Entity hierarchy.
+
+      // we start by doing a top-down scan of all Entities in the Model
       foreach(Entity entity in this.Model.Entities) {
         this.CollapseAlternatives(entity);
       }
     }
     
-    private void CollapseAlternatives(Entity entity) {
-      if( ! (entity.ParseAction is ConsumeAny) ) { return; }
+    private bool CollapseAlternatives(Entity entity) {
+      // we're only interested in Alternatives
+      // TODO ConsumeAll with only one active ConsumeAny might also be valid
+      if( ! (entity.ParseAction is ConsumeAny) ) { return false; }
+
+      ConsumeAny consume = (ConsumeAny)entity.ParseAction;
+
+      // make sure that Entities referenced by our alternative ParseActions
+      // are already collapsed
+      foreach(ParseAction action in consume.Actions) {
+        if(action is ConsumeEntity) {
+          this.CollapseAlternatives(((ConsumeEntity)action).Entity);
+        }
+      }
 
       // if all Properties result from the ParseActions Alternatives, AND they 
       // are not a mix of strings and other Types, we can replace 
       // them by a single one...
-      ConsumeAny consume = (ConsumeAny)entity.ParseAction;
       int all     = entity.Properties.Count();
       int props   = consume.Actions.Where(a => a.Property != null).Count();
       int strings = consume.Actions.Where(a => (a.Type != null && a.Type.Equals("string"))).Count();
@@ -688,7 +700,17 @@ namespace HumanParserGenerator.Generator {
             action.Property = property;          
           }
         }
+
+        this.Log(
+          "collapsed " + entity.Name + " : " + 
+          entity.Type + " " + (entity.IsVirtual ? "virtual" : "")
+        );
+        this.Log("    - " + string.Join("   \n    - ",
+          consume.Actions.Select(action=>action.Type)));        
+      
+        return true;
       }
+      return false;
     }
 
     // RULE 2: detect inheritance in 3 cases: 
@@ -696,17 +718,34 @@ namespace HumanParserGenerator.Generator {
     //         2. Alternatives of only Entity references push their type down
     //         3. Sequences that contain only one Entity reference
 
+    private void DetectInheritance() {
+      foreach(Entity entity in this.Model.Entities) {
+        entity.Supers.Clear();
+        entity.Subs.Clear();
+      }
+      foreach(Entity entity in this.Model.Entities) {
+        this.DetectInheritance(entity);
+      }
+    }
+
     private void DetectInheritance(Entity entity) {
       // 1-on-1 (TODO: actually in use/usefull?)
       if(entity.ParseAction is ConsumeEntity && ! entity.ParseAction.IsPlural) {
         this.AddInheritance(entity, ((ConsumeEntity)entity.ParseAction).Entity);
       }
-      // Alternatives, 1-on-n
+      // Alternatives, 1-on-n x ConsumeEntity.Type != String
       if(entity.ParseAction is ConsumeAny) {
-        // TODO check for ONLY ConsumeEntities?
-        foreach(ParseAction action in ((ConsumeAny)entity.ParseAction).Actions) {
-          if(action is ConsumeEntity) {
-            this.AddInheritance(entity, ((ConsumeEntity)action).Entity);
+        List<ParseAction> actions = ((ConsumeAny)entity.ParseAction).Actions;
+        // check if the alternative types are all non-strings or all strings
+        // if there are any NULL Types (e.g. from Sequence), we don't collapse
+        int all = actions.Count();
+        int strings = actions.Where(a => a.Type != null && a.Type.Equals("string")).Count();
+        int nulls = actions.Where(a => a.Type == null).Count();
+        if( nulls == 0 && (strings == 0 || strings == all)) {
+          foreach(ParseAction action in actions) {
+            if(action is ConsumeEntity) {
+              this.AddInheritance(entity, ((ConsumeEntity)action).Entity);
+            }
           }
         }
       }

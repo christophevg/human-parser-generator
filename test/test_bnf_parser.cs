@@ -34,6 +34,10 @@ public class BNFParserTests {
     if(model != null) { this.compare(m.ToString(), model); }
   }
 
+  private Model process(string input) {
+    return this.transform(this.parse(input));
+  }
+
   [Test]
   public void testPascalGrammar() {
     this.processAndCompare(
@@ -173,6 +177,38 @@ Model(
 )
       "
     );
+  }
+
+  [Test]
+  public void testCobolValueDefinition() {
+    Model model = this.process(
+      @"
+copybook         ::= { sentence };
+sentence         ::= record ""."";
+record           ::= renames-record | values-record ;
+
+renames-record   ::= ""66"" level-name ""RENAMES"" identifier-range ;
+level-name       ::= identifier | ""FILLER"" ;
+identifier-range ::= identifier ""THRU"" identifier ;
+
+values-record    ::= ""88"" level-name ""VALUES"" { value } ;
+value            ::= literal | variable ;
+literal          ::= int | string ;
+variable         ::= identifier [ ""("" subset "")"" ];
+subset           ::= numeric [ "":"" subset ];
+numeric          ::= int | identifier;
+identifier       ::= /([A-Z][A-Z0-9]*)/ ;
+string           ::= /""([^""]*)""|'([^']*)'/ ;
+int              ::= /(-?[1-9][0-9]*)/ ;"
+    );
+
+    Assert.IsTrue  (             model["literal"].IsVirtual );
+    Assert.AreEqual( "string",   model["literal"].Type      );
+
+    Assert.IsFalse (             model["variable"].IsVirtual);
+    Assert.AreEqual( "variable", model["variable"].Type      );
+
+    Assert.IsFalse( model["value"].IsVirtual );
   }
 
 }

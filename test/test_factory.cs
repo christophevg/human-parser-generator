@@ -719,14 +719,15 @@ public class GeneratorModelFactoryTests {
              ],
              ParseAction=ConsumeEntity(exp)->exp
            ),
-           VirtualEntity(
+           Entity(
              Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Properties=[
-               Property(Name=alternative,Type=exp,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
+               Property(Name=a,Type=a,Source=ConsumeEntity(a)->a),
+               Property(Name=b,Type=string,Source=ConsumeEntity(b)->b)
              ],
              ParseAction=ConsumeAny([
-               ConsumeEntity(a)->alternative,
-               ConsumeEntity(b)->alternative
-             ])->alternative
+               ConsumeEntity(a)->a,
+               ConsumeEntity(b)->b
+             ])
            ),
            Entity(
              Name=a,Type=a,Supers=[exp],
@@ -832,18 +833,16 @@ public class GeneratorModelFactoryTests {
              ],
              ParseAction=ConsumeEntity(value)*->value
            ),
-           VirtualEntity(
+           Entity(
              Name=value,Type=value,Subs=[literal,variable],
              Properties=[
-               Property(Name=alternative,Type=value,Source=ConsumeAny([
-                 ConsumeEntity(literal)->alternative,
-                 ConsumeEntity(variable)->alternative
-               ])->alternative)
+               Property(Name=literal,Type=string,Source=ConsumeEntity(literal)->literal),
+               Property(Name=variable,Type=variable,Source=ConsumeEntity(variable)->variable)
              ],
              ParseAction=ConsumeAny([
-               ConsumeEntity(literal)->alternative,
-               ConsumeEntity(variable)->alternative
-             ])->alternative
+               ConsumeEntity(literal)->literal,
+               ConsumeEntity(variable)->variable
+             ])
            ),
            VirtualEntity(
              Name=literal,Type=string,Supers=[value],Subs=[number,string],

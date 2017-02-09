@@ -76,6 +76,9 @@ public class Parser {
   public Parser Parse(string source) {
     this.source = new Parsable(source);
     this.AST    = this.ParseProgram();
+    if( ! this.source.IsDone ) {
+      throw this.source.GenerateParseException("Could not parse");
+    }
     return this;
   }
   

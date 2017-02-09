@@ -46,7 +46,7 @@ public class GeneratorModelFactoryTests {
       },
       @"Model(
          Entities=[
-           Entity(Name=rule,Type=rule,ParseAction=ConsumeString(a))
+           Entity(Name=rule,Type=,ParseAction=ConsumeString(a))
          ],
          Root=rule
        )"
@@ -74,7 +74,7 @@ public class GeneratorModelFactoryTests {
              Name=rule,Type=rule,
              Properties=[
                Property(
-                 Name=StringProperty,Type=string,
+                 Name=StringProperty,Type=<string>,
                  Source=ConsumeString(a)->StringProperty
                )
              ],
@@ -99,7 +99,7 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "rule2",
-            Expression = new ExtractorExpression() { Regex = "a" }
+            Expression = new ExtractorExpression() { Pattern = "a" }
           }
         }
       },
@@ -107,12 +107,12 @@ public class GeneratorModelFactoryTests {
          Entities=[
            Entity(
              Name=rule1,Type=rule1,Subs=[rule2],
-             Properties=[Property(Name=rule2,Type=string,Source=ConsumeEntity(rule2)->rule2)],
+             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumeEntity(rule2)->rule2)],
              ParseAction=ConsumeEntity(rule2)->rule2
            ),
            VirtualEntity(
-             Name=rule2,Type=string,Supers=[rule1],
-             Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern(a)->rule2)],
+             Name=rule2,Type=<string>,Supers=[rule1],
+             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumePattern(a)->rule2)],
              ParseAction=ConsumePattern(a)->rule2
            )
         ],
@@ -129,7 +129,7 @@ public class GeneratorModelFactoryTests {
         Rules = new List<Rule>() {
           new Rule() {
             Identifier = "rule",
-            Expression = new ExtractorExpression() { Regex = "[A-Za-z0-9-]*" }
+            Expression = new ExtractorExpression() { Pattern = "[A-Za-z0-9-]*" }
           }
         }
       },
@@ -137,7 +137,7 @@ public class GeneratorModelFactoryTests {
          Entities=[
            Entity(
              Name=rule,Type=rule,
-             Properties=[Property(Name=rule,Type=string,Source=ConsumePattern([A-Za-z0-9-]*)->rule)],
+             Properties=[Property(Name=rule,Type=<string>,Source=ConsumePattern([A-Za-z0-9-]*)->rule)],
              ParseAction=ConsumePattern([A-Za-z0-9-]*)->rule
            )
         ],
@@ -156,7 +156,7 @@ public class GeneratorModelFactoryTests {
             Identifier = "rule",
             Expression = new ExtractorExpression() {
               Name  = "PatternProperty",
-              Regex = "[A-Za-z0-9-]*"
+              Pattern = "[A-Za-z0-9-]*"
             }
           }
         }
@@ -167,7 +167,7 @@ public class GeneratorModelFactoryTests {
              Name=rule,Type=rule,
              Properties=[
                Property(
-                 Name=PatternProperty,Type=string,
+                 Name=PatternProperty,Type=<string>,
                  Source=ConsumePattern([A-Za-z0-9-]*)->PatternProperty
                )
              ],
@@ -195,7 +195,7 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "rule2",
-            Expression = new ExtractorExpression() { Regex = "a" }
+            Expression = new ExtractorExpression() { Pattern = "a" }
           }
         }
       },
@@ -204,13 +204,13 @@ public class GeneratorModelFactoryTests {
            Entity(
              Name=rule1,Type=rule1,Subs=[rule2],
              Properties=[
-               Property(Name=IdentifierProperty,Type=string,Source=ConsumeEntity(rule2)->IdentifierProperty)
+               Property(Name=IdentifierProperty,Type=<string>,Source=ConsumeEntity(rule2)->IdentifierProperty)
              ],
              ParseAction=ConsumeEntity(rule2)->IdentifierProperty
            ),
            VirtualEntity(
-             Name=rule2,Type=string,Supers=[rule1],
-             Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern(a)->rule2)],
+             Name=rule2,Type=<string>,Supers=[rule1],
+             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumePattern(a)->rule2)],
              ParseAction=ConsumePattern(a)->rule2
            )
         ],
@@ -239,11 +239,11 @@ public class GeneratorModelFactoryTests {
              Name=rule,Type=rule,
              Properties=[
                Property(
-                 Name=has-a,Type=bool,IsOptional,
-                 Source=ConsumeString(a)?->has-a
+                 Name=has-a,Type=<bool>,IsOptional,
+                 Source=ConsumeString(a)?!->has-a
                )
              ],
-             ParseAction=ConsumeString(a)?->has-a
+             ParseAction=ConsumeString(a)?!->has-a
            )
         ],
         Root=rule
@@ -270,7 +270,7 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "rule2",
-            Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+            Expression = new ExtractorExpression() { Pattern = "[a-z]+" }
           }
         }
       },
@@ -279,8 +279,8 @@ public class GeneratorModelFactoryTests {
            Entity(
              Name=rule1,Type=rule1,
              Properties=[
-               Property(Name=rule20,Type=string,Source=ConsumeEntity(rule2)->rule20),
-               Property(Name=rule21,Type=string,Source=ConsumeEntity(rule2)->rule21)
+               Property(Name=rule20,Type=<string>,Source=ConsumeEntity(rule2)->rule20),
+               Property(Name=rule21,Type=<string>,Source=ConsumeEntity(rule2)->rule21)
              ],
              ParseAction=ConsumeAll([
                ConsumeEntity(rule2)->rule20,
@@ -289,8 +289,8 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=rule2,Type=string,
-             Properties=[Property(Name=rule2,Type=string,Source=ConsumePattern([a-z]+)->rule2)],
+             Name=rule2,Type=<string>,
+             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumePattern([a-z]+)->rule2)],
              ParseAction=ConsumePattern([a-z]+)->rule2
            )
         ],
@@ -325,7 +325,7 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "id",
-            Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+            Expression = new ExtractorExpression() { Pattern = "[a-z]+" }
           }
         }
       },
@@ -334,8 +334,8 @@ public class GeneratorModelFactoryTests {
            Entity(
              Name=rule,Type=rule,
              Properties=[
-               Property(Name=name,Type=string,IsOptional,Source=ConsumeEntity(name)?->name),
-               Property(Name=id,Type=string,Source=ConsumeEntity(id)->id)
+               Property(Name=name,Type=<string>,IsOptional,Source=ConsumeEntity(name)?->name),
+               Property(Name=id,Type=<string>,Source=ConsumeEntity(id)->id)
              ],
              ParseAction=ConsumeAll([
                ConsumeEntity(name)?->name,
@@ -343,9 +343,9 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=name,Type=string,Subs=[id],
+             Name=name,Type=<string>,Subs=[id],
              Properties=[
-               Property(Name=id,Type=string,Source=ConsumeEntity(id)->id)
+               Property(Name=id,Type=<string>,Source=ConsumeEntity(id)->id)
              ],
              ParseAction=ConsumeAll([
                ConsumeEntity(id)->id,
@@ -353,8 +353,8 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=id,Type=string,Supers=[name],
-             Properties=[Property(Name=id,Type=string,Source=ConsumePattern([a-z]+)->id)],
+             Name=id,Type=<string>,Supers=[name],
+             Properties=[Property(Name=id,Type=<string>,Source=ConsumePattern([a-z]+)->id)],
              ParseAction=ConsumePattern([a-z]+)->id
            )
         ],
@@ -384,19 +384,12 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,
-             Properties=[
-               Property(Name=alternative,Type=string,Source=ConsumeAny([
-               ConsumeString(a),
-               ConsumeString(b),
-               ConsumeString(c)
-             ])->alternative)
-             ],
+             Name=rule,Type=,
              ParseAction=ConsumeAny([
                ConsumeString(a),
                ConsumeString(b),
                ConsumeString(c)
-             ])->alternative
+             ])
            )
         ],
         Root=rule
@@ -432,15 +425,11 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,
-             Properties=[Property(Name=alternative,Type=,Source=ConsumeAny([
-               ConsumeAll([ConsumeString(a), ConsumeString(b)]),
-               ConsumeAll([ConsumeString(c), ConsumeString(d)])
-             ])->alternative)],
+             Name=rule,Type=,
              ParseAction=ConsumeAny([
                ConsumeAll([ConsumeString(a), ConsumeString(b)]),
                ConsumeAll([ConsumeString(c), ConsumeString(d)])
-             ])->alternative
+             ])
            )
         ],
         Root=rule
@@ -465,7 +454,7 @@ public class GeneratorModelFactoryTests {
       @"Model(
          Entities=[
            Entity(
-             Name=rule,Type=rule,
+             Name=rule,Type=,
              ParseAction=ConsumeString(a)*
            )
         ],
@@ -506,7 +495,7 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "id",
-            Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+            Expression = new ExtractorExpression() { Pattern = "[a-z]+" }
           }
         }
       },
@@ -523,9 +512,9 @@ public class GeneratorModelFactoryTests {
            Entity(
              Name=rule,Type=rule,
              Properties=[
-               Property(Name=id0,Type=string,Source=ConsumeEntity(id)->id0),
-               Property(Name=id1,Type=string,Source=ConsumeEntity(id)->id1),
-               Property(Name=id2,Type=string,Source=ConsumeEntity(id)->id2)
+               Property(Name=id0,Type=<string>,Source=ConsumeEntity(id)->id0),
+               Property(Name=id1,Type=<string>,Source=ConsumeEntity(id)->id1),
+               Property(Name=id2,Type=<string>,Source=ConsumeEntity(id)->id2)
              ],
              ParseAction=ConsumeAll([
                ConsumeEntity(id)->id0,
@@ -536,8 +525,8 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=id,Type=string,
-             Properties=[Property(Name=id,Type=string,Source=ConsumePattern([a-z]+)->id)],
+             Name=id,Type=<string>,
+             Properties=[Property(Name=id,Type=<string>,Source=ConsumePattern([a-z]+)->id)],
              ParseAction=ConsumePattern([a-z]+)->id
            )
         ],
@@ -577,24 +566,19 @@ public class GeneratorModelFactoryTests {
              Name=rule1,Type=rule1,
              Properties=[
                Property(
-                 Name=rule2,Type=rule2,IsPlural,
+                 Name=rule2,Type=,IsPlural,
                  Source=ConsumeEntity(rule2)*->rule2
                )
              ],
              ParseAction=ConsumeEntity(rule2)*->rule2
            ),
            Entity(
-             Name=rule2,Type=rule2,
-             Properties=[Property(Name=alternative,Type=string,Source=ConsumeAny([
-               ConsumeString(a),
-               ConsumeString(b),
-               ConsumeString(c)
-             ])->alternative)],
+             Name=rule2,Type=,
              ParseAction=ConsumeAny([
                ConsumeString(a),
                ConsumeString(b),
                ConsumeString(c)
-             ])->alternative
+             ])
            )
         ],
         Root=rule1
@@ -624,11 +608,11 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "a",
-            Expression = new ExtractorExpression() { Regex = "aa" }
+            Expression = new ExtractorExpression() { Pattern = "aa" }
           },
           new Rule() {
             Identifier = "b",
-            Expression = new ExtractorExpression() { Regex = "bb" }
+            Expression = new ExtractorExpression() { Pattern = "bb" }
           }
         }
       },
@@ -636,27 +620,27 @@ public class GeneratorModelFactoryTests {
          Entities=[
            Entity(
              Name=assign,Type=assign,Subs=[exp],Properties=[
-               Property(Name=exp,Type=string,Source=ConsumeEntity(exp)->exp)
+               Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
              ],
              ParseAction=ConsumeEntity(exp)->exp
            ),
            VirtualEntity(
-             Name=exp,Type=string,Supers=[assign],Subs=[a,b],Properties=[
-               Property(Name=alternative,Type=string,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
+             Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Properties=[
+               Property(Name=alternative,Type=exp,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
              ],
              ParseAction=ConsumeAny([
                ConsumeEntity(a)->alternative,
                ConsumeEntity(b)->alternative
              ])->alternative
            ),
-           VirtualEntity(
-             Name=a,Type=string,Supers=[exp],
-             Properties=[Property(Name=a,Type=string,Source=ConsumePattern(aa)->a)],
+           Entity(
+             Name=a,Type=a,Supers=[exp],
+             Properties=[Property(Name=a,Type=<string>,Source=ConsumePattern(aa)->a)],
              ParseAction=ConsumePattern(aa)->a
            ),
-           VirtualEntity(
-             Name=b,Type=string,Supers=[exp],
-             Properties=[Property(Name=b,Type=string,Source=ConsumePattern(bb)->b)],
+           Entity(
+             Name=b,Type=b,Supers=[exp],
+             Properties=[Property(Name=b,Type=<string>,Source=ConsumePattern(bb)->b)],
              ParseAction=ConsumePattern(bb)->b
            )
          ],
@@ -703,11 +687,11 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "x",
-            Expression = new ExtractorExpression() { Regex = "xx" }
+            Expression = new ExtractorExpression() { Pattern = "xx" }
           },
           new Rule() {
             Identifier = "y",
-            Expression = new ExtractorExpression() { Regex = "yy" }
+            Expression = new ExtractorExpression() { Pattern = "yy" }
           }
         }
       },
@@ -719,20 +703,22 @@ public class GeneratorModelFactoryTests {
              ],
              ParseAction=ConsumeEntity(exp)->exp
            ),
-           Entity(
+           VirtualEntity(
              Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Properties=[
-               Property(Name=a,Type=a,Source=ConsumeEntity(a)->a),
-               Property(Name=b,Type=string,Source=ConsumeEntity(b)->b)
+               Property(Name=alternative,Type=exp,Source=ConsumeAny([
+                 ConsumeEntity(a)->alternative,
+                 ConsumeEntity(b)->alternative
+               ])->alternative)
              ],
              ParseAction=ConsumeAny([
-               ConsumeEntity(a)->a,
-               ConsumeEntity(b)->b
-             ])
+               ConsumeEntity(a)->alternative,
+               ConsumeEntity(b)->alternative
+             ])->alternative
            ),
            Entity(
              Name=a,Type=a,Supers=[exp],
              Properties=[
-               Property(Name=b,Type=string,Source=ConsumeEntity(b)->b),
+               Property(Name=b,Type=b,Source=ConsumeEntity(b)->b),
                Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
              ],
              ParseAction=ConsumeAll([
@@ -741,23 +727,23 @@ public class GeneratorModelFactoryTests {
              ])
            ),
            VirtualEntity(
-             Name=b,Type=string,Supers=[exp],Subs=[x,y],
+             Name=b,Type=b,Supers=[exp],Subs=[x,y],
              Properties=[
-               Property(Name=alternative,Type=string,Source=ConsumeAny([ConsumeEntity(x)->alternative,ConsumeEntity(y)->alternative])->alternative)
+               Property(Name=alternative,Type=b,Source=ConsumeAny([ConsumeEntity(x)->alternative,ConsumeEntity(y)->alternative])->alternative)
              ],
              ParseAction=ConsumeAny([
                ConsumeEntity(x)->alternative,
                ConsumeEntity(y)->alternative
              ])->alternative
            ),
-           VirtualEntity(
-             Name=x,Type=string,Supers=[b],
-             Properties=[Property(Name=x,Type=string,Source=ConsumePattern(xx)->x)],
+           Entity(
+             Name=x,Type=x,Supers=[b],
+             Properties=[Property(Name=x,Type=<string>,Source=ConsumePattern(xx)->x)],
              ParseAction=ConsumePattern(xx)->x
            ),
-           VirtualEntity(
-             Name=y,Type=string,Supers=[b],
-             Properties=[Property(Name=y,Type=string,Source=ConsumePattern(yy)->y)],
+           Entity(
+             Name=y,Type=y,Supers=[b],
+             Properties=[Property(Name=y,Type=<string>,Source=ConsumePattern(yy)->y)],
              ParseAction=ConsumePattern(yy)->y
            )
          ],
@@ -810,15 +796,15 @@ public class GeneratorModelFactoryTests {
           },
           new Rule() {
             Identifier = "number",
-            Expression = new ExtractorExpression() { Regex = "[0-9]+" }
+            Expression = new ExtractorExpression() { Pattern = "[0-9]+" }
           },
           new Rule() {
             Identifier = "string",
-            Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+            Expression = new ExtractorExpression() { Pattern = "[a-z]+" }
           },
           new Rule() {
             Identifier = "identifier",
-            Expression = new ExtractorExpression() { Regex = "[a-z]+" }
+            Expression = new ExtractorExpression() { Pattern = "[a-z]+" }
           }
         }
       },
@@ -833,21 +819,23 @@ public class GeneratorModelFactoryTests {
              ],
              ParseAction=ConsumeEntity(value)*->value
            ),
-           Entity(
+           VirtualEntity(
              Name=value,Type=value,Subs=[literal,variable],
              Properties=[
-               Property(Name=literal,Type=string,Source=ConsumeEntity(literal)->literal),
-               Property(Name=variable,Type=variable,Source=ConsumeEntity(variable)->variable)
+               Property(Name=alternative,Type=value,Source=ConsumeAny([
+                 ConsumeEntity(literal)->alternative,
+                 ConsumeEntity(variable)->alternative
+               ])->alternative)
              ],
              ParseAction=ConsumeAny([
-               ConsumeEntity(literal)->literal,
-               ConsumeEntity(variable)->variable
-             ])
+               ConsumeEntity(literal)->alternative,
+               ConsumeEntity(variable)->alternative
+             ])->alternative
            ),
            VirtualEntity(
-             Name=literal,Type=string,Supers=[value],Subs=[number,string],
+             Name=literal,Type=literal,Supers=[value],Subs=[number,string],
              Properties=[
-               Property(Name=alternative,Type=string,Source=ConsumeAny([
+               Property(Name=alternative,Type=literal,Source=ConsumeAny([
                  ConsumeEntity(number)->alternative,
                  ConsumeEntity(string)->alternative
                ])->alternative)
@@ -860,8 +848,8 @@ public class GeneratorModelFactoryTests {
            Entity(
              Name=variable,Type=variable,Supers=[value],
              Properties=[
-               Property(Name=identifier,Type=string,Source=ConsumeEntity(identifier)->identifier),
-               Property(Name=number,Type=string,Source=ConsumeEntity(number)->number)
+               Property(Name=identifier,Type=<string>,Source=ConsumeEntity(identifier)->identifier),
+               Property(Name=number,Type=number,Source=ConsumeEntity(number)->number)
              ],
              ParseAction=ConsumeAll([
                ConsumeEntity(identifier)->identifier,
@@ -869,24 +857,24 @@ public class GeneratorModelFactoryTests {
                ConsumeEntity(number)->number
              ])
            ),
-           VirtualEntity(
-             Name=number,Type=string,Supers=[literal],
+           Entity(
+             Name=number,Type=number,Supers=[literal],
              Properties=[
-               Property(Name=number,Type=string,Source=ConsumePattern([0-9]+)->number)
+               Property(Name=number,Type=<string>,Source=ConsumePattern([0-9]+)->number)
              ],
              ParseAction=ConsumePattern([0-9]+)->number
            ),
-           VirtualEntity(
+           Entity(
              Name=string,Type=string,Supers=[literal],
              Properties=[
-               Property(Name=string,Type=string,Source=ConsumePattern([a-z]+)->string)
+               Property(Name=string,Type=<string>,Source=ConsumePattern([a-z]+)->string)
              ],
              ParseAction=ConsumePattern([a-z]+)->string
            ),
            VirtualEntity(
-             Name=identifier,Type=string,
+             Name=identifier,Type=<string>,
              Properties=[
-               Property(Name=identifier,Type=string,Source=ConsumePattern([a-z]+)->identifier)
+               Property(Name=identifier,Type=<string>,Source=ConsumePattern([a-z]+)->identifier)
              ],
              ParseAction=ConsumePattern([a-z]+)->identifier
            )

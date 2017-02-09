@@ -27,13 +27,14 @@ namespace HumanParserGenerator.Emitter {
           this.GenerateHeader(),
           this.GenerateReferences(),
           this.GenerateEntities(),
-          this.GenerateExtracting(),
-          this.GenerateParsers()
+          this.GenerateParsers(),
+          this.GenerateExtracting()
         }
       );
     }
 
     private string GenerateHeader() {
+      // TODO x
       return @"// parser.cs";
     }
 
@@ -49,9 +50,7 @@ using System.Diagnostics;
 
     private string GenerateEntities() {
       return string.Join( "\n\n",
-        this.Model.Entities
-            .Where(entity => !(entity.ParseAction is Generator.ConsumePattern))
-            .Select(x => this.GenerateEntity(x))
+        this.Model.Entities.Select(x => this.GenerateEntity(x))
       );
     }
 
@@ -104,8 +103,8 @@ using System.Diagnostics;
 
     private string GenerateType(Generator.Entity entity) {
       if( entity.Type == null ) { return "Object"; }
-      if( entity.Type.Equals("string") ) { return "string"; }
-      if( entity.Type.Equals("bool") ) { return "bool"; }
+      if( entity.Type.Equals("<string>") ) { return "string"; }
+      if( entity.Type.Equals("<bool>") ) { return "bool"; }
       return this.PascalCase(entity.Type);
     }
 
@@ -114,8 +113,8 @@ using System.Diagnostics;
         return "List<" + this.PascalCase(property.Type) + ">";
       }
       if( property.Type == null ) { return "Object"; }
-      if( property.Type.Equals("string") ) { return "string"; }
-      if( property.Type.Equals("bool") ) { return "bool"; }
+      if( property.Type.Equals("<string>") ) { return "string"; }
+      if( property.Type.Equals("<bool>") ) { return "bool"; }
       return this.PascalCase(property.Type);
     }
 
@@ -162,21 +161,7 @@ using System.Diagnostics;
       return "}";
     }
 
-    // Extracting functionality is generated for all Entities that are "just"
-    // consuming a pattern.
-    private string GenerateExtracting() {
-      return
-        "public class Extracting {\n" +
-        string.Join("\n",
-          this.Model.Entities
-                    .Where(entity => entity.ParseAction is Generator.ConsumePattern)
-                    .Select(entity => 
-                      "  public static Regex " + this.PascalCase(entity.Name) +
-                        " = new Regex(@\"^" + ((Generator.ConsumePattern)entity.ParseAction).Pattern.Replace("\"", "\"\"") + "\");"
-                    )
-        ) + "\n" +
-        "}";
-    }
+    // PARSER METHODS
 
     private string GenerateParsers() {
       return string.Join( "\n\n",
@@ -201,7 +186,7 @@ using System.Diagnostics;
     private string GenerateEntityParsers() {
       return string.Join("\n\n",
         this.Model.Entities
-          .Where(entity => !(entity.ParseAction is Generator.ConsumePattern))
+          .Where(entity => ! (entity.IsVirtual && entity.ParseAction is Generator.ConsumePattern))
           .Select(x => this.GenerateEntityParser(x))
       );
     }
@@ -259,8 +244,11 @@ using System.Diagnostics;
 
     private string GenerateConsumePattern(Generator.ParseAction action) {
       Generator.ConsumePattern consume = (Generator.ConsumePattern)action;
+
+
       return this.GenerateAssignment(action) +
-        "this.source.Consume(Extracting." + this.PascalCase(consume.Type) + ");";
+        "this.source.Consume(Extracting." +
+          this.PascalCase(consume.Property.Entity.Name) + ");";
     }
 
     private string GenerateConsumeEntity(Generator.ParseAction action) {
@@ -286,8 +274,9 @@ using System.Diagnostics;
     private string GenerateConsumeSingleEntity(Generator.ConsumeEntity consume,
                                                bool withoutAssignment = false)
     {
-      // if the referenced Entity is an Extractor, consume it directly
-      if(consume.Entity.ParseAction is Generator.ConsumePattern) {
+      // if the referenced Entity is Virtual and is an Extractor, consume it 
+      // directly
+      if(consume.Entity.IsVirtual && consume.Entity.ParseAction is Generator.ConsumePattern) {
         return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
           "this.source.Consume(Extracting." + this.PascalCase(consume.Entity.Name) + ")";
       }
@@ -388,10 +377,26 @@ using System.Diagnostics;
 
     private string GenerateVirtualEntityParserReturn(Generator.Entity entity) {
       if(entity.Properties.Count > 0) {
-      return "return " + this.CamelCase(entity.Properties[0].Name) + ";\n" +
+      return "return " + this.GenerateLocalVariable(entity.Properties.First()) + ";\n" +
              "}"; 
       }
       return "return;"; 
+    }
+
+    // Extracting functionality is generated for all Entities that are "just"
+    // consuming a pattern.
+    private string GenerateExtracting() {
+      return
+        "public class Extracting {\n" +
+        string.Join("\n",
+          this.Model.Entities
+                    .Where(entity => entity.ParseAction is Generator.ConsumePattern)
+                    .Select(entity => 
+                      "  public static Regex " + this.PascalCase(entity.Name) +
+                        " = new Regex(@\"^" + ((Generator.ConsumePattern)entity.ParseAction).Pattern.Replace("\"", "\"\"") + "\");"
+                    )
+        ) + "\n" +
+        "}";
     }
 
     private string GenerateParserFooter() {

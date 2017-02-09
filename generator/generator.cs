@@ -49,6 +49,9 @@ namespace HumanParserGenerator.Generator {
       this.properties.Remove(property);
     }
     
+    public void Clear() {
+      this.properties.Clear();
+    }
 
     // to populate the Properties, ParseActions have to be generated
     // ParseActions are a tree-structure with a single top-level ParseAction
@@ -56,26 +59,29 @@ namespace HumanParserGenerator.Generator {
     
     // a Virtual Entity is suppressed from the resulting AST
     // the general rule is that this is possible for entities with only 1 prop
-    // exceptions to this rule are:
-    // - the Root entity can never be Virtual
-    // - leaf Entities (without subEntities) also can't be Virtual
-    //   except for Extractors that are always Virtual Entities (of type string)
+    // with some exceptions:
+    // TODO simplify -> sibblings might be more precise/corrrect
     public bool IsVirtual {
       get {
-        // the Root can never be Virtual
-        if( this.IsRoot ) { return false; }
+        // exception 3: the root is always Real
+        if( this == this.Model.Root) {
+          return false;
+        }
 
-        // Extractors are always Virtual
-        if( this.ParseAction is ConsumePattern ) { return true; }
-        
-        // entities without sub-classes, are "leafs" and cannot be Virtual
-        if( this.Subs.Count == 0 ) { return false; }
-        
-        // if this Entity has only one Property, it is Virtual (DEFAULT RULE)
-        if( this.Properties.Count() == 1) { return true; }
-
-        // everything else is an Entity that will appear in the AST
-        return false;
+        // general rule: 1 NON Plural property == Virtual
+        if( this.Properties.Count == 1 && ! this.Properties.First().IsPlural ) {
+          // exception 1: leafs are Real
+          if( this.Subs.Count == 0 ) {
+            // exception 2: no super classes == allowed Virtual
+            // OR superclasses have only me as sub
+            if( this.Supers.Count == 0 || ! this.HasSibblings ) {
+              return true; // exception 2: no super classes == allowed Virtual
+            }
+            return false;  // exception 1: leafs are Real
+          }
+          return true; // general rule: 1 property == Virtual
+        }
+        return false;  // general rule: > 1 property == Real
       }
     }
 
@@ -85,8 +91,18 @@ namespace HumanParserGenerator.Generator {
     public bool IsOptional { get { return this.ParseAction.IsOptional; } }
 
     // Inheritance Model  Super <|-- Sub
-    public List<Entity> Supers { get; set; }
-    public List<Entity> Subs { get; set; }
+    public HashSet<Entity> Supers { get; set; }
+    public HashSet<Entity> Subs   { get; set; }
+
+    public bool HasSibblings {
+      get {
+        // counts = list of # sibblings of supers
+        List<int> counts =
+          this.Supers.Select(super=>super.Subs.Count()).Distinct().ToList();
+        // if supers have different # subs OR same but multiple
+        return counts.Count > 1 || counts.First() > 1;
+      }
+    }
 
     public bool IsA(Entity super) {
       if(this.Supers.Contains(super)) { return true; }
@@ -95,32 +111,44 @@ namespace HumanParserGenerator.Generator {
       }
       return false;
     }
+    
+    public void IsSubEntityOf(Entity parent) {
+      this.Supers.Add(parent);
+      parent.Subs.Add(this);
+    }
 
-    public string DefaultType { get { return this.Name; } }
+    public void IsSuperEntityOf(Entity child) {
+      this.Subs.Add(child);
+      child.Supers.Add(this);
+    }
 
+    // a Type is always the Entity itself unless the Entity behaves in a Virtual
+    // way, then it returns the type of its first property
     public string Type {
       get {
-        if( this.IsVirtual ) {
-          if( this.Properties.Count == 1 ) {
-            return this.Properties[0].Type;
-          } else {
-            if( this.ParseAction != null ) {
-              if( this.ParseAction.Type != null ) {
-                return this.ParseAction.Type;
-              }
-            } else {
-              throw new ArgumentException("missing ParseAction on " + this.Name);
-            }
-          }
+        // Console.Error.Write(this.Name +".Type ");
+        // no properties
+        if(this.Properties.Count == 0) {
+          // this.Log();
+          return null;
         }
+        // one property
+        if(this.IsVirtual){
+          // this.Log(" is Virtual");
+          return this.Properties.First().Type;
+        }
+        // default case
+        // this.Log();
         return this.DefaultType;
       }
     }
+    
+    public string DefaultType { get { return this.Name; } }
 
     public Entity() {
       this.properties = new List<Property>();
-      this.Supers     = new List<Entity>();
-      this.Subs       = new List<Entity>();
+      this.Supers     = new HashSet<Entity>();
+      this.Subs       = new HashSet<Entity>();
     }
 
     public override string ToString() {
@@ -143,7 +171,7 @@ namespace HumanParserGenerator.Generator {
               string.Join(",", this.Properties.Select(x => x.ToString())) +
             "]"
           ) +
-          ",ParseAction=" + this.ParseAction.ToString() +
+          (this.ParseAction != null ? ",ParseAction=" + this.ParseAction.ToString() : "") +
         ")";
     }
 
@@ -156,7 +184,7 @@ namespace HumanParserGenerator.Generator {
     // a (back-)reference to the Entity this property belongs to, managed by
     // the Entity
     public Entity Entity { get; set; }
-    
+
     // a unique name to identify the property, used for variable emission
     private string rawname;
     // to make sure the name is unique, an index is added - if needed
@@ -169,7 +197,7 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
-    // is this property indexed?
+    // is this property indexed == are there > 1 properties with our rawname
     public bool IsIndexed {
       get {
         return this.Entity.Properties
@@ -185,7 +213,8 @@ namespace HumanParserGenerator.Generator {
     public string Label { get { return this.FQN; } }
 
     // if multiple properties on an Entity have the same name, an index is 
-    // computed to differentiate between them
+    // computed to differentiate between them, if only one Property carries the
+    // same name, it's "this" property, and it has index 0.
     public int Index {
       get {
         return this.Entity.Properties
@@ -195,7 +224,7 @@ namespace HumanParserGenerator.Generator {
       }
     }
 
-    // a property is populated by a ParseAction
+    // a property is ALWAYS populated by a ParseAction
     private ParseAction source;
     public ParseAction Source {
       get {
@@ -230,6 +259,13 @@ namespace HumanParserGenerator.Generator {
     }
   }
 
+  public class PropertyProxy : Property {
+    public List<Property> Proxied { get; set; }
+    public PropertyProxy() {
+      this.Proxied = new List<Property>();
+    }
+  }
+
   // ParseActions implement the steps that are taken to parse all information
   // needed to construct an Entity.
 
@@ -258,12 +294,16 @@ namespace HumanParserGenerator.Generator {
     // (Optional) Property that receives parsing result from this ParseAction
     public Property Property { get; set; }
 
+    // Back-reference to our Parent ParseAction, when null = top-level @ Entity
+    public ParseAction Parent { get; set; }
+
     public override string ToString() {
       return
         this.GetType().ToString().Replace("HumanParserGenerator.Generator.", "") +
         "(" + this.Representation + ")" +
-        (this.IsPlural   ? "*" : "") +
-        (this.IsOptional ? "?" : "") +
+        (this.IsPlural      ? "*" : "") +
+        (this.IsOptional    ? "?" : "") +
+        (this.ReportSuccess ? "!" : "") +
         (this.Property != null ? "->" + this.Property.Name : "");
     }
   }
@@ -273,9 +313,9 @@ namespace HumanParserGenerator.Generator {
     public          string String { get; set; }
     public override string Label  { get { return this.String; } }
     public override string Type   {
-      get { return  this.ReportSuccess ? "bool" : "string"; }
+      get { return  this.ReportSuccess ? "<bool>" : "<string>"; }
     }
-    public override string Name   { get { return this.String.Replace(" ", "-"); }}
+    public override string Name { get { return this.String.Replace(" ", "-"); }}
   }
 
   // ... to consume a sequence of characters according to a regular expression
@@ -292,7 +332,7 @@ namespace HumanParserGenerator.Generator {
     public Entity Entity { get; set; }
     public override string Label  { get { return this.Entity.Name; } }
     public override string Type   {
-      get { return this.ReportSuccess ? "bool" : this.Entity.Type; }
+      get { return this.ReportSuccess ? "<bool>" : this.Entity.Type; }
     }
     public override string Name   { get { return this.Entity.Name; } }
   }
@@ -304,10 +344,18 @@ namespace HumanParserGenerator.Generator {
       this.Actions = new List<ParseAction>();
     }
     
-    // TODO if this All consists of one actual ConsumeEntity, we should behave
-    //      as it was only that.
     public override string Type {
-      get { return this.ReportSuccess ? "bool" : null; }
+      get {
+        if( this.ReportSuccess ) { return "<bool>"; }
+        string type = null;
+        foreach(ParseAction action in this.Actions) {
+          if(action.Type != null) {
+            if(type != null) { return null; } // more than one Type
+            type = action.Type;
+          }
+        }
+        return type; // only one type bubbled up
+      }
     }
 
     public override string Name {
@@ -341,24 +389,23 @@ namespace HumanParserGenerator.Generator {
 
     public override string Type {
       get {
-        if( this.ReportSuccess ) { return "bool"; }
+        if( this.ReportSuccess ) { return "<bool>"; }
         
-        // case 1: if all alternatives expose the same Type (string or null
-        // probably), we take on that type
+        // case 1: if all alternatives expose the same Type
         if( this.Actions.Select(a => a.Type).Distinct().Count() == 1) {
-          return this.Actions[0].Type;
+          return this.Actions.First().Type;
         }
         
-        // default is simply the Default Entity Type, referring to Type would
-        // cause an endless recursion ;-)
+        // case 2: if we're a Collapsed Alternatives Consumption
         if(this.Property != null) {
           return this.Property.Entity.DefaultType;
         }
-        
+
+        // TODO think this through
         return null;
       }
     }
-
+    
     public override string Label {
       get { return string.Join( " | ", this.Actions.Select(x => x.Label) ); }
     }
@@ -390,14 +437,13 @@ namespace HumanParserGenerator.Generator {
       return this;
     }
 
+    // offer a Dinctionary-like interface Model[name]=Entity
     public bool Contains(string key) {
       return this.entities.Keys.Contains(key);
     }
 
     public Entity this[string key] {
-      get {
-        return this.Contains(key) ? this.entities[key] : null;
-      }
+      get { return this.Contains(key) ? this.entities[key] : null; }
     }
 
     // the first entity to start parsing
@@ -433,15 +479,46 @@ namespace HumanParserGenerator.Generator {
     }
 
     public Factory Import(Grammar grammar) {
+      // step 0:
       this.ImportEntities(grammar.Rules);
+
+      // this.Log("===========================================");
+      // this.Log("STEP 0:");
+      // this.Log("-------------------------------------------");
+      // this.Log(this.Model.ToString());
+      // this.Log("===========================================");
+
+      // step 1:
       this.ImportPropertiesAndActions();
 
-      this.DetectInheritance();   // to temporary detect Leafs
+      // this.Log("===========================================");
+      // this.Log("STEP 1: imported");
+      // this.Log("-------------------------------------------");
+      // this.Log(this.Model.ToString());
+      // this.Log("===========================================");
+
+      // step 2:
       this.CollapseAlternatives();
+
+      // this.Log("===========================================");
+      // this.Log("STEP 2: collapsed alternatives");
+      // this.Log("-------------------------------------------");
+      // this.Log(this.Model.ToString());
+      // this.Log("===========================================");
+      
+      // step 3:
       this.DetectInheritance();
 
+      // this.Log("===========================================");
+      // this.Log("STEP 3: with inheritance");
+      // this.Log("-------------------------------------------");
+      // this.Log(this.Model.ToString());
+      // this.Log("===========================================");
+      
       return this;
     }
+
+    // STEP 0
 
     private void ImportEntities(List<Rule> rules) {
       this.Model.Entities = rules
@@ -451,6 +528,7 @@ namespace HumanParserGenerator.Generator {
         }).ToList();
     }
 
+    // STEP 1
 
     private void ImportPropertiesAndActions() {
       foreach(Entity entity in this.Model.Entities) {
@@ -464,12 +542,13 @@ namespace HumanParserGenerator.Generator {
       );
     }
 
-    private ParseAction ImportPropertiesAndParseActions(Expression exp,
-                                                        Entity     entity)
+    private ParseAction ImportPropertiesAndParseActions(Expression  exp,
+                                                        Entity      entity,
+                                                        ParseAction parent=null)
     {
       this.Log("ImportPropertiesAndParseActions("+exp.GetType().ToString()+")" );
       try {
-        return new Dictionary<string, Func<Expression,Entity,ParseAction>>() {
+        return new Dictionary<string, Func<Expression,Entity,ParseAction,ParseAction>>() {
           { "SequentialExpression",   this.ImportSequentialExpression   },
           { "AlternativesExpression", this.ImportAlternativesExpression },
           { "OptionalExpression",     this.ImportOptionalExpression     },
@@ -478,7 +557,7 @@ namespace HumanParserGenerator.Generator {
           { "IdentifierExpression",   this.ImportIdentifierExpression   },
           { "StringExpression",       this.ImportStringExpression       },
           { "ExtractorExpression",    this.ImportExtractorExpression    }
-        }[exp.GetType().ToString()](exp, entity);
+        }[exp.GetType().ToString()](exp, entity,parent);
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
           "Importing not implemented for " + exp.GetType().ToString(), e
@@ -494,18 +573,22 @@ namespace HumanParserGenerator.Generator {
       return consume;
     }
 
-    private ParseAction ImportStringExpression(Expression exp,
-                                               Entity     entity)
+    private ParseAction ImportStringExpression(Expression  exp,
+                                               Entity      entity,
+                                               ParseAction parent=null)
     {
       StringExpression str = ((StringExpression)exp);
-      ParseAction consume = new ConsumeString() { String = str.String };
+      ParseAction consume = new ConsumeString() {
+        String = str.String,
+        Parent = parent
+      };
 
       // if a StringExpression has an explicit Name, we create a Property for it
       // with that name
       if(str.Name != null) {
         return this.Add(
           entity,
-          new Property() { Name = str.Name },
+          new Property() { Name = str.Name, },
           consume
         );
       }
@@ -513,8 +596,9 @@ namespace HumanParserGenerator.Generator {
       return consume;
     }    
 
-    private ParseAction ImportIdentifierExpression(Expression exp,
-                                                   Entity     entity)
+    private ParseAction ImportIdentifierExpression(Expression  exp,
+                                                   Entity      entity,
+                                                   ParseAction parent=null)
     {
       IdentifierExpression id = ((IdentifierExpression)exp);
 
@@ -523,31 +607,34 @@ namespace HumanParserGenerator.Generator {
       return this.Add(
         entity,
         new Property() { Name = id.Name != null ? id.Name : id.Identifier },
-        new ConsumeEntity() { Entity = referred }
+        new ConsumeEntity() { Entity = referred, Parent = parent }
       );
     }
 
-    private ParseAction ImportExtractorExpression(Expression exp,
-                                                  Entity     entity)
+    private ParseAction ImportExtractorExpression(Expression  exp,
+                                                  Entity      entity,
+                                                  ParseAction parent=null)
     {
       ExtractorExpression extr = ((ExtractorExpression)exp);
 
       return this.Add(
         entity,
         new Property() { Name = extr.Name != null ? extr.Name : entity.Name },
-        new ConsumePattern() { Pattern = extr.Regex }
+        new ConsumePattern() { Pattern = extr.Pattern, Parent = parent }
       );
     }
 
-    private ParseAction ImportOptionalExpression(Expression exp,
-                                                 Entity     entity)
+    private ParseAction ImportOptionalExpression(Expression  exp,
+                                                 Entity      entity,
+                                                 ParseAction parent=null)
     {
       OptionalExpression optional = ((OptionalExpression)exp);
 
       // recurse down
       ParseAction consume = this.ImportPropertiesAndParseActions(
         optional.Expression,
-        entity
+        entity,
+        parent
       );
       // mark optional
       consume.IsOptional = true;
@@ -566,24 +653,25 @@ namespace HumanParserGenerator.Generator {
       return consume;
     }
 
-    private ParseAction ImportSequentialExpression(Expression exp,
-                                                   Entity entity)
+    private ParseAction ImportSequentialExpression(Expression  exp,
+                                                   Entity      entity,
+                                                   ParseAction parent=null)
     {
       SequentialExpression sequence = ((SequentialExpression)exp);
 
-      ConsumeAll consume = new ConsumeAll();
+      ConsumeAll consume = new ConsumeAll() { Parent = parent };
 
       // SequentialExpression is constructed recusively, unroll it...
       while(true) {
         // add first part
         consume.Actions.Add(this.ImportPropertiesAndParseActions(
-          sequence.NonSequentialExpression, entity
+          sequence.NonSequentialExpression, entity, consume
         ));
         // add remaining parts
         if(sequence.Expression is NonSequentialExpression) {
           // last part
           consume.Actions.Add(this.ImportPropertiesAndParseActions(
-            sequence.Expression, entity
+            sequence.Expression, entity, consume
           ));
           break;
         } else {
@@ -594,24 +682,25 @@ namespace HumanParserGenerator.Generator {
       return consume;
     }
 
-    private ParseAction ImportAlternativesExpression(Expression exp,
-                                                     Entity entity)
+    private ParseAction ImportAlternativesExpression(Expression  exp,
+                                                     Entity      entity,
+                                                     ParseAction parent=null)
     {
       AlternativesExpression alternative = ((AlternativesExpression)exp);
 
-      ConsumeAny consume = new ConsumeAny();
+      ConsumeAny consume = new ConsumeAny() { Parent = parent };
 
       // AlternativesExpression is constructed recusively, unroll it...
       while(true) {
         // add first part
         consume.Actions.Add(this.ImportPropertiesAndParseActions(
-          alternative.AtomicExpression, entity
+          alternative.AtomicExpression, entity, consume
         ));
         // add remaining parts
         if(alternative.NonSequentialExpression is AtomicExpression) {
           // last part
           consume.Actions.Add(this.ImportPropertiesAndParseActions(
-            alternative.NonSequentialExpression, entity
+            alternative.NonSequentialExpression, entity, consume
           ));
           break;
         } else {
@@ -625,22 +714,23 @@ namespace HumanParserGenerator.Generator {
     }
 
     // just recurse and provide a ParseAction for the nested Expression
-    private ParseAction ImportGroupExpression(Expression exp,
-                                              Entity     entity)
+    private ParseAction ImportGroupExpression(Expression  exp,
+                                              Entity      entity,
+                                              ParseAction parent=null)
     {
       return this.ImportPropertiesAndParseActions(
-        ((GroupExpression)exp).Expression, entity
+        ((GroupExpression)exp).Expression, entity, parent
       );
     }
 
-    private ParseAction ImportRepetitionExpression(Expression exp,
-                                                   Entity     entity)
+    private ParseAction ImportRepetitionExpression(Expression  exp,
+                                                   Entity      entity,
+                                                   ParseAction parent=null)
     {
       RepetitionExpression repetition = ((RepetitionExpression)exp);
       // recurse down
       ParseAction action = this.ImportPropertiesAndParseActions(
-        repetition.Expression,
-        entity
+        repetition.Expression, entity, parent
       );
       // mark Plural
       action.IsPlural = true;
@@ -648,128 +738,143 @@ namespace HumanParserGenerator.Generator {
       return action;
     }
 
+    // After importing all Entities, Properties and ParseActions, we apply our
+    // transformation rules
 
-    // After importing all Entitie, Properties and ParseActions, we apply our
-    // transformation rules:
-
-    // RULE 1: Alternatives that can be collapsed (e.g. multiple Properties can
-    //         be replaced by a single one) are collapsed.
+    // STEP 2: collapse all Alternatives when all Properties belong to them
 
     private void CollapseAlternatives() {
-      // we need to do this bottom-up, because lower-level alternatives might
-      // collapse and change their Entity's type, causing a different decision
-      // higher up the Entity hierarchy.
-
-      // we start by doing a top-down scan of all Entities in the Model
       foreach(Entity entity in this.Model.Entities) {
         this.CollapseAlternatives(entity);
       }
     }
-    
-    private bool CollapseAlternatives(Entity entity) {
-      // we're only interested in Alternatives
-      // TODO ConsumeAll with only one active ConsumeAny might also be valid
-      if( ! (entity.ParseAction is ConsumeAny) ) { return false; }
 
-      ConsumeAny consume = (ConsumeAny)entity.ParseAction;
-
-      // make sure that Entities referenced by our alternative ParseActions
-      // are already collapsed
-      foreach(ParseAction action in consume.Actions) {
-        if(action is ConsumeEntity) {
-          this.CollapseAlternatives(((ConsumeEntity)action).Entity);
-        }
-      }
-
-      // if all Properties result from the ParseActions Alternatives, AND they 
-      // are not a mix of strings and other Types, we can replace 
-      // them by a single one...
-      int all     = entity.Properties.Count();
-      int props   = consume.Actions.Where(a => a.Property != null).Count();
-      int strings = consume.Actions.Where(a => (a.Type != null && a.Type.Equals("string"))).Count();
-      this.Log(entity.Name + " : # all: " + all.ToString() + " = # strings: " + strings.ToString() + " / # props: " + props.ToString() );
-      this.Log("    - " + string.Join("   \n    - ", consume.Actions.Select(action=>action.Type)));
-      if(all == 0 || props == all && (strings == all || strings == 0)) {
-        // Add a new Property to the Entity that holds the outcome of the
-        // Consumption
-        Property property = new Property() {
-          Name   = "alternative",
-          Source = consume
-        };
-        consume.Property = property;
-        property.Source  = consume;
-
-        entity.Add(property);
+    private void CollapseAlternatives(Entity entity) {
+      // we're only interested in Entities whose Properties belong to one 
+      // Alternatives consuming action
       
-        // make all original consumers point to the new alternative property
-        foreach(ParseAction action in consume.Actions) {
-          if(action.Property != null) {
-            action.Property.Entity.Remove(action.Property);
-            action.Property = property;          
-          }
-        }
+      List<ParseAction> actions =
+        entity.Properties.Select(prop => prop.Source.Parent).Distinct().ToList();
 
-        this.Log(
-          "collapsed " + entity.Name + " : " + 
-          entity.Type + " " + (entity.IsVirtual ? "virtual" : "")
-        );
-        this.Log("    - " + string.Join("   \n    - ",
-          consume.Actions.Select(action=>action.Type)));        
+      // this should be ONLY 1 and it must BE CONSUMEANY
+      if(actions.Count != 1 || ! (actions.First() is ConsumeAny)) { return; }
+
+      this.Log("collapsing alternatives on " + entity.Name);
+
+      ConsumeAny consume = (ConsumeAny)actions.First();
       
-        return true;
+      // create a new Property to hold the outcome of the consumption
+      PropertyProxy property = new PropertyProxy() {
+        Name   = "alternative",
+        Source = consume
+      };
+      // add the new Property as the target of the action
+      consume.Property = property;
+      
+      // make all original consumers point to the new alternative property
+      // this is the case for all existing properties
+      foreach(Property prop in entity.Properties) {
+        prop.Source.Property = property;
+        property.Proxied.Add(prop);
+        this.Log("  - " + prop.Type);
       }
-      return false;
+      // now remove all old Properies
+      entity.Clear();
+
+      // add the new property to the Entity
+      entity.Add(property);
     }
 
-    // RULE 2: detect inheritance in 3 cases: 
-    //         1. Single reference to other NonPlural Entity
-    //         2. Alternatives of only Entity references push their type down
-    //         3. Sequences that contain only one Entity reference
+    // STEP 3: detect inheritance
+    //         - all Entities with only ONE Property become Supers for all
+    //           Entities that are referenced from it.
+    //         - this can be a single Entity
+    //         - or an alternatives
+
+    private List<Entity> done = new List<Entity>();
 
     private void DetectInheritance() {
+      // we need to recurse down through the hierarchy, starting at the Root
+      this.DetectInheritance(this.Model.Root);
+      this.Log("DetectInheritance ... DONE");
+      this.ShowInheritance();
+    }
+
+    private void ShowInheritance() {
+      this.Log("---------------------------------------------");
       foreach(Entity entity in this.Model.Entities) {
-        entity.Supers.Clear();
-        entity.Subs.Clear();
+        string t = "";
+        t += entity.IsVirtual ? "<" : "";
+        t += entity.Name;
+        t += entity.IsVirtual ? ">" : "";
+        if(entity.Supers.Count > 0) {
+          t += " : " + string.Join(",", entity.Supers.Select(s=>s.Name));
+        }
+        if(entity.Subs.Count > 0) {
+          t += " <|-- " + string.Join(",", entity.Subs.Select(s=>s.Name));
+        }
+        this.Log(t);
       }
-      foreach(Entity entity in this.Model.Entities) {
-        this.DetectInheritance(entity);
-      }
+      this.Log("---------------------------------------------");
     }
 
     private void DetectInheritance(Entity entity) {
-      // 1-on-1 (TODO: actually in use/usefull?)
-      if(entity.ParseAction is ConsumeEntity && ! entity.ParseAction.IsPlural) {
-        this.AddInheritance(entity, ((ConsumeEntity)entity.ParseAction).Entity);
+      this.Log("["+entity.Name+"] START");
+      if( this.done.Contains(entity) ) {
+        this.Log("["+entity.Name+"] SKIPPING");
+        return;
       }
-      // Alternatives, 1-on-n x ConsumeEntity.Type != String
-      if(entity.ParseAction is ConsumeAny) {
-        List<ParseAction> actions = ((ConsumeAny)entity.ParseAction).Actions;
-        // check if the alternative types are all non-strings or all strings
-        // if there are any NULL Types (e.g. from Sequence), we don't collapse
-        int all = actions.Count();
-        int strings = actions.Where(a => a.Type != null && a.Type.Equals("string")).Count();
-        int nulls = actions.Where(a => a.Type == null).Count();
-        if( nulls == 0 && (strings == 0 || strings == all)) {
-          foreach(ParseAction action in actions) {
-            if(action is ConsumeEntity) {
-              this.AddInheritance(entity, ((ConsumeEntity)action).Entity);
+      // avoid recursion and doubles, keep track of what we've done
+      this.done.Add(entity);
+      
+      // TODO CLEAN THIS UP :-(
+      if(entity.Properties.Count == 1 && ! entity.Properties.First().IsPlural) {
+        // only 1 Property? => we're the Super of the Entity/ies related to
+        // the property.
+        this.Log("["+entity.Name+"] is super");
+        // PropertyProxy (Collapsed Alternatives)
+        if(entity.Properties.First() is PropertyProxy) {
+          // first push down our Superness to all children
+          foreach(Property property in ((PropertyProxy)entity.Properties.First()).Proxied) {
+            this.Log("["+entity.Name+"] processing proxied ");
+            if(property.Source is ConsumeEntity) {
+              this.AddInheritance(entity, ((ConsumeEntity)property.Source).Entity);
+            } else {
+              throw new NotImplementedException("only ConsumeEntities expected, got " + property.Source.GetType().ToString());
             }
           }
-        }
-      }
-      // ConsumeAll that actually is a single ConsumeEntity and otherwise only
-      // none-Property related Consumes
-      if(entity.ParseAction is ConsumeAll) {
-        List<ParseAction> actions = ((ConsumeAll)entity.ParseAction).Actions;
-        if( actions.OfType<ConsumeEntity>().Count() == 1 ) {
-          int other = actions.Where(action => action.Property == null).Count();
-          if(actions.Count() == other + 1) {
-            Entity sub = actions.OfType<ConsumeEntity>().ToList()[0].Entity;
-            this.AddInheritance(entity, sub);
+          // recurse down
+          foreach(Property property in ((PropertyProxy)entity.Properties.First()).Proxied) {
+            this.Log("["+entity.Name+"] processing proxied ");
+            if(property.Source is ConsumeEntity) {
+              this.Log("["+entity.Name+"] recursing down proxied property's entity");
+              this.DetectInheritance(((ConsumeEntity)property.Source).Entity);
+            } else {
+              throw new NotImplementedException("only ConsumeEntities expected, got " + property.Source.GetType().ToString());
+            }
+          }
+
+        } else {
+          if(entity.Properties.First().Source is ConsumeEntity) {
+            this.AddInheritance(entity, ((ConsumeEntity)entity.Properties.First().Source).Entity);
+            this.Log("["+entity.Name+"] recursing down only property's entity");
+            this.DetectInheritance(((ConsumeEntity)entity.Properties.First().Source).Entity);
+          } else {
+            this.Log("["+entity.Name+"] not interested in " + entity.Properties.First().Source.GetType().ToString());
           }
         }
-        
+      } else {
+        this.Log("["+entity.Name+"] is not super, just recursing down...");
+        // detect inheritance in all Entities on all properties
+        foreach(Property property in entity.Properties) {
+          if( property.Source is ConsumeEntity) {
+            this.DetectInheritance( ((ConsumeEntity)property.Source).Entity );
+          } else {
+            this.Log("["+entity.Name+"] not interested in " + entity.Properties.First().Source.GetType().ToString());
+          }
+        }
       }
+      this.Log("["+entity.Name+"] END");
     }
 
     private void AddInheritance(Entity parent, Entity child) {

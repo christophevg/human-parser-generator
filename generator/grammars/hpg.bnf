@@ -36,10 +36,10 @@ terminal-expression       ::= identifier-expression
 identifier-expression     ::= [ name ] identifier ;
 string-expression         ::= [ name ] string;
 
-extractor-expression      ::= [ name ] "/" regex "/" ;
+extractor-expression      ::= [ name ] "/" pattern "/" ;
 
 name                      ::= identifier "@" ;
 
 identifier                ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
 string                    ::= /"([^"]*)"|^'([^']*)'/ ;
-regex                     ::= /(.*?)(?<keep>/\s*;)/ ;
+pattern                   ::= /(.*?)(?<keep>/\s*;)/ ;

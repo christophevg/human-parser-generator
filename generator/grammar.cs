@@ -170,7 +170,7 @@ public class AsModel {
             Expression = new IdentifierExpression() { Identifier = "string" }
           }
         },
-        // extractor-expression ::= [ name ] "/" regex "/" ;
+        // extractor-expression ::= [ name ] "/" pattern "/" ;
         new Rule() {
           Identifier = "extractor-expression",
           Expression = new SequentialExpression() {
@@ -180,7 +180,7 @@ public class AsModel {
             Expression              = new SequentialExpression() {
               NonSequentialExpression = new StringExpression() { String = "/" },
               Expression              = new SequentialExpression() {
-                NonSequentialExpression = new IdentifierExpression() { Identifier = "regex" },
+                NonSequentialExpression = new IdentifierExpression() { Identifier = "pattern" },
                 Expression              = new StringExpression() { String = "/" }
               }
             }
@@ -197,17 +197,17 @@ public class AsModel {
         // identifier ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
         new Rule() {
           Identifier = "identifier",
-          Expression = new ExtractorExpression() { Regex = @"([A-Za-z][A-Za-z0-9-]*)" }
+          Expression = new ExtractorExpression() { Pattern = @"([A-Za-z][A-Za-z0-9-]*)" }
         },
         // string ::= /"([^"]*)"|^'([^']*)'/ ;
         new Rule() {
           Identifier = "string",
-          Expression = new ExtractorExpression() { Regex = @"""([^""]*)""|^'([^']*)'" }
+          Expression = new ExtractorExpression() { Pattern = @"""([^""]*)""|^'([^']*)'" }
         },
-        // regex ::= /(.*?)(?<keep>/\s*;)/ ;
+        // pattern ::= /(.*?)(?<keep>/\s*;)/ ;
         new Rule() {
-          Identifier = "regex",
-          Expression = new ExtractorExpression() { Regex = @"(.*?)(?<keep>/\s*;)" }
+          Identifier = "pattern",
+          Expression = new ExtractorExpression() { Pattern = @"(.*?)(?<keep>/\s*;)" }
         }
       } // Rules
     }; // Grammar
@@ -286,17 +286,17 @@ public class AsModel {
         // identifier ::= /([A-Z][A-Z0-9]*)/ ;
         new Rule() {
           Identifier = "identifier",
-          Expression = new ExtractorExpression() { Regex = @"([A-Z][A-Z0-9]*)" }
+          Expression = new ExtractorExpression() { Pattern = @"([A-Z][A-Z0-9]*)" }
         },
         // string ::= /"([^"]*)"|'([^']*)'/ ;
         new Rule() {
           Identifier = "string",
-          Expression = new ExtractorExpression() { Regex = @"""([^""]*)""|'([^']*)'" }
+          Expression = new ExtractorExpression() { Pattern = @"""([^""]*)""|'([^']*)'" }
         },
         // number ::= /(-?[1-9][0-9]*)/ ;
         new Rule() {
           Identifier = "number",
-          Expression = new ExtractorExpression() { Regex = @"(-?[1-9][0-9]*)" }
+          Expression = new ExtractorExpression() { Pattern = @"(-?[1-9][0-9]*)" }
         }
       } // Rules
     }; // Grammar
@@ -447,12 +447,12 @@ public class StringExpression : TerminalExpression {
 // name                 ::= identifier "@";
 public class ExtractorExpression : TerminalExpression {
   public string Name { get; set; }
-  public string Regex { get; set; }
+  public string Pattern { get; set; }
   public override string ToString() {
     return
       "ExtractorExpression(" +
         "Name="  + this.Name + "," +
-        "Regex=" + this.Regex +
+        "Pattern=" + this.Pattern +
       ")";
   }
 }

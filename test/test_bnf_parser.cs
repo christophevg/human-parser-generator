@@ -42,22 +42,23 @@ public class BNFParserTests {
   public void testPascalGrammar() {
     this.processAndCompare(
       @"
-program     ::= ""PROGRAM"" identifier
-                ""BEGIN""
-                { assignment }
-                ""END.""
-              ;
+program               ::= ""PROGRAM"" identifier
+                          ""BEGIN""
+                          { assignment }
+                          ""END.""
+                        ;
 
-assignment  ::= identifier "":="" expression "";"" ;
+assignment            ::= identifier "":="" expression "";"" ;
 
-expression  ::= identifier
-              | string
-              | number
-              ;
+expression            ::= identifier
+                        | string
+                        | number
+                        ;
 
-identifier  ::= /([A-Z][A-Z0-9]*)/ ;
-string      ::= /""([^""]*)""|'([^']*)'/ ;
-number      ::= /(-?[1-9][0-9]*)/ ;
+identifier            ::= name  @ /([A-Z][A-Z0-9]*)/ ;
+string                ::= text  @ /""([^""]*)""|'([^']*)'/ ;
+number                ::= value @ /(-?[1-9][0-9]*)/ ;
+
       ",
       @"
 Grammar(
@@ -105,15 +106,15 @@ Grammar(
     ),
     Rule(
       Identifier=identifier,
-      Expression=ExtractorExpression(Name=,Regex=([A-Z][A-Z0-9]*))
+      Expression=ExtractorExpression(Name=name,Pattern=([A-Z][A-Z0-9]*))
     ),
     Rule(
       Identifier=string,
-      Expression=ExtractorExpression(Name=,Regex=""([^""]*)""|'([^']*)')
+      Expression=ExtractorExpression(Name=text,Pattern=""([^""]*)""|'([^']*)')
     ),
     Rule(
       Identifier=number,
-      Expression=ExtractorExpression(Name=,Regex=(-?[1-9][0-9]*))
+      Expression=ExtractorExpression(Name=value,Pattern=(-?[1-9][0-9]*))
     )
   ]
 )
@@ -123,7 +124,7 @@ Model(
   Entities=[
     Entity(
       Name=program,Type=program,Properties=[
-        Property(Name=identifier,Type=string,Source=ConsumeEntity(identifier)->identifier),
+        Property(Name=identifier,Type=identifier,Source=ConsumeEntity(identifier)->identifier),
         Property(Name=assignment,Type=assignment,IsPlural,Source=ConsumeEntity(assignment)*->assignment)
       ],ParseAction=ConsumeAll([
         ConsumeString(PROGRAM),
@@ -135,8 +136,8 @@ Model(
     ),
     Entity(
       Name=assignment,Type=assignment,Properties=[
-        Property(Name=identifier,Type=string,Source=ConsumeEntity(identifier)->identifier),
-        Property(Name=expression,Type=string,Source=ConsumeEntity(expression)->expression)
+        Property(Name=identifier,Type=identifier,Source=ConsumeEntity(identifier)->identifier),
+        Property(Name=expression,Type=expression,Source=ConsumeEntity(expression)->expression)
       ],ParseAction=ConsumeAll([
         ConsumeEntity(identifier)->identifier,
         ConsumeString(:=),
@@ -145,8 +146,8 @@ Model(
       ])
     ),
     VirtualEntity(
-      Name=expression,Type=string,Subs=[identifier,string,number],Properties=[
-        Property(Name=alternative,Type=string,Source=ConsumeAny([
+      Name=expression,Type=expression,Subs=[identifier,string,number],Properties=[
+        Property(Name=alternative,Type=expression,Source=ConsumeAny([
           ConsumeEntity(identifier)->alternative,
           ConsumeEntity(string)->alternative,
           ConsumeEntity(number)->alternative
@@ -157,20 +158,20 @@ Model(
         ConsumeEntity(number)->alternative
       ])->alternative
     ),
-    VirtualEntity(
-      Name=identifier,Type=string,Supers=[expression],Properties=[
-       Property(Name=identifier,Type=string,Source=ConsumePattern(([A-Z][A-Z0-9]*))->identifier)
-      ],ParseAction=ConsumePattern(([A-Z][A-Z0-9]*))->identifier
+    Entity(
+      Name=identifier,Type=identifier,Supers=[expression],Properties=[
+       Property(Name=name,Type=<string>,Source=ConsumePattern(([A-Z][A-Z0-9]*))->name)
+      ],ParseAction=ConsumePattern(([A-Z][A-Z0-9]*))->name
     ),
-    VirtualEntity(
+    Entity(
       Name=string,Type=string,Supers=[expression],Properties=[
-       Property(Name=string,Type=string,Source=ConsumePattern(""([^""]*)""|'([^']*)')->string)
-      ],ParseAction=ConsumePattern(""([^""]*)""|'([^']*)')->string
+       Property(Name=text,Type=<string>,Source=ConsumePattern(""([^""]*)""|'([^']*)')->text)
+      ],ParseAction=ConsumePattern(""([^""]*)""|'([^']*)')->text
     ),
-    VirtualEntity(
-      Name=number,Type=string,Supers=[expression],Properties=[
-       Property(Name=number,Type=string,Source=ConsumePattern((-?[1-9][0-9]*))->number)
-      ],ParseAction=ConsumePattern((-?[1-9][0-9]*))->number
+    Entity(
+      Name=number,Type=number,Supers=[expression],Properties=[
+       Property(Name=value,Type=<string>,Source=ConsumePattern((-?[1-9][0-9]*))->value)
+      ],ParseAction=ConsumePattern((-?[1-9][0-9]*))->value
     )
   ],
   Root=program
@@ -203,12 +204,12 @@ int              ::= /(-?[1-9][0-9]*)/ ;"
     );
 
     Assert.IsTrue  (             model["literal"].IsVirtual );
-    Assert.AreEqual( "string",   model["literal"].Type      );
+    Assert.AreEqual( "literal",  model["literal"].Type      );
 
     Assert.IsFalse (             model["variable"].IsVirtual);
     Assert.AreEqual( "variable", model["variable"].Type      );
 
-    Assert.IsFalse( model["value"].IsVirtual );
+    Assert.IsTrue( model["value"].IsVirtual );
   }
 
 }

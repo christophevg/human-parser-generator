@@ -1,6 +1,5 @@
-copybook         ::= { sentence };
-sentence         ::= record ".";
-record           ::= renames-record | values-record | basic-record ;
+copybook         ::= { record };
+record           ::= renames-record | values-record | basic-record ".";
 
 renames-record   ::= "66" level-name "RENAMES"  identifier-range ;
 level-name       ::= identifier | "FILLER" ;
@@ -31,7 +30,7 @@ option           ::= redefines-option
                    | value-option
                    ;
 
-redefines-option ::= redefines @ "REDEFINES" identifier ;
+redefines-option ::= "REDEFINES" identifier ;
 external-option  ::= [ "IS" ] "EXTERNAL" ;
 internal-option  ::= [ "IS" ] "INTERNAL" ;
 picture-option   ::= picture ;
@@ -43,16 +42,22 @@ just-option      ::= "JUST" [ "IFIED" ] [ "RIGHT" ] ;
 blank-option     ::= "BLANK" [ "WHEN" ] "ZERO" ;
 value-option     ::= "VALUE" [ "IS" ] symbolic ;
 
-picture          ::= ( [ "PICTURE" | "PIC" ] [ "IS" ] picture-type [ "(" int ")" [ [ "V" | "." ] picture-type "(" int ")" ] ] )
-                   | ( [ "PICTURE" | "PIC" ] [ "IS" ] string )
+picture          ::= ( picture-header picture-type [ "(" int ")" [ [ "V" | "." ] picture-type "(" int ")" ] ] )
+                   | ( picture-header string )
                    ;
+
+picture-header   ::= picture-label [ "IS" ];
+picture-label    ::= "PICTURE" | "PIC" ;
+
 usage            ::= "BINARY"
-                   | ( "COMPUTATIONAL" [ "-" digit ] )
-                   | ( "COMP" [ "-" digit ] )
+                   | comp-usage
                    | "DISPLAY"
                    | "INDEX"
                    | "PACKED-DECIMAL"
                    ;
+
+comp-usage       ::= "COMPUTATIONAL" | "COMP" [ "-" comp-level @ digit ] ;
+
 key              ::= [ "ASCENDING" | "DESCENDING" [ "KEY" ] [ "IS" ] { identifier } ] ;
 index            ::= [ "INDEXED" [ "BY" ] identifier ] ;
 symbolic         ::= literal | variable | figurative ;
@@ -73,8 +78,8 @@ figurative       ::= "ZEROS"
 
 picture-type     ::= /[9AXVSP]+/;
 
-identifier       ::= /([A-Z][A-Z0-9]*)/;
+identifier       ::= name @ /([A-Z][A-Z0-9]*)/;
 digit            ::= /([0-9])/;
-int              ::= /(-?[0-9]*)/ ;
+int              ::= value @ /(-?[0-9]*)/ ;
 float            ::= /([-+]?[0-9]*\.?[0-9]*)/; 
 string           ::= /"([^"]*)"|'([^']*)'/;

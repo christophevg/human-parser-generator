@@ -1,4 +1,6 @@
-TARGET      = hpg
+GRAMMAR    ?= grammars/cobol-record-definition.bnf
+
+TARGET      = main
 BUILD       = .build
 
 CC          = mcs
@@ -9,26 +11,34 @@ RUN        += --debug
 CFLAGS     += -define:DEBUG -debug
 endif
 
-GRAMMAR    ?= grammars/cobol-record-definition.bnf
+ifdef CSHARP_VERSION
+CFLAGS     += -langversion:$(CSHARP_VERSION)
+endif
 
-PARSER     ?= cobol-parser.cs
+ARGUMENTS  ?=
+NUNIT       = nunit-console -nologo
 
-INPUT      ?= simple.cobol
+SRCS        = generator/{grammar,parser,emitter}.cs
 
-all: clean run
+PARSER      = parser.cs
 
-run: $(BUILD)/$(TARGET).exe
-	@$(RUN) $< $(INPUT)
-
-$(BUILD)/%.exe: $(PARSER) *.cs
-	@echo "*** building $@ from $^"
-	@mkdir -p $(BUILD)
-	@$(CC) $(CFLAGS) -out:$@ $^
+all: clean test
 
 $(PARSER):
 	@echo "*** generating parser generator, including EBNF-like parser"
 	@(cd ../../generator; make clean generation2)
 	@(cd ../../generator/generation/generation && make parser LANG=$(GRAMMAR) OUT=../../../example/cobol/$(PARSER))
 
+$(BUILD)/test.dll: *.cs $(PARSER)
+	@echo "*** building unit tests"
+	@mkdir -p $(BUILD)
+	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^
+
+test: $(BUILD)/test.dll
+	@echo "*** executing unit tests"
+	@$(NUNIT) $<
+
 clean:
-	@rm -rf $(BUILD) $(PARSER)
+	@rm -rf $(BUILD) TestResult.xml $(PARSER)
+
+-include Makefile.local

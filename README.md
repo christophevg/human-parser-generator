@@ -66,54 +66,25 @@ This grammar would allow to parse
 
 ### Changes, Simplifications, Extensions,...
 
-To get a head-start I've added few changes/extensions/limitations to the standard EBNF notation. The following grammar is a rewritten version of the earlier example, using these extensions:
+To get a head-start I've added few changes/extensions/limitations to the standard EBNF notation. The following grammar is a rewritten version of the earlier Pascal example, using these extensions:
 
 ```ebnf
-grammar                   ::= { rule } ;
+program               ::= "PROGRAM" identifier
+                          "BEGIN"
+                          { assignment }
+                          "END."
+                        ;
 
-rule                      ::= identifier "::=" expression ";" ;
+assignment            ::= identifier ":=" expression ";" ;
 
-expression                ::= sequential-expression
-                            | non-sequential-expression
-                            ;
+expression            ::= identifier
+                        | string
+                        | number
+                        ;
 
-sequential-expression     ::= non-sequential-expression expression ;
-
-non-sequential-expression ::= alternatives-expression
-                            | atomic-expression
-                            ;
-
-alternatives-expression   ::= atomic-expression "|" non-sequential-expression ;
-
-
-atomic-expression         ::= nested-expression
-                            | terminal-expression
-                            ;
-
-nested-expression         ::= optional-expression
-                            | repetition-expression
-                            | group-expression
-                            ;
-
-optional-expression       ::= "[" expression "]" ;
-repetition-expression     ::= "{" expression "}" ;
-group-expression          ::= "(" expression ")" ;
-
-terminal-expression       ::= identifier-expression
-                            | string-expression
-                            | extractor-expression
-                            ;
-
-identifier-expression     ::= [ name ] identifier ;
-string-expression         ::= [ name ] string;
-
-extractor-expression      ::= [ name ] "/" pattern "/" ;
-
-name                      ::= identifier "@" ;
-
-identifier                ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
-string                    ::= /"([^"]*)"|^'([^']*)'/ ;
-pattern                   ::= /(.*?)(?<keep>/\s*;)/ ;
+identifier            ::= name  @ /([A-Z][A-Z0-9]*)/ ;
+string                ::= text  @ /"([^"]*)"|'([^']*)'/ ;
+number                ::= value @ /(-?[1-9][0-9]*)/ ;
 ```
 
 The extensions that are applied are:
@@ -122,7 +93,7 @@ The extensions that are applied are:
 * spaces in rule names (left hand side) are not allowed (e.g. use dashes)
 * ignoring whitespace, removing the need for explicit whitespace description
 * definition of "extracting terminals" using regular expressions
-* introduction of "virtual" entities, which don't show up in the AST
+* introduction of implicit "virtual" entities, which don't show up in the AST (`expression` is an example)
 
 ### Demos
 

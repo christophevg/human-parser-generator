@@ -101,6 +101,13 @@ public class Parsable {
     return new ParseException( message + "\n  Context:" + this.Context + "\n", inner );
   }
 
+  public bool IsDone {
+    get {
+      this.SkipLeadingWhitespace();
+      return this.position == this.text.Length;
+    }
+  }
+
   // ACTUAL CONSUMPTION
 
   // consumes an amount of characters

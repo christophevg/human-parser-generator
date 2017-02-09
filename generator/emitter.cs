@@ -179,6 +179,9 @@ using System.Diagnostics;
   public Parser Parse(string source) {
     this.source = new Parsable(source);
     this.AST    = this.Parse" + this.PascalCase(this.Model.Root.Name) + @"();
+    if( ! this.source.IsDone ) {
+      throw this.source.GenerateParseException(""Could not parse"");
+    }
     return this;
   }";
     }

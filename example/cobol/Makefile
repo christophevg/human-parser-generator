@@ -1,6 +1,6 @@
 GRAMMAR    ?= grammars/cobol-record-definition.bnf
 
-TARGET      = main
+TARGET      = main.exe
 BUILD       = .build
 
 CC          = mcs
@@ -22,14 +22,28 @@ SRCS        = generator/{grammar,parser,emitter}.cs
 
 PARSER      = parser.cs
 
+TEST_SRCS   = *.cs $(PARSER)
+PARSE_SRCS  = dump-ast.cs parsable.cs $(PARSER)
+
+INPUT      ?= copybook.cobol
+
 all: clean test
 
-$(PARSER):
+parse: $(BUILD)/$(TARGET)
+	@echo "*** running $<"
+	@$(RUN) $< $(INPUT)
+
+$(PARSER): ../../generator/$(GRAMMAR)
 	@echo "*** generating parser generator, including EBNF-like parser"
 	@(cd ../../generator; make clean generation2)
 	@(cd ../../generator/generation/generation && make parser LANG=$(GRAMMAR) OUT=../../../example/cobol/$(PARSER))
 
-$(BUILD)/test.dll: *.cs $(PARSER)
+$(BUILD)/%.exe: $(PARSE_SRCS)
+	@echo "*** building $@"
+	@mkdir -p $(BUILD)
+	@$(CC) $(CFLAGS) -out:$@ $^
+
+$(BUILD)/test.dll: $(TEST_SRCS)
 	@echo "*** building unit tests"
 	@mkdir -p $(BUILD)
 	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^

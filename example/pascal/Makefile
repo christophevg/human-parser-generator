@@ -1,21 +1,12 @@
 GENERATED  ?= generated
 PARSER     ?= pascal.cs
 GENERATOR  ?= ../../generator
-
 GRAMMAR    ?= pascal-assignments.bnf
+INPUT      ?= example.pas
+
+-include $(GENERATOR)/Makefile.support
 
 SRCS        = $(GENERATOR)/dump-ast.cs $(GENERATOR)/parsable.cs $(PARSER)
-
-CC          = mcs
-RUN         = mono
-HPG         = $(GENERATOR)/hpg.exe
-
-ifdef DEBUG
-RUN        += --debug
-CFLAGS     += -define:DEBUG -debug
-endif
-
-INPUT      ?= example.pas
 
 all: clean run-manual $(GENERATED)/$(PARSER) diff run-generated
 

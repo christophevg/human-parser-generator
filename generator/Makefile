@@ -17,20 +17,14 @@ GEN1SRCS    = $(COMMONSRCS) grammar.cs bootstrap.cs
 GEN2SRCS    = $(COMMONSRCS) parsable.cs $(GEN1PARSER) hpg.cs 
 SRCS       ?= $(COMMONSRCS) parsable.cs $(PARSER) hpg.cs 
 
-# external executables
-CC          = mcs
-RUN         = mono
-ASTYLE     ?= | LC_ALL="C" astyle -s2
-
-ifdef DEBUG
-RUN        += --debug
-CFLAGS     += -define:DEBUG -debug
-endif
-
 ifdef OUT
 OUTPUT      = > $(OUT)
 OUTPUT_LBL  = " to $(OUT)"
 endif
+
+GENERATOR = .
+
+-include Makefile.support
 
 all: $(HPG)
 
@@ -46,7 +40,7 @@ $(PARSER): $(GEN2SRCS)
 
 parser: $(HPG)
 	@echo "*** generating parser from $(LANG)$(OUTPUT_LBL)"
-	@$(RUN) $< $(LANG) $(ASTYLE) $(OUTPUT)
+	@$(RUN) $< $(LANG) | $(ASTYLE) $(OUTPUT)
 
 %.exe: $(SRCS)
 	@echo "*** compiling $@ from $^"

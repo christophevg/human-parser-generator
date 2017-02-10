@@ -4,19 +4,7 @@ TEST_SRCS   = $(GENERATOR)/generator.cs \
               $(GENERATOR)/parser.cs \
 							test_*.cs
 
-CC          = mcs
-RUN         = mono
-NUNIT       = nunit-console -nologo
-
-ifdef DEBUG
-RUN        += --debug
-CFLAGS     += -define:DEBUG -debug
-endif
-
-ifdef CSHARP_VERSION
-CFLAGS     += -langversion:$(CSHARP_VERSION)
-endif
-
+-include $(GENERATOR)/Makefile.support
 
 all: clean test
 

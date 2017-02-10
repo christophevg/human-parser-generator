@@ -2,21 +2,12 @@ PARSER     ?= cobol.cs
 GRAMMAR    ?= cobol-record-definition.bnf
 GENERATOR  ?= ../../generator
 TARGET     ?= parse-cobol.exe
+INPUT      ?= simple.cobol
 
-CC          = mcs
-RUN         = mono
-NUNIT       = nunit-console -nologo
-HPG         = $(GENERATOR)/hpg.exe
-
-ifdef DEBUG
-RUN        += --debug
-CFLAGS     += -define:DEBUG -debug
-endif
+-include ../../generator/Makefile.support
 
 SRCS        = $(GENERATOR)/parsable.cs $(GENERATOR)/dump-ast.cs $(PARSER)
 TEST_SRCS   = $(SRCS) test_*.cs
-
-INPUT      ?= simple.cobol
 
 all: clean test
 
@@ -30,18 +21,18 @@ test.dll: $(TEST_SRCS)
 
 parse: $(TARGET)
 	@echo "*** running $<"
-	@$(RUN) $< $(INPUT)
+	@$(RUN) $< $(INPUT) | $(FORMATTER)
 
-$(TARGET): $(SRCS)
-	@echo "*** building $@ from $^"
-	@$(CC) $(CFLAGS) -out:$@ $^
+$(TARGET): $(GRAMMAR) $(SRCS)
+	@echo "*** building $@ from $(filter-out $<,$^)"
+	@$(CC) $(CFLAGS) -out:$@ $(filter-out $<,$^)
 
 $(PARSER): $(GRAMMAR) $(HPG)
 	@echo "*** generating a Cobol parser from $<"
 	@$(RUN) $(HPG) $< > $@
 
 $(HPG):
-	@(cd ../../generator; make)
+	@(cd $(GENERATOR); make)
 
 clean:
 	@rm -rf $(BUILD) TestResult.xml $(PARSER) test.dll $(TARGET)

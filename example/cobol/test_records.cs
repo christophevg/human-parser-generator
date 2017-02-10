@@ -40,37 +40,45 @@ public class GeneratorModelTests {
   public void BasicRecordWithoutOptions() {
     Copybook book = this.testSingleSentence(
       "01 TOP.",
-      "BasicRecord(Int=Int(Value=01),LevelName=Identifier(Name=TOP),Options=[])"
+      "BasicRecord(Level=Int(Value=01),LevelName=Identifier(Name=TOP),Options=[])"
     );
-    Assert.AreEqual(((BasicRecord)book.Records[0]).Int.Value, "01");
+    Assert.AreEqual(((BasicRecord)book.Records[0]).Level.Value, "01");
   }
 
   [Test]
   public void BasicRecordWithPicWithCompOption() {
     this.testSingleSentence(
       "10 FIELD   PIC S9(05) COMP-5.",
-      @"BasicRecord(Int=Int(Value=10),LevelName=Identifier(Name=FIELD),Options=[
-        Picture(
-          PictureHeader0=PictureHeader(
-            PictureLabel=PictureLabel(),
-            HasIs=False
-          ),
-          PictureType0=,
-          Int0=Int(Value=05),
-          HasAny=False,
-          PictureType1=,
-          Int1=,
-          HasPictureTypeInt=False,
-          HasInt=True,
-          PictureHeader1=,
-          String=
-        ),
-        UsageOption(
-          HasIs=False,
-          HasAll=False,
-          Usage=CompUsage(CompLevel=5,HasDigit=True)
-        )
-      ])"
+      @"BasicRecord(
+         Level=Int(
+              Value=10
+              ),
+         LevelName=Identifier(
+                  Name=FIELD
+                  ),
+         Options=[
+                PictureFormat(
+                HasTure=False,
+                HasIs=False,
+                MainType=S9,
+                MainIndex=Int(
+                          Value=05
+                          ),
+                HasAny=False,
+                SubType=,
+                SubIndex=,
+                HasPictureTypeInt=False,
+                HasInt=True
+                ),
+                UsageOption(
+                HasIs=False,
+                HasAll=False,
+                Usage=CompUsage(
+                      CompLevel=5,
+                      HasDigit=True
+                      )
+                )]
+         )"
     );
   }
 

@@ -212,4 +212,63 @@ int              ::= /(-?[1-9][0-9]*)/ ;"
     Assert.IsTrue( model["value"].IsVirtual );
   }
 
+  [Test]
+  public void testCobolSignOption() {
+    this.processAndCompare(
+      @"
+sign-option ::=
+   ""SIGN"" [ ""IS"" ]
+   ( ""LEADING"" | ""TRAILING"" )
+   [ ""SEPARATE"" [ ""CHARACTER"" ] ]
+;",
+      @"
+Grammar(
+  Rules=[
+    Rule(
+      Identifier=sign-option,
+      Expression=SequentialExpression(
+        NonSequentialExpression=StringExpression(Name=,String=SIGN),
+        Expression=SequentialExpression(
+          NonSequentialExpression=OptionalExpression(
+            Expression=StringExpression(Name=,String=IS)
+          ),
+          Expression=SequentialExpression(
+            NonSequentialExpression=GroupExpression(
+              Expression=AlternativesExpression(
+                AtomicExpression=StringExpression(Name=,String=LEADING),
+                NonSequentialExpression=StringExpression(Name=,String=TRAILING)
+              )
+            ),
+            Expression=OptionalExpression(
+              Expression=SequentialExpression(
+                NonSequentialExpression=StringExpression(Name=,String=SEPARATE),
+                Expression=OptionalExpression(
+                  Expression=StringExpression(Name=,String=CHARACTER))))))))])",
+      @"
+Model(
+  Entities=[
+    Entity(
+      Name=sign-option,Type=sign-option,Properties=[
+        Property(Name=has-IS,Type=<bool>,IsOptional,Source=ConsumeString(IS)?!->has-IS),
+        Property(Name=has-CHARACTER,Type=<bool>,IsOptional,Source=ConsumeString(CHARACTER)?!->has-CHARACTER),
+        Property(Name=has-all,Type=<bool>,IsOptional,Source=ConsumeAll([ConsumeString(SEPARATE),ConsumeString(CHARACTER)?!->has-CHARACTER])?!->has-all)
+      ],
+      ParseAction=ConsumeAll([
+        ConsumeString(SIGN),
+        ConsumeString(IS)?!->has-IS,
+        ConsumeAny([
+          ConsumeString(LEADING),
+          ConsumeString(TRAILING)
+        ]),
+        ConsumeAll([
+          ConsumeString(SEPARATE),
+          ConsumeString(CHARACTER)?!->has-CHARACTER]
+        )?!->has-all
+      ])
+    )
+  ],
+  Root=sign-option
+)"
+    );
+  }
 }

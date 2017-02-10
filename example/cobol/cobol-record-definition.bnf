@@ -2,7 +2,7 @@ copybook         ::= { record };
 record           ::= renames-record | values-record | basic-record ".";
 
 renames-record   ::= "66" level-name "RENAMES"  identifier-range ;
-level-name       ::= identifier | "FILLER" ;
+level-name       ::= "FILLER" | identifier ;
 identifier-range ::= ( identifier "THRU" identifier )
                    | ( identifier "THROUGH" identifier )
                    | identifier
@@ -15,7 +15,7 @@ variable         ::= identifier [ "(" subset ")" ];
 subset           ::= numeric [ ":" subset ];
 numeric          ::= int | identifier;
 
-basic-record     ::= int level-name { option } ;
+basic-record     ::= level @ int level-name { option } ;
 
 option           ::= redefines-option
                    | external-option
@@ -33,7 +33,6 @@ option           ::= redefines-option
 redefines-option ::= "REDEFINES" identifier ;
 external-option  ::= [ "IS" ] "EXTERNAL" ;
 internal-option  ::= [ "IS" ] "INTERNAL" ;
-picture-option   ::= picture ;
 usage-option     ::= [ "USAGE" [ "IS" ] ] usage;
 sign-option      ::= "SIGN" [ "IS" ] ( "LEADING" | "TRAILING" ) [ "SEPARATE" [ "CHARACTER" ] ] ;
 occurs-option    ::= "OCCURS" numeric [ "TO" numeric ] [ "TIMES" ] [ "DEPENDING" [ "ON" ] identifier ] key index ;
@@ -42,12 +41,11 @@ just-option      ::= "JUST" [ "IFIED" ] [ "RIGHT" ] ;
 blank-option     ::= "BLANK" [ "WHEN" ] "ZERO" ;
 value-option     ::= "VALUE" [ "IS" ] symbolic ;
 
-picture          ::= ( picture-header picture-type [ "(" int ")" [ [ "V" | "." ] picture-type "(" int ")" ] ] )
-                   | ( picture-header string )
-                   ;
+picture-option   ::= picture ;
+picture          ::= picture-format | picture-string ;
+picture-format   ::= "PIC" [ "TURE" ] [ "IS" ] main-type @ picture-type [ "(" main-index @ int ")" [ [ "V" | "." ] sub-type @ picture-type "(" sub-index @ int ")" ] ] ;
 
-picture-header   ::= picture-label [ "IS" ];
-picture-label    ::= "PICTURE" | "PIC" ;
+picture-string   ::= "PIC" [ "TURE" ] [ "IS" ] string ;
 
 usage            ::= "BINARY"
                    | comp-usage
@@ -76,7 +74,7 @@ figurative       ::= "ZEROS"
                    | "NULL"
                    ;
 
-picture-type     ::= /[9AXVSP]+/;
+picture-type     ::= /([9AXVSP]+)/;
 
 identifier       ::= name @ /([A-Z][A-Z0-9-]*)/;
 digit            ::= /([0-9])/;

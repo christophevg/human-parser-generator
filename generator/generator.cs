@@ -482,6 +482,8 @@ namespace HumanParserGenerator.Generator {
       // step 0:
       this.ImportEntities(grammar.Rules);
 
+      if(this.Model.Entities.Count == 0) { return this; }
+
       // this.Log("===========================================");
       // this.Log("STEP 0:");
       // this.Log("-------------------------------------------");

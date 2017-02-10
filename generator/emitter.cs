@@ -22,6 +22,7 @@ namespace HumanParserGenerator.Emitter {
 
     public override string ToString() {
       if( this.Model == null ) { return "// no model generated"; }
+      if( this.Model.Entities.Count == 0) { return "// no entities generated"; }
       return string.Join("\n\n", 
         new List<string>() { 
           this.GenerateHeader(),

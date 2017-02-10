@@ -1,58 +1,49 @@
-GRAMMAR    ?= grammars/cobol-record-definition.bnf
-
-TARGET      = main.exe
-BUILD       = .build
+PARSER     ?= cobol.cs
+GRAMMAR    ?= cobol-record-definition.bnf
+GENERATOR  ?= ../../generator
+TARGET     ?= parse-cobol.exe
 
 CC          = mcs
 RUN         = mono
+NUNIT       = nunit-console -nologo
+HPG         = $(GENERATOR)/hpg.exe
 
 ifdef DEBUG
 RUN        += --debug
 CFLAGS     += -define:DEBUG -debug
 endif
 
-ifdef CSHARP_VERSION
-CFLAGS     += -langversion:$(CSHARP_VERSION)
-endif
+SRCS        = $(GENERATOR)/parsable.cs $(GENERATOR)/dump-ast.cs $(PARSER)
+TEST_SRCS   = $(SRCS) test_*.cs
 
-ARGUMENTS  ?=
-NUNIT       = nunit-console -nologo
-
-SRCS        = generator/{grammar,parser,emitter}.cs
-
-PARSER      = parser.cs
-
-TEST_SRCS   = *.cs $(PARSER)
-PARSE_SRCS  = dump-ast.cs parsable.cs $(PARSER)
-
-INPUT      ?= copybook.cobol
+INPUT      ?= simple.cobol
 
 all: clean test
 
-parse: $(BUILD)/$(TARGET)
-	@echo "*** running $<"
-	@$(RUN) $< $(INPUT)
-
-$(PARSER): ../../generator/$(GRAMMAR)
-	@echo "*** generating parser generator, including EBNF-like parser"
-	@(cd ../../generator; make clean generation2)
-	@(cd ../../generator/generation/generation && make parser LANG=$(GRAMMAR) OUT=../../../example/cobol/$(PARSER))
-
-$(BUILD)/%.exe: $(PARSE_SRCS)
-	@echo "*** building $@"
-	@mkdir -p $(BUILD)
-	@$(CC) $(CFLAGS) -out:$@ $^
-
-$(BUILD)/test.dll: $(TEST_SRCS)
-	@echo "*** building unit tests"
-	@mkdir -p $(BUILD)
-	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^
-
-test: $(BUILD)/test.dll
+test: test.dll
 	@echo "*** executing unit tests"
 	@$(NUNIT) $<
 
+test.dll: $(TEST_SRCS)
+	@echo "*** building unit tests"
+	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^
+
+parse: $(TARGET)
+	@echo "*** running $<"
+	@$(RUN) $< $(INPUT)
+
+$(TARGET): $(SRCS)
+	@echo "*** building $@ from $^"
+	@$(CC) $(CFLAGS) -out:$@ $^
+
+$(PARSER): $(GRAMMAR) $(HPG)
+	@echo "*** generating a Cobol parser from $<"
+	@$(RUN) $(HPG) $< > $@
+
+$(HPG):
+	@(cd ../../generator; make)
+
 clean:
-	@rm -rf $(BUILD) TestResult.xml $(PARSER)
+	@rm -rf $(BUILD) TestResult.xml $(PARSER) test.dll $(TARGET)
 
 -include Makefile.local

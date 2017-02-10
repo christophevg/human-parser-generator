@@ -20,7 +20,7 @@ The project will initially target C#. No other target language is planned at thi
 
 **Disclaimer** I'm not aiming for feature completeness and only add support for what I need at a given time ;-)
 
-## Current status
+## Current Status
 
 * A trivial example of a small subset of the Pascal language can be parsed.
 * The generator is capable of generating a parser for its own EBNF-like definition language, which means its self-hosting (see also below for more information on this feature). 
@@ -95,49 +95,111 @@ The extensions that are applied are:
 * definition of "extracting terminals" using regular expressions
 * introduction of implicit "virtual" entities, which don't show up in the AST (`expression` is an example)
 
-### Demos
+## Demos
 
 A few demos show the capabilities and results of the generated parsers.
 
-#### Pascal
+### Pascal
 
-In the `example/` folder I've started by writing a manual implementation (`parser.cs`), taking into account how I think this could be generated. The output of the example program, parses the example Pascal file and outputs an AST-like structure:
+In the [`example/pascal`](example/pascal) folder I've started by writing a manual implementation [`pascal.cs`](example/pascal/pascal.cs), taking into account how I think this could be generated. The output of the example program, parses the example Pascal file and outputs an AST-like structure:
 
 ```bash
 $ cd example/pascal
 
-$ make
+$ make run-manual
+*** compiling manual.exe from ../../generator/dump-ast.cs ../../generator/parsable.cs pascal.cs
+*** running manual Pascal parser
 Program(Identifier=Identifier(Name=DEMO1),Assignments=[Assignment(Identifier=Identifier(Name=A),Expression=Number(Value=3)),Assignment(Identifier=Identifier(Name=B),Expression=Number(Value=45)),Assignment(Identifier=Identifier(Name=H),Expression=Number(Value=-100023)),Assignment(Identifier=Identifier(Name=C),Expression=Identifier(Name=A)),Assignment(Identifier=Identifier(Name=D123),Expression=Identifier(Name=B34A)),Assignment(Identifier=Identifier(Name=BABOON),Expression=Identifier(Name=GIRAFFE)),Assignment(Identifier=Identifier(Name=TEXT),Expression=String(Text=Hello world!))])
 ```
 
-In the `generator/` folder a (still rough around the edges) implementation of the generator is able to generate the same parser.
+> The manual implementation uses two supporting files, that are now part of the generator framework. They were "promoted" from the manual example to the actual framework.
 
-The Makefile implements a complete demo that first generates the parser, compares it to the manual version (not taking into account whitespace changes ;-) ) and then copies the other files from the demo (`parsable.cs`, which contains a helper class to deal with basic parsing operation, `main.cs`, the same runner, `example.pascal`, the Pascal source code and `Makefile`, to compile and run the parser).
+The Makefile also implements an example on how to generate a Pascal generator from the EBNF-like language definition. In fact, just issuing `make` runs the manual implementation, generates a fresh Pascal parser, compares the manual and generated parser and finally also runs the generated version:
 
 ```bash
-$ cd generator/
-
 $ make
-*** building second generation generator/parser
-*** generating parser
-*** generating parser from bootstrap to generation/parser.cs
-*** setting up generator environment
-*** generating parser
-*** generating parser from grammars/hpg.bnf to generation/parser.cs
-*** setting up generator environment
-*** generating parser from grammars/pascal-assignments.bnf to ../../demo/parser.cs
-*** comparing to manual version
-*** setting up runtime environment for parser
-*** running example with generated parser
+*** compiling manual.exe from ../../generator/dump-ast.cs ../../generator/parsable.cs pascal.cs
+*** running manual Pascal parser
 Program(Identifier=Identifier(Name=DEMO1),Assignments=[Assignment(Identifier=Identifier(Name=A),Expression=Number(Value=3)),Assignment(Identifier=Identifier(Name=B),Expression=Number(Value=45)),Assignment(Identifier=Identifier(Name=H),Expression=Number(Value=-100023)),Assignment(Identifier=Identifier(Name=C),Expression=Identifier(Name=A)),Assignment(Identifier=Identifier(Name=D123),Expression=Identifier(Name=B34A)),Assignment(Identifier=Identifier(Name=BABOON),Expression=Identifier(Name=GIRAFFE)),Assignment(Identifier=Identifier(Name=TEXT),Expression=String(Text=Hello world!))])
-
-$ ls demo
-Makefile	dump-ast.cs	example.pas	parsable.cs	parser.cs
+*** building parser.gen1.cs
+*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
+*** generating parser from hpg.bnf to parser.gen1.cs
+*** building parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
+*** generating parser from hpg.bnf to parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
+*** generating a Pascal parser from pascal-assignments.bnf
+*** comparing to manual version
+    manual and generated parsers are identical
+*** setting up generated environment for generated/pascal.cs
+total 24
+-rw-r--r--@ 1 xtof  staff   400 Feb 10 12:05 Makefile
+-rw-r--r--  1 xtof  staff  5494 Feb 10 12:05 pascal.cs
+*** compiling and running generated/pascal.cs
+*** compiling dump-ast.exe from ../../../generator/dump-ast.cs ../../../generator/parsable.cs pascal.cs
+*** running dump-ast.exe
+Program(Identifier=Identifier(Name=DEMO1),Assignments=[Assignment(Identifier=Identifier(Name=A),Expression=Number(Value=3)),Assignment(Identifier=Identifier(Name=B),Expression=Number(Value=45)),Assignment(Identifier=Identifier(Name=H),Expression=Number(Value=-100023)),Assignment(Identifier=Identifier(Name=C),Expression=Identifier(Name=A)),Assignment(Identifier=Identifier(Name=D123),Expression=Identifier(Name=B34A)),Assignment(Identifier=Identifier(Name=BABOON),Expression=Identifier(Name=GIRAFFE)),Assignment(Identifier=Identifier(Name=TEXT),Expression=String(Text=Hello world!))])
 ```
+
+### Cobol Example
+
+In [`example/cobol`](example/cobol) a parser is generated for Cobol record definitions, also known as Copybooks - Warning: this is work in progress. The generated parser is currently capable of parsing several example Copybooks, but needs some EBNF-like definition rewriting to get the full potential. A few unit tests are the beginning to get this in motion:
+
+```bash
+$ make
+*** building parser.gen1.cs
+*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
+*** generating parser from hpg.bnf to parser.gen1.cs
+*** building parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
+*** generating parser from hpg.bnf to parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
+*** generating a Cobol parser from cobol-record-definition.bnf
+~~~ C# Emitter Warning: rewriting property name: subset
+~~~ C# Emitter Warning: rewriting property name: subset
+~~~ C# Emitter Warning: rewriting property name: float
+~~~ C# Emitter Warning: rewriting property name: float
+~~~ C# Emitter Warning: rewriting property name: string
+~~~ C# Emitter Warning: rewriting property name: string
+~~~ C# Emitter Warning: rewriting property name: subset
+~~~ C# Emitter Warning: rewriting property name: float
+~~~ C# Emitter Warning: rewriting property name: string
+*** building unit tests
+*** executing unit tests
+..
+Tests run: 2, Failures: 0, Not run: 0, Time: 0.085 seconds
+```
+
+The Makefile also provides a more visible demo that parses a small fragment of a Cobol copybook:
+
+```cobol
+01 TOP.
+  05 SUB.
+    10 FIELD   PIC S9(05) COMP-5.
+```
+
+```bash
+$ make parse
+*** generating a Cobol parser from cobol-record-definition.bnf
+~~~ C# Emitter Warning: rewriting property name: subset
+~~~ C# Emitter Warning: rewriting property name: subset
+~~~ C# Emitter Warning: rewriting property name: float
+~~~ C# Emitter Warning: rewriting property name: float
+~~~ C# Emitter Warning: rewriting property name: string
+~~~ C# Emitter Warning: rewriting property name: string
+~~~ C# Emitter Warning: rewriting property name: subset
+~~~ C# Emitter Warning: rewriting property name: float
+~~~ C# Emitter Warning: rewriting property name: string
+*** building parse-cobol.exe from ../../generator/parsable.cs ../../generator/dump-ast.cs cobol.cs
+*** running parse-cobol.exe
+Copybook(Records=[BasicRecord(Int=Int(Value=01),LevelName=Identifier(Name=TOP),Options=[]),BasicRecord(Int=Int(Value=05),LevelName=Identifier(Name=SUB),Options=[]),BasicRecord(Int=Int(Value=10),LevelName=Identifier(Name=FIELD),Options=[Picture(PictureHeader0=PictureHeader(PictureLabel=PictureLabel(),HasIs=False),PictureType0=,Int0=Int(Value=05),HasAny=False,PictureType1=,Int1=,HasPictureTypeInt=False,HasInt=True,PictureHeader1=,String=),UsageOption(HasIs=False,HasAll=False,Usage=CompUsage(CompLevel=5,HasDigit=True))])])
+```
+
+> As shown by the output from the examples, the generator first generates two copies of itself, before the examples use it to generate a Pascal or Cobol parser. This is the implementation of the *self-hosting objective*.
 
 ## Being Self Hosting
 
-An important aspect of this project is being self hosting and parsing the EBNF-like grammars with a parser that is generated by the parser generator itself. The following diagram shows what I mean by this; it shows the 9 steps to get from *no parser* to a fully generated/generation 2 EBNF-like parser, that can be used to generate a parser for a different languag, e.g. Pascal:
+An important aspect of this project is being self hosting and parsing the EBNF-like grammars with a parser that is generated by the parser generator itself. The following diagram shows what I mean by this; it shows the 9 steps to get from *no parser* to a fully generated second generation EBNF-like parser, that can be used to generate a parser for a different language, e.g. Pascal:
 
 ![Bootstrapping HPG](assets/hpg-bootstrap.png)
 
@@ -151,7 +213,7 @@ An important aspect of this project is being self hosting and parsing the EBNF-l
 8. Importing of the Grammar and transformation to a Parser model
 9. Emission of Pascal Parser
 
-### Grammar
+## Grammar
 
 The grammar for the Human Parser Generator BNF-like notation (currently) looks like this:
 
@@ -209,7 +271,7 @@ The model is a direct implementation of this EBNF-like definition in object-orie
 
 Not shown in the model are `identifier`, `string` and `regex`. These lowest-level, extracting entities, are not generated as classes, but as (static) prepared regular expressions, and used when needed.
 
-### Generator
+## Generator
 
 The generator accepts a Grammar Model, which is basically an Abstract Syntax Tree (AST), and first transforms this, to a Parser Model. This model is a rewritten version of the Grammar Model and is designed to facilitate the emission of the actual Parser code.
 
@@ -217,54 +279,68 @@ The structure of the Generator (currently) looks like this:
 
 ![Parser Model](model/generator.png)
 
+### Building `hpg.exe`
+
+Building the generator simply requires a `make` command in the [`generator`](generator) folder - which is what is also done by the Pascal and Cobol examples above:
+
+```bash
+$ make
+*** building parser.gen1.cs
+*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
+*** generating parser from hpg.bnf to parser.gen1.cs
+*** building parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
+*** generating parser from hpg.bnf to parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
+```
+
+This compiles a second generation generator, called `hpg.exe`:
+
+```bash
+$ mono hpg.exe 
+USAGE: main.exe <filename> [options]
+```
+
+Providing it with an EBNF-like language definition, will simple generate a corresponding parser to standard output:
+
+```bash
+$ mono hpg.exe ../example/pascal/pascal-assignments.bnf 
+// parser.cs
+
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Linq;
+using System.Diagnostics;
+
+
+public class Program {
+public Identifier Identifier { get; set; }
+public List<Assignment> Assignments { get; set; }
+  public Program() {
+...
+```
+
+> Currently no `[options]` are actually available. As the generator is now operational enough to be used, these features will be added soon enough ;-)
+
 ### Test Driven Development
 
 To be able to focus on sub-problems and isolate combinations of constructs, I've set up a unit testing infrastructure that generates a EBNF-like parser and then uses that to run the tests:
 
 ```bash
 $ make
-*** generating parser generator, including EBNF-like parser
-*** building second generation generator/parser
-*** generating parser
-*** generating parser from bootstrap to generation/parser.cs
-*** setting up generator environment
-*** generating parser
-*** generating parser from grammars/hpg.bnf to generation/parser.cs
-*** setting up generator environment
+*** building parser.gen1.cs
+*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
+*** generating parser from hpg.bnf to parser.gen1.cs
+*** building parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
+*** generating parser from hpg.bnf to parser.cs
+*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
 *** building unit tests
 *** executing unit tests
 .......................
-Tests run: 23, Failures: 0, Not run: 0, Time: 0.191 seconds
+Tests run: 23, Failures: 0, Not run: 0, Time: 0.217 seconds
 ```
 
 > The unit tests hardly cover the basics of the source tree, but the goal is to have a comprehensive set, covering all possibilities. The unit tests will be the driving force for the continued development :-)
-
-### Cobol Example
-
-In `examples/cobol` the HPG is used to generate a parser for Cobol record definitions, also known as Copybooks - Warning: this is work in progress. The generated parser is currently capable of parsing several example Copybooks, but needs some EBNF-like definition rewriting to get the full potential. A few unit tests are the beginning to get this in motion:
-
-```bash
-$ make
-*** generating parser generator, including EBNF-like parser
-*** building second generation generator/parser
-*** generating parser
-*** generating parser from bootstrap to generation/parser.cs
-*** setting up generator environment
-*** generating parser
-*** generating parser from grammars/hpg.bnf to generation/parser.cs
-*** setting up generator environment
-*** generating parser from grammars/cobol-record-definition.bnf to ../../../example/cobol/parser.cs
-~~~ C# Emitter Warning: rewriting property name: subset
-~~~ C# Emitter Warning: rewriting property name: subset
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: string
-~~~ C# Emitter Warning: rewriting property name: string
-~~~ C# Emitter Warning: rewriting property name: subset
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: string
-*** building unit tests
-*** executing unit tests
-..
-Tests run: 2, Failures: 0, Not run: 0, Time: 0.099 seconds
-```

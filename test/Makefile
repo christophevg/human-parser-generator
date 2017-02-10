@@ -1,8 +1,12 @@
-TARGET      = main
-BUILD       = .build
+GENERATOR  ?= ../generator
+TEST_SRCS   = $(GENERATOR)/generator.cs \
+              $(GENERATOR)/parsable.cs \
+              $(GENERATOR)/parser.cs \
+							test_*.cs
 
 CC          = mcs
 RUN         = mono
+NUNIT       = nunit-console -nologo
 
 ifdef DEBUG
 RUN        += --debug
@@ -13,30 +17,22 @@ ifdef CSHARP_VERSION
 CFLAGS     += -langversion:$(CSHARP_VERSION)
 endif
 
-ARGUMENTS  ?=
-NUNIT       = nunit-console -nologo
-
-SRCS        = generator/{grammar,parser,emitter}.cs
-
-PARSER      = parser.cs
 
 all: clean test
 
-$(PARSER):
-	@echo "*** generating parser generator, including EBNF-like parser"
-	@(cd ../generator; make clean generation2)
-	@cp ../generator/generation/generation/parser.cs .
-
-$(BUILD)/test.dll: *.cs $(PARSER)
-	@echo "*** building unit tests"
-	@mkdir -p $(BUILD)
-	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^
-
-test: $(BUILD)/test.dll
+test: test.dll
 	@echo "*** executing unit tests"
 	@$(NUNIT) $<
 
+test.dll: $(TEST_SRCS)
+	@echo "*** building unit tests"
+	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^
+
+$(GENERATOR)/parser.cs:
+	@(cd $(GENERATOR); make)
+
 clean:
-	@rm -rf $(BUILD) TestResult.xml $(PARSER)
+	@rm -rf $(BUILD) TestResult.xml test.dll
+	@(cd $(GENERATOR); make clean)
 
 -include Makefile.local

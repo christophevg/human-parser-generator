@@ -267,7 +267,7 @@ using System.Diagnostics;
           "      break;\n" +
           "    }\n" +
                this.GenerateLocalVariable(consume.Property) + ".Add(temp);\n" +
-          "  }" +
+          "  }\n" +
           "}";
       }
 
@@ -306,12 +306,12 @@ using System.Diagnostics;
           "try {\n" +
             this.GenerateParseAction(option) + "\n" +
           "} catch(ParseException) {\n";
-        closing += "}";
+        closing += "}\n";
       }
       code +=
         "throw this.source.GenerateParseException(\n" +
         "  \"Expected: " + consume.Label + "\"\n" +
-        ");";
+        ");\n ";
 
       return code + closing;
     }

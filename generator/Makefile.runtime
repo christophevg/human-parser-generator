@@ -1,0 +1,25 @@
+# path to generator sources
+GENERATOR  ?=
+
+# file to parse
+INPUT ?=
+
+TARGET = dump-ast.exe
+SRCS   = $(GENERATOR)/dump-ast.cs \
+         $(GENERATOR)/parsable.cs \
+				 *.cs
+
+# external executables
+CC          = mcs
+RUN         = mono
+
+all: $(TARGET)
+	@echo "*** running $<"
+	@$(RUN) $< $(INPUT)
+
+%.exe: $(SRCS)
+	@echo "*** compiling $@ from $^"
+	@$(CC) $(CFLAGS) -out:$@ $^
+
+clean:
+	@rm -f $(TARGET)

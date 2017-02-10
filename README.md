@@ -297,8 +297,16 @@ $ make
 This compiles a second generation generator, called `hpg.exe`:
 
 ```bash
-$ mono hpg.exe 
-USAGE: main.exe <filename> [options]
+$ mono hpg.exe --help
+Usage: hpg.exe [options] [file ...]
+
+    --help, -h              Show usage information
+
+Output options.
+Select one of the following:
+    --parser, -p            Generate parser (DEFAULT)
+    --ast, -a               Show AST
+    --model, -m             Show parser model
 ```
 
 Providing it with an EBNF-like language definition, will simple generate a corresponding parser to standard output:
@@ -322,7 +330,7 @@ public List<Assignment> Assignments { get; set; }
 ...
 ```
 
-> Currently no `[options]` are actually available. As the generator is now operational enough to be used, these features will be added soon enough ;-)
+> Currently only the bare minimal `[options]` are actually available. As the generator is now operational enough to be used, more features will be added soon enough ;-)
 
 ### Test Driven Development
 

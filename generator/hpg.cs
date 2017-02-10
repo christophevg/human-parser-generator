@@ -16,22 +16,26 @@ namespace HumanParserGenerator {
 
     public static void Main(string[] args) {
 
-      if(args.Length != 1) {
-        Console.WriteLine("USAGE: main.exe <filename> [options]");
-        return;
+      string input = "";
+
+      if(args.Length == 1) {
+        if(! File.Exists(args[0])) {
+          Console.WriteLine("Unknown file");
+          return;
+        }
+        input = System.IO.File.ReadAllText(args[0]);
+      } else {
+        string s;
+        while( (s = Console.ReadLine()) != null ) {
+          input += s;
+        }
       }
 
-      if(! File.Exists(args[0])) {
-        Console.WriteLine("Unknown file");
-        return;
-      }
-
-      new Runner().Generate(args[0]);
+      new Runner().Generate(input);
     }
     
-    private void Generate(string file) {
+    private void Generate(string input) {
       // EBNF-like file -> AST/Grammar Model
-      string input  = System.IO.File.ReadAllText(file);
       Grammar grammar = new Parser().Parse(input).AST;
 
       this.Log(grammar.ToString());

@@ -175,8 +175,14 @@ namespace HumanParserGenerator {
       // Entity [
       //   label = "{Entity|+ property : type\l ... |+ method() : void\l}"
       // ]
-      return "\n" + this.PascalCase(entity.Name) + 
-        " [ label = \"" + this.PascalCase(entity.Name) + "\" ]";
+      string dot = "";
+      dot = "\n" + this.PascalCase(entity.Name) + 
+        " [ label = \"{" + (entity.IsVirtual ? " / " : "") + this.PascalCase(entity.Name) + "|";
+      foreach(Property property in entity.Properties) {
+        dot += "+ " + this.PascalCase(property.Name) + " : " + this.GenerateType(property.Type) + "\\l";
+      }  
+      dot += "}\" ]";
+      return dot;
     }
     
     private string GenerateGeneralizations(Entity entity) {
@@ -201,6 +207,13 @@ namespace HumanParserGenerator {
           x.First().ToString().ToUpper() + x.ToLower().Substring(1)
         )
       );
+    }
+
+    private string GenerateType(string type) {
+      if( type == null ) { return "Object"; }
+      if( type.Equals("<string>") ) { return "string"; }
+      if( type.Equals("<bool>") ) { return "bool"; }
+      return this.PascalCase(type);
     }
 
   }

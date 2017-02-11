@@ -2,3 +2,4 @@ demo
 parser.cs
 parser.gen1.cs
 
+*.png

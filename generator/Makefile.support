@@ -19,3 +19,14 @@ ASTYLE      = LC_ALL="C" astyle -s2 -xt0 -xe
 FORMATTER   = sed -e $$'s/[(\[,]/&\\\n/g' | sed -e $$'s/)/\\\n)/g' | $(ASTYLE)
 
 HPG        ?= $(GENERATOR)/hpg.exe
+
+$(HPG):
+	@(cd $(GENERATOR); make)
+
+ifdef $(GRAMMAR)
+grammar-model: $(HPG)
+	@echo "*** dumping parser model of $(GRAMMAR)"
+	@$(RUN) $(HPG) -m $(GRAMMAR) | $(FORMATTER)
+else
+grammar-model:
+endif

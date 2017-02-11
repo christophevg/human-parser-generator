@@ -19,9 +19,6 @@ $(GENERATED)/$(PARSER): $(GRAMMAR) $(HPG)
 	@mkdir -p $(GENERATED)
 	@$(RUN) $(HPG) $< > $@
 
-$(HPG):
-	@(cd ../../generator; make)
-
 diff: $(GENERATED)/$(PARSER)
 	@echo "*** comparing to manual version"
 	@diff -u -w $(PARSER) $(GENERATED)/$(PARSER) && \

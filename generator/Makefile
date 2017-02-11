@@ -22,6 +22,7 @@ OUTPUT      = > $(OUT)
 OUTPUT_LBL  = " to $(OUT)"
 endif
 
+GRAMMAR=hpg.bnf
 GENERATOR = .
 
 -include Makefile.support

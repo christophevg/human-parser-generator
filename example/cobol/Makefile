@@ -31,9 +31,6 @@ $(PARSER): $(GRAMMAR) $(HPG)
 	@echo "*** generating a Cobol parser from $<"
 	@$(RUN) $(HPG) $< > $@
 
-$(HPG):
-	@(cd $(GENERATOR); make)
-
 clean:
 	@rm -rf $(BUILD) TestResult.xml $(PARSER) test.dll $(TARGET)
 

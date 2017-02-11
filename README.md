@@ -307,6 +307,9 @@ Select one of the following:
     --parser, -p            Generate parser (DEFAULT)
     --ast, -a               Show AST
     --model, -m             Show parser model
+Formatting options.
+    --text, -t              Generate textual output (DEFAULT).
+    --dot, -d               Generate Graphviz/Dot format output. (model)
 ```
 
 Providing it with an EBNF-like language definition, will simple generate a corresponding parser to standard output:

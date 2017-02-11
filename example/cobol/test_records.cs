@@ -40,7 +40,15 @@ public class GeneratorModelTests {
   public void BasicRecordWithoutOptions() {
     Copybook book = this.testSingleSentence(
       "01 TOP.",
-      "BasicRecord(Level=Int(Value=01),LevelName=Identifier(Name=TOP),Options=[])"
+      @"
+BasicRecord(
+  Level=Int(Value=01),
+  LevelName=LevelName(
+    HasFiller=False,
+    Identifier=Identifier(Name=TOP)
+  ),
+  Options=[]
+)"
     );
     Assert.AreEqual(((BasicRecord)book.Records[0]).Level.Value, "01");
   }
@@ -49,34 +57,64 @@ public class GeneratorModelTests {
   public void BasicRecordWithPicWithCompOption() {
     this.testSingleSentence(
       "10 FIELD   PIC S9(05) COMP-5.",
-      @"BasicRecord(
+      @"
+BasicRecord(
          Level=Int(
               Value=10
               ),
-         LevelName=Identifier(
-                  Name=FIELD
+         LevelName=LevelName(
+                  HasFiller=False,
+                  Identifier=Identifier(
+                             Name=FIELD
+                             )
                   ),
          Options=[
-                PictureFormat(
-                HasTure=False,
-                HasIs=False,
-                MainType=S9,
-                MainIndex=Int(
-                          Value=05
-                          ),
-                HasAny=False,
-                SubType=,
-                SubIndex=,
-                HasPictureTypeInt=False,
-                HasInt=True
+                Option(
+                RedefinesOption=,
+                ExternalOption=False,
+                InternalOption=False,
+                PictureOption=PictureOption(
+                              PictureFormat=PictureFormat(
+                                  MainType=S9,
+                                  MainIndex=Int(
+                                      Value=05
+                                      ),
+                                  HasV=False,
+                                  HasDot=False,
+                                  SubType=,
+                                  SubIndex=
+                                  ),
+                              PictureString=
+                              ),
+                UsageOption=,
+                SignOption=,
+                OccursOption=,
+                SyncOption=,
+                JustOption=,
+                BlankOption=False,
+                ValueOption=
                 ),
-                UsageOption(
-                HasIs=False,
-                HasAll=False,
-                Usage=CompUsage(
-                      CompLevel=5,
-                      HasDigit=True
-                      )
+                Option(
+                RedefinesOption=,
+                ExternalOption=False,
+                InternalOption=False,
+                PictureOption=,
+                UsageOption=Usage(
+                            HasBinary=False,
+                            CompUsage=CompUsage(
+                                      HasDash=True,
+                                      CompLevel=5
+                                      ),
+                            HasDisplay=False,
+                            HasIndex=False,
+                            HasPackedDecimal=False
+                            ),
+                SignOption=,
+                OccursOption=,
+                SyncOption=,
+                JustOption=,
+                BlankOption=False,
+                ValueOption=
                 )]
          )"
     );

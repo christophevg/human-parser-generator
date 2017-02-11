@@ -33,19 +33,17 @@ option           ::= redefines-option
 redefines-option ::= "REDEFINES" identifier ;
 external-option  ::= [ "IS" ] "EXTERNAL" ;
 internal-option  ::= [ "IS" ] "INTERNAL" ;
-usage-option     ::= [ "USAGE" [ "IS" ] ] usage;
-sign-option      ::= "SIGN" [ "IS" ] ( "LEADING" | "TRAILING" ) [ "SEPARATE" [ "CHARACTER" ] ] ;
+usage-option     ::= [ _ @ "USAGE" [ _ @ "IS" ] ] usage;
+sign-option      ::= "SIGN" [ _ @ "IS" ] "LEADING" | "TRAILING" [ "SEPARATE" [ "CHARACTER" ] ] ;
 occurs-option    ::= "OCCURS" numeric [ "TO" numeric ] [ "TIMES" ] [ "DEPENDING" [ "ON" ] identifier ] key index ;
 sync-option      ::= "SYNC" [ "HRONIZED" ] [ "LEFT" | "RIGHT" ] ;
 just-option      ::= "JUST" [ "IFIED" ] [ "RIGHT" ] ;
 blank-option     ::= "BLANK" [ "WHEN" ] "ZERO" ;
 value-option     ::= "VALUE" [ "IS" ] symbolic ;
 
-picture-option   ::= picture ;
-picture          ::= picture-format | picture-string ;
-picture-format   ::= "PIC" [ "TURE" ] [ "IS" ] main-type @ picture-type [ "(" main-index @ int ")" [ [ "V" | "." ] sub-type @ picture-type "(" sub-index @ int ")" ] ] ;
-
-picture-string   ::= "PIC" [ "TURE" ] [ "IS" ] string ;
+picture-option   ::= picture-format | picture-string ;
+picture-format   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] main-type @ picture-type [ _ @ "(" main-index @ int _ @ ")" [ [ "V" | "." ] sub-type @ picture-type _ @ "(" sub-index @ int _ @ ")" ] ] ;
+picture-string   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] string ;
 
 usage            ::= "BINARY"
                    | comp-usage
@@ -54,7 +52,7 @@ usage            ::= "BINARY"
                    | "PACKED-DECIMAL"
                    ;
 
-comp-usage       ::= "COMPUTATIONAL" | "COMP" [ "-" comp-level @ digit ] ;
+comp-usage       ::= "COMP" [ _ @ "UTATIONAL" ] [ "-" comp-level @ digit ] ;
 
 key              ::= [ "ASCENDING" | "DESCENDING" [ "KEY" ] [ "IS" ] { identifier } ] ;
 index            ::= [ "INDEXED" [ "BY" ] identifier ] ;

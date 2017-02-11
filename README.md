@@ -24,7 +24,7 @@ The project will initially target C#. No other target language is planned at thi
 
 * A trivial example of a small subset of the Pascal language can be parsed.
 * The generator is capable of generating a parser for its own EBNF-like definition language, which means its self-hosting (see also below for more information on this feature). 
-* A parser for a more complex grammar for Cobol record definitions (aka Copybooks) is capable of (roughly) parsing a set of example Copybooks.
+* A parser for a more complex grammar for Cobol record definitions (aka Copybooks) is capable of parsing a set of example Copybooks and outputs an *okay* object model.
 
 ## Example
 
@@ -181,18 +181,66 @@ The Makefile also provides a more visible demo that parses a small fragment of a
 ```bash
 $ make parse
 *** generating a Cobol parser from cobol-record-definition.bnf
-~~~ C# Emitter Warning: rewriting property name: subset
-~~~ C# Emitter Warning: rewriting property name: subset
 ~~~ C# Emitter Warning: rewriting property name: float
 ~~~ C# Emitter Warning: rewriting property name: float
 ~~~ C# Emitter Warning: rewriting property name: string
 ~~~ C# Emitter Warning: rewriting property name: string
-~~~ C# Emitter Warning: rewriting property name: subset
 ~~~ C# Emitter Warning: rewriting property name: float
 ~~~ C# Emitter Warning: rewriting property name: string
 *** building parse-cobol.exe from ../../generator/parsable.cs ../../generator/dump-ast.cs cobol.cs
 *** running parse-cobol.exe
-Copybook(Records=[BasicRecord(Int=Int(Value=01),LevelName=Identifier(Name=TOP),Options=[]),BasicRecord(Int=Int(Value=05),LevelName=Identifier(Name=SUB),Options=[]),BasicRecord(Int=Int(Value=10),LevelName=Identifier(Name=FIELD),Options=[Picture(PictureHeader0=PictureHeader(PictureLabel=PictureLabel(),HasIs=False),PictureType0=,Int0=Int(Value=05),HasAny=False,PictureType1=,Int1=,HasPictureTypeInt=False,HasInt=True,PictureHeader1=,String=),UsageOption(HasIs=False,HasAll=False,Usage=CompUsage(CompLevel=5,HasDigit=True))])])
+Copybook(
+Records=[
+         BasicRecord(
+         Level=Int(
+              Value=01
+              ),
+         LevelName=LevelName(
+                  HasFiller=False,
+                  Identifier=Identifier(
+                             Name=TOP
+                             )
+                  ),
+         Options=[
+                ]
+         ),
+         BasicRecord(
+         Level=Int(
+              Value=05
+              ),
+         LevelName=LevelName(
+                  HasFiller=False,
+                  Identifier=Identifier(
+                             Name=SUB
+                             )
+                  ),
+         Options=[
+                ]
+         ),
+         BasicRecord(
+         Level=Int(
+              Value=10
+              ),
+         LevelName=LevelName(
+                  HasFiller=False,
+                  Identifier=Identifier(
+                             Name=FIELD
+                             )
+                  ),
+         Options=[
+                PictureFormat(
+                Type=S9,
+                Digits=Int(
+                       Value=05
+                       ),
+                DecimalType=,
+                DecimalDigits=
+                ),
+                CompUsage(
+                Level=5
+                )]
+         )]
+)
 ```
 
 > As shown by the output from the examples, the generator first generates two copies of itself, before the examples use it to generate a Pascal or Cobol parser. This is the implementation of the *self-hosting objective*.
@@ -333,7 +381,22 @@ public List<Assignment> Assignments { get; set; }
 ...
 ```
 
-> Currently only the bare minimal `[options]` are actually available. As the generator is now operational enough to be used, more features will be added soon enough ;-)
+> If no `file` is provided, input is read from standard input.
+
+#### Graphviz/Dot support
+
+The parser model can be dumped and formatted in [Graphviz/Dot](http://graphviz.org) format, which is often an great tool while restructuring/rewriting the EBNF to obtain a nicer class model.
+
+The output is generated, so it isn't as attractive as manually laid out diagrams, but still very useful. A few examples:
+
+#### ENBF
+![HPG Grammar Model](assets/hpg.bnf.png)
+
+#### Pascal
+![Pascal Model](assets/pascal-assignments.bnf.png)
+
+#### Cobol
+![Cobol Model](assets/cobol-record-definition.bnf.png)
 
 ### Test Driven Development
 

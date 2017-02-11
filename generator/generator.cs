@@ -546,11 +546,12 @@ namespace HumanParserGenerator.Generator {
 
     private ParseAction ImportPropertiesAndParseActions(Expression  exp,
                                                         Entity      entity,
-                                                        ParseAction parent=null)
+                                                        ParseAction parent=null,
+                                                        bool        optional=false)
     {
       this.Log("ImportPropertiesAndParseActions("+exp.GetType().ToString()+")" );
       try {
-        return new Dictionary<string, Func<Expression,Entity,ParseAction,ParseAction>>() {
+        return new Dictionary<string, Func<Expression,Entity,ParseAction,bool,ParseAction>>() {
           { "SequentialExpression",   this.ImportSequentialExpression   },
           { "AlternativesExpression", this.ImportAlternativesExpression },
           { "OptionalExpression",     this.ImportOptionalExpression     },
@@ -559,7 +560,7 @@ namespace HumanParserGenerator.Generator {
           { "IdentifierExpression",   this.ImportIdentifierExpression   },
           { "StringExpression",       this.ImportStringExpression       },
           { "ExtractorExpression",    this.ImportExtractorExpression    }
-        }[exp.GetType().ToString()](exp, entity,parent);
+        }[exp.GetType().ToString()](exp, entity, parent, optional);
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
           "Importing not implemented for " + exp.GetType().ToString(), e
@@ -577,7 +578,8 @@ namespace HumanParserGenerator.Generator {
 
     private ParseAction ImportStringExpression(Expression  exp,
                                                Entity      entity,
-                                               ParseAction parent=null)
+                                               ParseAction parent=null,
+                                               bool        optional=false)
     {
       StringExpression str = ((StringExpression)exp);
       ParseAction consume = new ConsumeString() {
@@ -585,22 +587,55 @@ namespace HumanParserGenerator.Generator {
         Parent = parent
       };
 
-      // if a StringExpression has an explicit Name, we create a Property for it
-      // with that name
-      if(str.Name != null) {
+      // default behavior for String Consumption is to just do it, it must be 
+      // done to have succesful parsing
+      
+      // IF the string being parsed is within an optional context, we migt want
+      // to know IF it was parsed. So we create a property to store a flag to
+      // indicate whether the optional parse was successful or not.
+
+      // IF the StringExpression has an explicit Name (name @ string-expression)
+      // we _do_ create a property with that name.
+      
+      // IF the StringExpression has an Alternatives Parent we behave as if we
+      // are optional.
+      if( parent is ConsumeAny ) { optional = true; }
+
+      // UNLESS the name is an underscore '_', then we don't create any Property
+      if( str.Name != null && str.Name.Equals("_") ) { return consume; }
+
+      if( str.Name != null || optional ) {
+        if( optional ) { consume.ReportSuccess = true; }
+        string name = (str.Name != null ? str.Name : consume.Name);
+        // TODO improve
+        if(name.Equals("-")) { name = "dash"; }
+        name = name.Replace("(", "open-bracket");
+        name = name.Replace(")", "close-bracket");
+        name = name.Replace("[", "open-square-bracket");
+        name = name.Replace("]", "close-square-bracket");
+        name = name.Replace("{", "open-brace");
+        name = name.Replace("}", "close-brace");
+        name = name.Replace(":", "colon");
+        name = name.Replace(";", "semi-colon");
+        name = name.Replace(",", "comma");
+        name = name.Replace(".", "dot");
         return this.Add(
           entity,
-          new Property() { Name = str.Name, },
+          new Property() {
+            Name = (optional ? "has-" : "") + name                   
+          },
           consume
         );
       }
+
       // a simple consumer of text, with no resulting information
       return consume;
     }    
 
     private ParseAction ImportIdentifierExpression(Expression  exp,
                                                    Entity      entity,
-                                                   ParseAction parent=null)
+                                                   ParseAction parent=null,
+                                                   bool        optional=false)
     {
       IdentifierExpression id = ((IdentifierExpression)exp);
 
@@ -615,7 +650,8 @@ namespace HumanParserGenerator.Generator {
 
     private ParseAction ImportExtractorExpression(Expression  exp,
                                                   Entity      entity,
-                                                  ParseAction parent=null)
+                                                  ParseAction parent=null,
+                                                  bool        optional=false)
     {
       ExtractorExpression extr = ((ExtractorExpression)exp);
 
@@ -628,36 +664,25 @@ namespace HumanParserGenerator.Generator {
 
     private ParseAction ImportOptionalExpression(Expression  exp,
                                                  Entity      entity,
-                                                 ParseAction parent=null)
+                                                 ParseAction parent=null,
+                                                 bool        optional=false)
     {
-      OptionalExpression optional = ((OptionalExpression)exp);
+      OptionalExpression option = ((OptionalExpression)exp);
 
       // recurse down
       ParseAction consume = this.ImportPropertiesAndParseActions(
-        optional.Expression,
-        entity,
-        parent
+        option.Expression, entity, parent, true
       );
       // mark optional
       consume.IsOptional = true;
 
-      // if the action doesn't have a Property reference, we create one now.
-      // this is possible in case of simple String extraction without the need
-      // to store it, aka Token consumption.
-      if( consume.Property == null ) {
-        consume.ReportSuccess = true;
-        return this.Add(
-          entity,
-          new Property() { Name = "has-" + consume.Name },
-          consume
-        );
-      }
       return consume;
     }
 
     private ParseAction ImportSequentialExpression(Expression  exp,
                                                    Entity      entity,
-                                                   ParseAction parent=null)
+                                                   ParseAction parent=null,
+                                                   bool        optional=false)
     {
       SequentialExpression sequence = ((SequentialExpression)exp);
 
@@ -667,13 +692,13 @@ namespace HumanParserGenerator.Generator {
       while(true) {
         // add first part
         consume.Actions.Add(this.ImportPropertiesAndParseActions(
-          sequence.NonSequentialExpression, entity, consume
+          sequence.NonSequentialExpression, entity, consume, optional
         ));
         // add remaining parts
         if(sequence.Expression is NonSequentialExpression) {
           // last part
           consume.Actions.Add(this.ImportPropertiesAndParseActions(
-            sequence.Expression, entity, consume
+            sequence.Expression, entity, consume, optional
           ));
           break;
         } else {
@@ -686,7 +711,8 @@ namespace HumanParserGenerator.Generator {
 
     private ParseAction ImportAlternativesExpression(Expression  exp,
                                                      Entity      entity,
-                                                     ParseAction parent=null)
+                                                     ParseAction parent=null,
+                                                     bool        optional=false)
     {
       AlternativesExpression alternative = ((AlternativesExpression)exp);
 
@@ -696,13 +722,13 @@ namespace HumanParserGenerator.Generator {
       while(true) {
         // add first part
         consume.Actions.Add(this.ImportPropertiesAndParseActions(
-          alternative.AtomicExpression, entity, consume
+          alternative.AtomicExpression, entity, consume, optional
         ));
         // add remaining parts
         if(alternative.NonSequentialExpression is AtomicExpression) {
           // last part
           consume.Actions.Add(this.ImportPropertiesAndParseActions(
-            alternative.NonSequentialExpression, entity, consume
+            alternative.NonSequentialExpression, entity, consume, optional
           ));
           break;
         } else {
@@ -718,21 +744,23 @@ namespace HumanParserGenerator.Generator {
     // just recurse and provide a ParseAction for the nested Expression
     private ParseAction ImportGroupExpression(Expression  exp,
                                               Entity      entity,
-                                              ParseAction parent=null)
+                                              ParseAction parent=null,
+                                              bool        optional=false)
     {
       return this.ImportPropertiesAndParseActions(
-        ((GroupExpression)exp).Expression, entity, parent
+        ((GroupExpression)exp).Expression, entity, parent, optional
       );
     }
 
     private ParseAction ImportRepetitionExpression(Expression  exp,
                                                    Entity      entity,
-                                                   ParseAction parent=null)
+                                                   ParseAction parent=null,
+                                                   bool        optional=false)
     {
       RepetitionExpression repetition = ((RepetitionExpression)exp);
       // recurse down
       ParseAction action = this.ImportPropertiesAndParseActions(
-        repetition.Expression, entity, parent
+        repetition.Expression, entity, parent, optional
       );
       // mark Plural
       action.IsPlural = true;
@@ -760,6 +788,26 @@ namespace HumanParserGenerator.Generator {
 
       // this should be ONLY 1 and it must BE CONSUMEANY
       if(actions.Count != 1 || ! (actions.First() is ConsumeAny)) { return; }
+
+      // there CAN NOT be a mix of Entities and Basic Types or different Basic 
+      // Types
+      int entities = 0;
+      int strings = 0;
+      int bools = 0;
+      foreach(Property prop in entity.Properties) {
+        if( this.Model.Contains(prop.Type) ) { entities++; }
+        else {
+          if(prop.Type.Equals("<string>")) {
+            strings++;
+          } else {
+            bools++;
+          }
+        }
+      }
+      // all entities or none
+      if(entities != 0 && entities != entity.Properties.Count) { return; }
+      // same basic types
+      if(strings != 0 && bools != 0) { return; }
 
       this.Log("collapsing alternatives on " + entity.Name);
 
@@ -842,7 +890,7 @@ namespace HumanParserGenerator.Generator {
             if(property.Source is ConsumeEntity) {
               this.AddInheritance(entity, ((ConsumeEntity)property.Source).Entity);
             } else {
-              throw new NotImplementedException("only ConsumeEntities expected, got " + property.Source.GetType().ToString());
+              this.Log("["+entity.Name+"] not interested in " + property.Source.GetType().ToString());
             }
           }
           // recurse down
@@ -852,7 +900,7 @@ namespace HumanParserGenerator.Generator {
               this.Log("["+entity.Name+"] recursing down proxied property's entity");
               this.DetectInheritance(((ConsumeEntity)property.Source).Entity);
             } else {
-              throw new NotImplementedException("only ConsumeEntities expected, got " + property.Source.GetType().ToString());
+              this.Log("["+entity.Name+"] not interested in " + property.Source.GetType().ToString());
             }
           }
 

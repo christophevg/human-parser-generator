@@ -213,11 +213,11 @@ int              ::= /(-?[1-9][0-9]*)/ ;"
   }
 
   [Test]
-  public void testCobolSignOption() {
+  public void testPropertiesFromStringExpression() {
     this.processAndCompare(
       @"
 sign-option ::=
-   ""SIGN"" [ ""IS"" ]
+   ""SIGN"" [ _ @ ""IS"" ]
    ( ""LEADING"" | ""TRAILING"" )
    [ ""SEPARATE"" [ ""CHARACTER"" ] ]
 ;",
@@ -230,7 +230,7 @@ Grammar(
         NonSequentialExpression=StringExpression(Name=,String=SIGN),
         Expression=SequentialExpression(
           NonSequentialExpression=OptionalExpression(
-            Expression=StringExpression(Name=,String=IS)
+            Expression=StringExpression(Name=_,String=IS)
           ),
           Expression=SequentialExpression(
             NonSequentialExpression=GroupExpression(
@@ -249,21 +249,21 @@ Model(
   Entities=[
     Entity(
       Name=sign-option,Type=sign-option,Properties=[
-        Property(Name=has-IS,Type=<bool>,IsOptional,Source=ConsumeString(IS)?!->has-IS),
-        Property(Name=has-CHARACTER,Type=<bool>,IsOptional,Source=ConsumeString(CHARACTER)?!->has-CHARACTER),
-        Property(Name=has-all,Type=<bool>,IsOptional,Source=ConsumeAll([ConsumeString(SEPARATE),ConsumeString(CHARACTER)?!->has-CHARACTER])?!->has-all)
+        Property(Name=has-LEADING,Type=<bool>,Source=ConsumeString(LEADING)!->has-LEADING),
+        Property(Name=has-TRAILING,Type=<bool>,Source=ConsumeString(TRAILING)!->has-TRAILING),
+        Property(Name=has-SEPARATE,Type=<bool>,Source=ConsumeString(SEPARATE)!->has-SEPARATE),
+        Property(Name=has-CHARACTER,Type=<bool>,IsOptional,Source=ConsumeString(CHARACTER)?!->has-CHARACTER)
       ],
       ParseAction=ConsumeAll([
         ConsumeString(SIGN),
-        ConsumeString(IS)?!->has-IS,
+        ConsumeString(IS)?,
         ConsumeAny([
-          ConsumeString(LEADING),
-          ConsumeString(TRAILING)
-        ]),
-        ConsumeAll([
-          ConsumeString(SEPARATE),
-          ConsumeString(CHARACTER)?!->has-CHARACTER]
-        )?!->has-all
+          ConsumeString(LEADING)!->has-LEADING,
+          ConsumeString(TRAILING)!->has-TRAILING]),
+          ConsumeAll([
+            ConsumeString(SEPARATE)!->has-SEPARATE,
+            ConsumeString(CHARACTER)?!->has-CHARACTER
+          ])?
       ])
     )
   ],

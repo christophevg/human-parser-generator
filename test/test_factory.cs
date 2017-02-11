@@ -365,7 +365,7 @@ public class GeneratorModelFactoryTests {
 
   [Test]
   public void testAlternativeCharacters() {
-    // rule ::= "a" | "b" | "c"
+    // rule ::= "a" | "b" | "c" ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -381,19 +381,28 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=,
-             ParseAction=ConsumeAny([
-               ConsumeString(a),
-               ConsumeString(b),
-               ConsumeString(c)
-             ])
-           )
-        ],
-        Root=rule
-      )"
+      @"
+Model(
+  Entities=[
+    Entity(
+      Name=rule,Type=rule,Properties=[
+        Property(
+          Name=alternative,Type=<bool>,Source=ConsumeAny([
+            ConsumeString(a)!->alternative,
+            ConsumeString(b)!->alternative,
+            ConsumeString(c)!->alternative
+          ])->alternative
+        )
+      ],
+      ParseAction=ConsumeAny([
+        ConsumeString(a)!->alternative,
+        ConsumeString(b)!->alternative,
+        ConsumeString(c)!->alternative
+      ])->alternative
+    )
+  ],
+  Root=rule
+)"
     );
   }
 
@@ -560,29 +569,31 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule1,Type=rule1,
-             Properties=[
-               Property(
-                 Name=rule2,Type=,IsPlural,
-                 Source=ConsumeEntity(rule2)*->rule2
-               )
-             ],
-             ParseAction=ConsumeEntity(rule2)*->rule2
-           ),
-           Entity(
-             Name=rule2,Type=,
-             ParseAction=ConsumeAny([
-               ConsumeString(a),
-               ConsumeString(b),
-               ConsumeString(c)
-             ])
-           )
+      @"
+Model(
+  Entities=[
+    Entity(
+      Name=rule1,Type=rule1,Properties=[
+        Property(Name=rule2,Type=<bool>,IsPlural,Source=ConsumeEntity(rule2)*->rule2)
+      ],
+      ParseAction=ConsumeEntity(rule2)*->rule2
+    ),
+    VirtualEntity(
+      Name=rule2,Type=<bool>,Properties=[
+        Property(Name=alternative,Type=<bool>,Source=ConsumeAny([
+          ConsumeString(a)!->alternative,
+          ConsumeString(b)!->alternative,
+          ConsumeString(c)!->alternative])->alternative)
         ],
-        Root=rule1
-      )"
+      ParseAction=ConsumeAny([
+        ConsumeString(a)!->alternative,
+        ConsumeString(b)!->alternative,
+        ConsumeString(c)!->alternative]
+      )->alternative
+    )
+  ],
+  Root=rule1
+)"
     );
   }
 

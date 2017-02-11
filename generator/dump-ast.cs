@@ -7,17 +7,20 @@ using System.IO;
 public class Runner {
   public static void Main(string[] args) {
 
-    if(args.Length != 1) {
-      Console.WriteLine("USAGE: main.exe <filename>");
-      return;
+    string input = "";
+    if(args.Length == 1) {
+      if(! File.Exists(args[0])) {
+        Console.WriteLine("Unknown file.");
+        return;
+      }
+      input  = System.IO.File.ReadAllText(args[0]);
+    } else {
+      string s;
+      while( (s = Console.ReadLine()) != null ) {
+        input += s;
+      }
     }
   
-    if(! File.Exists(args[0])) {
-      Console.WriteLine("Unknown file");
-      return;
-    }
-  
-    string input  = System.IO.File.ReadAllText(args[0]);
     Parser parser = new Parser();
     string code   = parser.Parse(input).AST.ToString();
 

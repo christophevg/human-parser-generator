@@ -13,6 +13,7 @@ endif
 
 ASTYLE      = LC_ALL="C" astyle -s2 -xt0 -xe
 FORMATTER   = sed -e $$'s/[(\[,]/&\\\n/g' | sed -e $$'s/)/\\\n)/g' | $(ASTYLE)
+DOT         = dot -T png -o
 
 all:
 
@@ -25,10 +26,14 @@ else:
 HPG        ?= hpg.exe
 endif
 
-ifdef $(GRAMMAR)
+ifdef GRAMMAR
 grammar-model: $(HPG)
 	@echo "*** dumping parser model of $(GRAMMAR)"
 	@$(RUN) $(HPG) -m $(GRAMMAR) | $(FORMATTER)
+
+model-dot: $(HPG)
+	@echo "*** generating visual model diagram"
+	@$(RUN) $(HPG) -m -d $(GRAMMAR) | $(DOT) $(GRAMMAR).png
 else
 grammar-model:
 endif

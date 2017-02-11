@@ -126,19 +126,9 @@ namespace HumanParserGenerator.Generator {
     // way, then it returns the type of its first property
     public string Type {
       get {
-        // Console.Error.Write(this.Name +".Type ");
-        // no properties
-        if(this.Properties.Count == 0) {
-          // this.Log();
-          return null;
-        }
-        // one property
         if(this.IsVirtual){
-          // this.Log(" is Virtual");
           return this.Properties.First().Type;
         }
-        // default case
-        // this.Log();
         return this.DefaultType;
       }
     }
@@ -439,6 +429,7 @@ namespace HumanParserGenerator.Generator {
 
     // offer a Dinctionary-like interface Model[name]=Entity
     public bool Contains(string key) {
+      if(key == null) { return false; }
       return this.entities.Keys.Contains(key);
     }
 
@@ -484,38 +475,14 @@ namespace HumanParserGenerator.Generator {
 
       if(this.Model.Entities.Count == 0) { return this; }
 
-      // this.Log("===========================================");
-      // this.Log("STEP 0:");
-      // this.Log("-------------------------------------------");
-      // this.Log(this.Model.ToString());
-      // this.Log("===========================================");
-
       // step 1:
       this.ImportPropertiesAndActions();
 
-      // this.Log("===========================================");
-      // this.Log("STEP 1: imported");
-      // this.Log("-------------------------------------------");
-      // this.Log(this.Model.ToString());
-      // this.Log("===========================================");
-
       // step 2:
       this.CollapseAlternatives();
-
-      // this.Log("===========================================");
-      // this.Log("STEP 2: collapsed alternatives");
-      // this.Log("-------------------------------------------");
-      // this.Log(this.Model.ToString());
-      // this.Log("===========================================");
       
       // step 3:
       this.DetectInheritance();
-
-      // this.Log("===========================================");
-      // this.Log("STEP 3: with inheritance");
-      // this.Log("-------------------------------------------");
-      // this.Log(this.Model.ToString());
-      // this.Log("===========================================");
       
       return this;
     }
@@ -789,25 +756,10 @@ namespace HumanParserGenerator.Generator {
       // this should be ONLY 1 and it must BE CONSUMEANY
       if(actions.Count != 1 || ! (actions.First() is ConsumeAny)) { return; }
 
-      // there CAN NOT be a mix of Entities and Basic Types or different Basic 
-      // Types
-      int entities = 0;
-      int strings = 0;
-      int bools = 0;
-      foreach(Property prop in entity.Properties) {
-        if( this.Model.Contains(prop.Type) ) { entities++; }
-        else {
-          if(prop.Type.Equals("<string>")) {
-            strings++;
-          } else {
-            bools++;
-          }
-        }
+      // all properties should be Consuming Entities
+      if( entity.Properties.Where(p=>p.Source is ConsumeEntity).ToList().Count() != entity.Properties.Count) {
+        return;
       }
-      // all entities or none
-      if(entities != 0 && entities != entity.Properties.Count) { return; }
-      // same basic types
-      if(strings != 0 && bools != 0) { return; }
 
       this.Log("collapsing alternatives on " + entity.Name);
 

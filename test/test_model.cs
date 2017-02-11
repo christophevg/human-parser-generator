@@ -37,7 +37,7 @@ public class GeneratorModelTests {
     Assert.AreEqual(
       @"Model(
          Entities=[
-           Entity(Name=rule,Type=,ParseAction=ConsumeString(a))
+           Entity(Name=rule,Type=rule,ParseAction=ConsumeString(a))
          ],
          Root=rule
        )".Replace(" ", "").Replace("\n",""),

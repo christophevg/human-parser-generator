@@ -1,7 +1,3 @@
-ifndef GENERATOR
-$(error Please define GENERATOR before including this supporting Makefile)
-endif
-
 CC          = mcs
 RUN         = mono
 NUNIT       = nunit-console -nologo
@@ -18,10 +14,16 @@ endif
 ASTYLE      = LC_ALL="C" astyle -s2 -xt0 -xe
 FORMATTER   = sed -e $$'s/[(\[,]/&\\\n/g' | sed -e $$'s/)/\\\n)/g' | $(ASTYLE)
 
+all:
+
+ifdef GENERATOR
 HPG        ?= $(GENERATOR)/hpg.exe
 
 $(HPG):
 	@(cd $(GENERATOR); make)
+else:
+HPG        ?= hpg.exe
+endif
 
 ifdef $(GRAMMAR)
 grammar-model: $(HPG)

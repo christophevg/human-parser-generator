@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.Diagnostics;
 
-using HumanParserGenerator;
+using HumanParserGenerator.Generator;
 
 namespace HumanParserGenerator {
 
@@ -18,11 +18,19 @@ namespace HumanParserGenerator {
       new HPG(args).Generate();
     }
 
+    // configuration
+
     private string input          = null;
 
     enum Output { Parser, AST, Model };
     private Output output = Output.Parser;
-    
+
+    enum Format { Text, Dot };
+    private Format format = Format.Text;
+
+
+    // argument processing
+
     private HPG(string[] args) {
       foreach(string arg in args) {
         if(arg.StartsWith("-")) {
@@ -49,14 +57,12 @@ namespace HumanParserGenerator {
       // try switches first
       try {
         return new Dictionary<string, Func<bool>>() {
-          { "-h",       this.ShowHelp       },
-          { "--help",   this.ShowHelp       },
-          { "-p",       this.GenerateParser },
-          { "--parser", this.GenerateParser },
-          { "-a",       this.ShowAST        },
-          { "--ast",    this.ShowAST        },
-          { "-m",       this.ShowModel      },
-          { "--model",  this.ShowModel      },
+          { "-h",       this.ShowHelp     }, { "--help",   this.ShowHelp     },
+          { "-p",       this.OutputParser }, { "--parser", this.OutputParser },
+          { "-a",       this.OutputAST    }, { "--ast",    this.OutputAST    },
+          { "-m",       this.OutputModel  }, { "--model",  this.OutputModel  },
+          { "-t",       this.FormatText   }, { "--text",   this.FormatText   },
+          { "-d",       this.FormatDot    }, { "--dot",    this.FormatDot    },
         }[option]();
       } catch(KeyNotFoundException) {}
 
@@ -86,23 +92,19 @@ namespace HumanParserGenerator {
       Console.WriteLine("    --parser, -p            Generate parser (DEFAULT)");
       Console.WriteLine("    --ast, -a               Show AST");
       Console.WriteLine("    --model, -m             Show parser model");
+      Console.WriteLine("Formatting options.");
+      Console.WriteLine("    --text, -t              Generate textual output (DEFAULT).");
+      Console.WriteLine("    --dot, -d               Generate Graphviz/Dot format output. (model)");
       return false;
     }
 
-    private bool GenerateParser() {
-      this.output = Output.Parser;
-      return true;
-    }
-    
-    private bool ShowAST() {
-      this.output = Output.AST;
-      return true;
-    }
-    
-    private bool ShowModel() {
-      this.output = Output.Model;
-      return true;
-    }
+    private bool OutputParser(){ this.output = Output.Parser; return true; }
+    private bool OutputAST()   { this.output = Output.AST;    return true; }
+    private bool OutputModel() { this.output = Output.Model;  return true; }
+    private bool FormatText()  { this.format = Format.Text;   return true; }
+    private bool FormatDot()   { this.format = Format.Dot;    return true; }
+
+    // Generation of Model and Parser
 
     private void Generate() {
       if(this.input == null) { return; }
@@ -116,9 +118,13 @@ namespace HumanParserGenerator {
       }
 
       // Grammar Model -> Generator/Parser Model
-      Generator.Model model = new Generator.Factory().Import(grammar).Model;
+      Model model = new Factory().Import(grammar).Model;
 
       if( this.output == Output.Model ) {
+        if(this.format == Format.Dot) {
+          Console.WriteLine(this.Dotify(model));
+          return;
+        }
         Console.WriteLine(model.ToString());
         return;
       }
@@ -127,6 +133,74 @@ namespace HumanParserGenerator {
       Emitter.CSharp code = new Emitter.CSharp().Generate(model);
 
       Console.WriteLine(code.ToString());
+    }
+    
+    private string Dotify(Model model) {
+      string dot = "";
+      dot += this.GenerateDotHeader();
+      foreach(Entity entity in model.Entities) {
+        dot += this.GenerateEntity(entity);
+      }
+      foreach(Entity entity in model.Entities) {
+        dot += this.GenerateGeneralizations(entity);
+      }
+      dot += this.GenerateDotFooter();
+      return dot;
+    }
+
+    private string GenerateDotHeader() {
+      return @"
+      digraph G {
+        rankdir=BT;
+
+        node [
+          fontname = ""Bitstream Vera Sans""
+          fontsize = 10
+          shape = ""record""
+        ]
+
+        edge [
+          fontname = ""Bitstream Vera Sans""
+          fontsize = 8
+          arrowhead = ""empty""
+        ]
+";
+      }
+
+    private string GenerateDotFooter() {
+      return "\n}\n";
+    }
+
+    private string GenerateEntity(Entity entity) {
+      // Entity [
+      //   label = "{Entity|+ property : type\l ... |+ method() : void\l}"
+      // ]
+      return "\n" + this.PascalCase(entity.Name) + 
+        " [ label = \"" + this.PascalCase(entity.Name) + "\" ]";
+    }
+    
+    private string GenerateGeneralizations(Entity entity) {
+      // Sub1 -> Entity
+      // Sub2 -> Entity
+      // { rank=same Sub1, Sub2 }
+      if(entity.Subs.Count == 0) { return ""; } 
+      string dot = "";
+      foreach(Entity sub in entity.Subs) {
+        dot += "\n" + this.PascalCase(sub.Name) + " -> " + this.PascalCase(entity.Name);
+      }
+      if(entity.Subs.Count > 1) {
+        dot += "\n{ rank=same " + string.Join(", ", entity.Subs.Select(s=>this.PascalCase(s.Name)))+ "}";
+      }
+      return dot;
+    }
+
+    // TODO reuse from Emitter ;-)
+    private string PascalCase(string text) {
+      return string.Join("",
+        text.Split('-').Select(x =>
+          x.First().ToString().ToUpper() + x.ToLower().Substring(1)
+        )
+      );
     }
 
   }

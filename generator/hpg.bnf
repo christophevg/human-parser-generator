@@ -40,6 +40,6 @@ extractor-expression      ::= [ name ] "/" pattern "/" ;
 
 name                      ::= identifier "@" ;
 
-identifier                ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
+identifier                ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
 string                    ::= /"([^"]*)"|^'([^']*)'/ ;
 pattern                   ::= /(.*?)(?<keep>/\s*;)/ ;

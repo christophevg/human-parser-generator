@@ -283,10 +283,10 @@ public class AsModel {
           Identifier = "number-expression",
           Expression = new IdentifierExpression() { Identifier = "number" }
         },
-        // identifier ::= /([A-Z][A-Z0-9]*)/ ;
+        // identifier ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
         new Rule() {
           Identifier = "identifier",
-          Expression = new ExtractorExpression() { Pattern = @"([A-Z][A-Z0-9]*)" }
+          Expression = new ExtractorExpression() { Pattern = @"([A-Za-z_][A-Za-z0-9-_]*)" }
         },
         // string ::= /"([^"]*)"|'([^']*)'/ ;
         new Rule() {

@@ -13,7 +13,7 @@ endif
 
 ASTYLE      = LC_ALL="C" astyle -s2 -xt0 -xe
 FORMATTER   = sed -e $$'s/[(\[,]/&\\\n/g' | sed -e $$'s/)/\\\n)/g' | $(ASTYLE)
-DOT         = dot -T png -o
+DOT         = unflatten -f -l 1 -c 4 | dot -T png -o
 
 all:
 

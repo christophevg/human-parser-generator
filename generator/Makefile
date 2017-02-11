@@ -46,5 +46,9 @@ parser: $(HPG)
 	@echo "*** compiling $@ from $^"
 	@$(CC) $(CFLAGS) -out:$@ $^
 
+parse: $(HPG)
+	@echo "*** parsing grammar from stdin"
+	@$(RUN) $< -m | $(FORMATTER)
+
 clean:
 	@rm -rf $(HPG) $(GEN1PARSER) $(PARSER)

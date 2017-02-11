@@ -177,7 +177,8 @@ namespace HumanParserGenerator {
       // ]
       string dot = "";
       dot = "\n" + this.PascalCase(entity.Name) + 
-        " [ label = \"{" + (entity.IsVirtual ? " / " : "") + this.PascalCase(entity.Name) + "|";
+        " [ label = \"{" + (entity.IsVirtual ? " / " : "") +
+        this.PascalCase(entity.Name) + "|";
       foreach(Property property in entity.Properties) {
         dot += "+ " + this.PascalCase(property.Name) +
           (property.IsPlural ? "s" : "") +
@@ -196,10 +197,12 @@ namespace HumanParserGenerator {
       if(entity.Subs.Count == 0) { return ""; } 
       string dot = "";
       foreach(Entity sub in entity.Subs) {
-        dot += "\n" + this.PascalCase(sub.Name) + " -> " + this.PascalCase(entity.Name);
+        dot += "\n" + this.PascalCase(sub.Name) + " -> " +
+          this.PascalCase(entity.Name);
       }
       if(entity.Subs.Count > 1) {
-        dot += "\n{ rank=same " + string.Join(", ", entity.Subs.Select(s=>this.PascalCase(s.Name)))+ "}";
+        dot += "\n{ rank=same " +
+          string.Join(",", entity.Subs.Select(s=>this.PascalCase(s.Name)))+ "}";
       }
       return dot;
     }

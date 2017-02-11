@@ -3,16 +3,13 @@ record           ::= renames-record | values-record | basic-record ".";
 
 renames-record   ::= "66" level-name "RENAMES"  identifier-range ;
 level-name       ::= "FILLER" | identifier ;
-identifier-range ::= ( identifier "THRU" identifier )
-                   | ( identifier "THROUGH" identifier )
-                   | identifier
-                   ;
+identifier-range ::= identifier [ _ @ "THRU" | _ @ "THROUGH" through @ identifier ] ;
 
-values-record    ::= "88" level-name "VALUES" ["IS" | "ARE"] { value } ;
+values-record    ::= "88" level-name "VALUES" [ _ @ "IS" | _ @ "ARE"] { value } ;
 value            ::= literal | variable ;
 literal          ::= int | float | string ;
-variable         ::= identifier [ "(" subset ")" ];
-subset           ::= numeric [ ":" subset ];
+variable         ::= identifier [ _ @ "(" subset _ @ ")" ];
+subset           ::= limit @ numeric [ _ @ ":" next @ subset ];
 numeric          ::= int | identifier;
 
 basic-record     ::= level @ int level-name { option } ;
@@ -30,47 +27,56 @@ option           ::= redefines-option
                    | value-option
                    ;
 
-redefines-option ::= "REDEFINES" identifier ;
-external-option  ::= [ "IS" ] "EXTERNAL" ;
-internal-option  ::= [ "IS" ] "INTERNAL" ;
+redefines-option ::= "REDEFINES" redefined @ identifier ;
+external-option  ::= [ _ @ "IS" ] "EXTERNAL" ;
+internal-option  ::= [ _ @ "IS" ] "INTERNAL" ;
 usage-option     ::= [ _ @ "USAGE" [ _ @ "IS" ] ] usage;
 sign-option      ::= "SIGN" [ _ @ "IS" ] "LEADING" | "TRAILING" [ "SEPARATE" [ "CHARACTER" ] ] ;
-occurs-option    ::= "OCCURS" numeric [ "TO" numeric ] [ "TIMES" ] [ "DEPENDING" [ "ON" ] identifier ] key index ;
-sync-option      ::= "SYNC" [ "HRONIZED" ] [ "LEFT" | "RIGHT" ] ;
-just-option      ::= "JUST" [ "IFIED" ] [ "RIGHT" ] ;
-blank-option     ::= "BLANK" [ "WHEN" ] "ZERO" ;
-value-option     ::= "VALUE" [ "IS" ] symbolic ;
+occurs-option    ::= "OCCURS" amount @ numeric [ _ @ "TO" upper-bound @ numeric ] [ _ @ "TIMES" ] [ _ @ "DEPENDING" [ _ @ "ON" ] depends-on @ identifier ] key [ index ] ;
+
+sync-option      ::= "SYNC" [ _ @ "HRONIZED" ] [ "LEFT" | "RIGHT" ] ;
+
+just-option      ::= "JUST" [ _ @ "IFIED" ] [ "RIGHT" ] ;
+blank-option     ::= "BLANK" [ _ @ "WHEN" ] "ZERO" ;
+value-option     ::= "VALUE" [ _ @ "IS" ] symbolic ;
 
 picture-option   ::= picture-format | picture-string ;
-picture-format   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] main-type @ picture-type [ _ @ "(" main-index @ int _ @ ")" [ [ "V" | "." ] sub-type @ picture-type _ @ "(" sub-index @ int _ @ ")" ] ] ;
+picture-format   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] type @ picture-type [ digits @ indexer ] [ [ _ @ "V" | _ @ "." ] decimal-type @ picture-type [ decimal-digits @ indexer ] ] ;
 picture-string   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] string ;
 
-usage            ::= "BINARY"
+indexer          ::= "(" index @ int ")";
+
+usage            ::= binary-usage
                    | comp-usage
-                   | "DISPLAY"
-                   | "INDEX"
-                   | "PACKED-DECIMAL"
+                   | display-usage
+                   | index-usage
+                   | packed-decimal-usage
                    ;
 
-comp-usage       ::= "COMP" [ _ @ "UTATIONAL" ] [ "-" comp-level @ digit ] ;
+binary-usage     ::= "BINARY";
+comp-usage       ::= "COMP" [ _ @ "UTATIONAL" ] [ _ @ "-" level @ digit ] ;
+display-usage    ::= "DISPLAY";
+index-usage      ::= "INDEX";
+packed-decimal-usage ::= "PACKED-DECIMAL";
 
-key              ::= [ "ASCENDING" | "DESCENDING" [ "KEY" ] [ "IS" ] { identifier } ] ;
-index            ::= [ "INDEXED" [ "BY" ] identifier ] ;
+key              ::= [ "ASCENDING" | "DESCENDING" [ _ @ "KEY" ] [ _ @ "IS" ] { identifier } ] ;
+index            ::= "INDEXED" [ _ @ "BY" ] identifier ;
 symbolic         ::= literal | variable | figurative ;
 
-figurative       ::= "ZEROS"
-                   | "ZEROES"
-                   | "ZERO"
-                   | "SPACES"
-                   | "SPACE"
-                   | "HIGH-VALUES"
-                   | "HIGH-VALUE"
-                   | "LOW-VALUES"
-                   | "LOW-VALUE"
-                   | ( "ALL" string )
-                   | "NULLS"
-                   | "NULL"
+figurative       ::= zero
+                   | space
+                   | high-value
+                   | low-value
+                   | all-string
+                   | null
                    ;
+
+zero             ::= "ZERO" [ _ @ "ES" ] ;
+space            ::= "SPACE" [ _ @ "S" ] ;
+high-value       ::= "HIGH-VALUE" [ _ @ "S" ];
+low-value        ::= "LOW-VALUE" [ _ @ "S" ];
+all-string       ::= "ALL" string;
+null             ::= "NULL" [ _ @ "S" ] ;
 
 picture-type     ::= /([9AXVSP]+)/;
 

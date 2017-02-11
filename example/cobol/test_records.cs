@@ -59,64 +59,17 @@ BasicRecord(
       "10 FIELD   PIC S9(05) COMP-5.",
       @"
 BasicRecord(
-         Level=Int(
-              Value=10
-              ),
-         LevelName=LevelName(
-                  HasFiller=False,
-                  Identifier=Identifier(
-                             Name=FIELD
-                             )
-                  ),
-         Options=[
-                Option(
-                RedefinesOption=,
-                ExternalOption=False,
-                InternalOption=False,
-                PictureOption=PictureOption(
-                              PictureFormat=PictureFormat(
-                                  MainType=S9,
-                                  MainIndex=Int(
-                                      Value=05
-                                      ),
-                                  HasV=False,
-                                  HasDot=False,
-                                  SubType=,
-                                  SubIndex=
-                                  ),
-                              PictureString=
-                              ),
-                UsageOption=,
-                SignOption=,
-                OccursOption=,
-                SyncOption=,
-                JustOption=,
-                BlankOption=False,
-                ValueOption=
-                ),
-                Option(
-                RedefinesOption=,
-                ExternalOption=False,
-                InternalOption=False,
-                PictureOption=,
-                UsageOption=Usage(
-                            HasBinary=False,
-                            CompUsage=CompUsage(
-                                      HasDash=True,
-                                      CompLevel=5
-                                      ),
-                            HasDisplay=False,
-                            HasIndex=False,
-                            HasPackedDecimal=False
-                            ),
-                SignOption=,
-                OccursOption=,
-                SyncOption=,
-                JustOption=,
-                BlankOption=False,
-                ValueOption=
-                )]
-         )"
+  Level=Int(Value=10),
+  LevelName=LevelName(HasFiller=False,Identifier=Identifier(Name=FIELD)),
+  Options=[
+    PictureFormat(
+      Type=S9,      Digits=Int(Value=05),
+      DecimalType=, DecimalDigits= 
+    ),
+    CompUsage(Level=5 )
+  ]
+)
+"
     );
   }
 

@@ -336,6 +336,7 @@ using System.Diagnostics;
     }
 
     private string GenerateAssignment(Generator.ParseAction action) {
+      if(action.Type == null)     { return ""; }
       if(action.Property == null) { return ""; }
       if(action.ReportSuccess)    { return ""; }
       return this.GenerateLocalVariable(action.Property) + " = ";

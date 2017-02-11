@@ -60,28 +60,23 @@ namespace HumanParserGenerator.Generator {
     // a Virtual Entity is suppressed from the resulting AST
     // the general rule is that this is possible for entities with only 1 prop
     // with some exceptions:
-    // TODO simplify -> sibblings might be more precise/corrrect
+    // TODO simplify -> Sibblings/Subs might be more precise/corrrect
     public bool IsVirtual {
       get {
         // exception 3: the root is always Real
-        if( this == this.Model.Root) {
-          return false;
+        if( this == this.Model.Root) { return false; }
+
+        // only with 1 non-plural property possible
+        if( this.Properties.Count == 1 && ! this.Properties.First().IsPlural ) {
+          // pure patterns extractors = Virtual IF they have no sibblings!
+          // else we need their Entity for Typing of the Strings
+          if(this.ParseAction is ConsumePattern && ! this.HasSibblings) { return true; }
+        
+          // if we have SubEntities, we must be virtual ;-)
+          if(this.Subs.Count > 0) { return true; }
         }
 
-        // general rule: 1 NON Plural property == Virtual
-        if( this.Properties.Count == 1 && ! this.Properties.First().IsPlural ) {
-          // exception 1: leafs are Real
-          if( this.Subs.Count == 0 ) {
-            // exception 2: no super classes == allowed Virtual
-            // OR superclasses have only me as sub
-            if( this.Supers.Count == 0 || ! this.HasSibblings ) {
-              return true; // exception 2: no super classes == allowed Virtual
-            }
-            return false;  // exception 1: leafs are Real
-          }
-          return true; // general rule: 1 property == Virtual
-        }
-        return false;  // general rule: > 1 property == Real
+        return false;
       }
     }
 
@@ -96,11 +91,12 @@ namespace HumanParserGenerator.Generator {
 
     public bool HasSibblings {
       get {
+        if(this.Supers.Count == 0) { return false; }
         // counts = list of # sibblings of supers
         List<int> counts =
           this.Supers.Select(super=>super.Subs.Count()).Distinct().ToList();
         // if supers have different # subs OR same but multiple
-        return counts.Count > 1 || counts.First() > 1;
+        return (counts.Count > 1 || counts.First() > 1);
       }
     }
 
@@ -857,7 +853,14 @@ namespace HumanParserGenerator.Generator {
           }
 
         } else {
-          if(entity.Properties.First().Source is ConsumeEntity) {
+          // TODO simplify this ;-)
+          if(
+             entity.Properties.First().Source is ConsumeEntity &&
+             (
+               !(((ConsumeEntity)entity.Properties.First().Source).Entity.ParseAction is ConsumePattern)
+               || entity.Supers.Count == 0
+             )
+          ){
             this.AddInheritance(entity, ((ConsumeEntity)entity.Properties.First().Source).Entity);
             this.Log("["+entity.Name+"] recursing down only property's entity");
             this.DetectInheritance(((ConsumeEntity)entity.Properties.First().Source).Entity);

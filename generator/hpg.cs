@@ -179,7 +179,11 @@ namespace HumanParserGenerator {
       dot = "\n" + this.PascalCase(entity.Name) + 
         " [ label = \"{" + (entity.IsVirtual ? " / " : "") + this.PascalCase(entity.Name) + "|";
       foreach(Property property in entity.Properties) {
-        dot += "+ " + this.PascalCase(property.Name) + " : " + this.GenerateType(property.Type) + "\\l";
+        dot += "+ " + this.PascalCase(property.Name) +
+          (property.IsPlural ? "s" : "") +
+          " : " + (property.IsPlural ? "[" : "") +
+          this.GenerateType(property.Type) +
+          (property.IsPlural ? "]" : "") +  "\\l";
       }  
       dot += "}\" ]";
       return dot;

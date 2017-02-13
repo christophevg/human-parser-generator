@@ -1,4 +1,4 @@
-- CHECK type bubbling after changes to has- generation
+- improve generation of source rollback integers
 
 - replace PascalCase and CamelCase by function names: e.g. GenerateClassName(Entity)
 
@@ -11,7 +11,7 @@
   - i(nfo)      : suppress header in generated files
   - c(lass)=    : output class information (dot syntax)
 
-- setup building of standalone hpg executable
+- setup building of standalone hpg executable at top-level
 
 - improve top-level error reporting
   - include entire stack of exceptions

@@ -22,6 +22,9 @@ HPG        ?= $(GENERATOR)/hpg.exe
 
 $(HPG):
 	@(cd $(GENERATOR); make)
+
+.PHONY: $(HPG)
+
 else:
 HPG        ?= hpg.exe
 endif

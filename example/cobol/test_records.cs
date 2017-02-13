@@ -98,4 +98,25 @@ BasicRecord(
     );
   }
 
+  [Test]
+  public void BasicRecordWithOccursTimes() {
+    this.testSingleSentence(
+      "10 FIELDS OCCURS 10 TIMES.",
+      @"
+BasicRecord(
+  Level=Int(Value=10),
+  LevelName=LevelName(HasFiller=False,Identifier=Identifier(Name=FIELDS)),
+  Options=[
+    OccursOption(
+      Amount=Int(Value=10),
+      UpperBound=,
+      DependsOn=,
+      Key=,
+      Index=
+    )
+  ]
+)
+"
+    );
+  }
 }

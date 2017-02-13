@@ -351,7 +351,7 @@ using System.Diagnostics;
       if( name.Equals("string") ) { return "text";     }
       if( name.Equals("int")    ) { return "number";   }
       if( name.Equals("float")  ) { return "floating"; }
-      return this.CamelCase(name + (property.IsPlural ? "s" : "") );
+      return this.CamelCase( name + this.PluralSuffix(property) );
     }
 
     private string GenerateEntityParserFooter(Generator.Entity entity) {
@@ -425,7 +425,7 @@ using System.Diagnostics;
         this.Warn("rewriting property name: " + property.Name);
         return "next-" + property.Name;
       }
-      return property.Name + (property.IsPlural ? "s" : "");
+      return property.Name + this.PluralSuffix(property);
     }
 
     // this function makes sure that text is correctly case'd ;-)
@@ -445,6 +445,12 @@ using System.Diagnostics;
 
     private void Warn(string msg) {
       Console.Error.WriteLine("~~~ C# Emitter Warning: " + msg);
+    }
+
+    private string PluralSuffix(Generator.Property property) {
+      if(! property.IsPlural ) { return ""; }
+      if( property.Name.EndsWith("x") ) { return "es"; }
+      return "s";
     }
 
   }

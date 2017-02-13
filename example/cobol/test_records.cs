@@ -111,8 +111,8 @@ BasicRecord(
       Amount=Int(Value=10),
       UpperBound=,
       DependsOn=,
-      Key=,
-      Index=
+      Keys=[],
+      Indexes=[]
     )
   ]
 )

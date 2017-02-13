@@ -62,7 +62,7 @@ BasicRecord(
   Level=Int(Value=10),
   LevelName=LevelName(HasFiller=False,Identifier=Identifier(Name=FIELD)),
   Options=[
-    PictureFormat(
+    PictureFormatOption(
       Type=S9,      Digits=Int(Value=05),
       DecimalType=, DecimalDigits= 
     ),

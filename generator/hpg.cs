@@ -181,7 +181,7 @@ namespace HumanParserGenerator {
         this.PascalCase(entity.Name) + "|";
       foreach(Property property in entity.Properties) {
         dot += "+ " + this.PascalCase(property.Name) +
-          (property.IsPlural ? "s" : "") +
+          this.PluralSuffix(property) +
           " : " + (property.IsPlural ? "[" : "") +
           this.GenerateType(property.Type) +
           (property.IsPlural ? "]" : "") +  "\\l";
@@ -221,6 +221,12 @@ namespace HumanParserGenerator {
       if( type.Equals("<string>") ) { return "string"; }
       if( type.Equals("<bool>") ) { return "bool"; }
       return this.PascalCase(type);
+    }
+
+    private string PluralSuffix(Generator.Property property) {
+      if(! property.IsPlural ) { return ""; }
+      if( property.Name.EndsWith("x") ) { return "es"; }
+      return "s";
     }
 
   }

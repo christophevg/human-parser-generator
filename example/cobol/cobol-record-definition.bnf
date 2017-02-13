@@ -41,7 +41,7 @@ blank-option            ::= "BLANK" [ _ @ "WHEN" ] "ZERO" ;
 value-option            ::= "VALUE" [ _ @ "IS" ] symbolic ;
 
 picture-option          ::= picture-format-option | picture-string-option ;
-picture-format-option   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] type @ picture-type [ digits @ indexer ] [ [ _ @ "V" | _ @ "." ] decimal-type @ picture-type [ decimal-digits @ indexer ] ] ;
+picture-format-option   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] type @ picture-type [ digits @ indexer ] [ [ _ @ "V" | _ @ "." ] decimal-type @ decimal-picture-type [ decimal-digits @ indexer ] ] ;
 picture-string-option   ::= "PIC" [ _ @ "TURE" ] [ _ @ "IS" ] string ;
 
 indexer                 ::= "(" index @ int ")";
@@ -79,6 +79,7 @@ all-string              ::= "ALL" string;
 null                    ::= "NULL" [ _ @ "S" ] ;
 
 picture-type            ::= /([9AXVSP]+)/;
+decimal-picture-type    ::= /([9]+)/;
 
 identifier              ::= name @ /([A-Z][A-Z0-9-]*)/;
 digit                   ::= /([0-9])/;

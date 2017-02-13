@@ -73,4 +73,29 @@ BasicRecord(
     );
   }
 
+  [Test]
+  public void BasicRecordWithPicAndSignOption() {
+    this.testSingleSentence(
+      "10 FIELD PIC S9(18) SIGN TRAILING SEPARATE.",
+      @"
+BasicRecord(
+  Level=Int(Value=10),
+  LevelName=LevelName(HasFiller=False,Identifier=Identifier(Name=FIELD)),
+  Options=[
+    PictureFormatOption(
+      Type=S9,      Digits=Int(Value=18),
+      DecimalType=, DecimalDigits= 
+    ),
+    SignOption(
+      HasLeading   = False,
+      HasTrailing  = True,
+      HasSeparate  = True,
+      HasCharacter = False
+    )
+  ]
+)
+"
+    );
+  }
+
 }

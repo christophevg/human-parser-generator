@@ -1,4 +1,5 @@
 - improve generation of source rollback integers
+  - remove redundant {} around position tracking
 
 - replace PascalCase and CamelCase by function names: e.g. GenerateClassName(Entity)
 
@@ -40,3 +41,6 @@
 - replace Make by xbuild
 
 - check building in Windows environment
+
+- add Parsable.CanConsume -> bool
+  -> directly into Has<Entity>

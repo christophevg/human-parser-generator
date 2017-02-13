@@ -29,7 +29,7 @@ $(TARGET): $(GRAMMAR) $(SRCS)
 
 $(PARSER): $(GRAMMAR) $(HPG)
 	@echo "*** generating a Cobol parser from $<"
-	@$(RUN) $(HPG) $< > $@
+	@$(RUN) $(HPG) $< | $(ASTYLE) > $@
 
 clean:
 	@rm -rf $(BUILD) TestResult.xml $(PARSER) test.dll $(TARGET)

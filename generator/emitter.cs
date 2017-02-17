@@ -325,11 +325,11 @@ using System.Diagnostics;
     private string WrapOptional(Generator.ParseAction action, string code) {
       if( ! action.IsOptional ) { return code; }
       string positionName = "pos" + getrandom.Next(999).ToString();
-      return "{\n" +
+      return 
         "int " + positionName + " = this.source.position;\n" +
         "try {\n" + code + "\n} catch(ParseException) {\n" +
         "this.source.position = " + positionName + ";\n" +
-        "}\n}";
+        "}";
     }
 
     private string AddSuccessReporting(Generator.ParseAction action, string code) {

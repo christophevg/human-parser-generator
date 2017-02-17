@@ -21,9 +21,15 @@ public class Runner {
       }
     }
   
-    Parser parser = new Parser();
-    string code   = parser.Parse(input).AST.ToString();
-
-    Console.WriteLine(code);
+      Parser parser = new Parser();
+      try {
+        Console.WriteLine(parser.Parse(input).AST.ToString());
+      } catch(ParseException e) {
+        // recurse down the Exception tree, to reach the most specific one
+        while(e.InnerException != null) {
+          e = e.InnerException as ParseException;
+        } 
+        Console.Error.WriteLine(e.Message);
+      }
   }
 }

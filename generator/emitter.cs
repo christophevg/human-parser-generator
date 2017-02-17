@@ -184,7 +184,7 @@ using System.Diagnostics;
     this.source = new Parsable(source);
     this.AST    = this.Parse" + this.PascalCase(this.Model.Root.Name) + @"();
     if( ! this.source.IsDone ) {
-      throw this.source.GenerateParseException(""Could not parse"");
+      throw this.source.GenerateParseException(""Could not parse remaining data"");
     }
     return this;
   }";

@@ -45,7 +45,7 @@ public class Parsable {
 
   public string Context {
     get {
-      return (this.Peek(30) + "[...]").Replace("\n", "\\n");
+      return "position " + this.position.ToString() + "\n..X\n  " + (this.Peek(80).Trim() + " [...]");
     }
   }
 
@@ -98,12 +98,8 @@ public class Parsable {
     return this.head.Substring(0, Math.Min(amount, this.head.Length));
   }
 
-  public ParseException GenerateParseException(string message) {
-    return new ParseException( message + " at " + this.Context );
-  }
-
-  public ParseException GenerateParseException(string message, Exception inner) {
-    return new ParseException( message + "\n  Context:" + this.Context + "\n", inner );
+  public ParseException GenerateParseException(string message, Exception inner=null) {
+    return new ParseException( message + " at " + this.Context, inner );
   }
 
   public bool IsDone {

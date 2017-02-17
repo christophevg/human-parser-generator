@@ -320,11 +320,11 @@ using System.Diagnostics;
       return code + closing;
     }
 
-    private static readonly Random getrandom = new Random();
+    private static int posIndex = 0;
 
     private string WrapOptional(Generator.ParseAction action, string code) {
       if( ! action.IsOptional ) { return code; }
-      string positionName = "pos" + getrandom.Next(999).ToString();
+      string positionName = "pos" + (posIndex++);
       return 
         "int " + positionName + " = this.source.position;\n" +
         "try {\n" + code + "\n} catch(ParseException) {\n" +

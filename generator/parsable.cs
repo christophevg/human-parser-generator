@@ -32,7 +32,12 @@ public class Parsable {
   }
   
   // helper Regular Expressions for general clean-up
-  private static Regex leadingWhitespace = new Regex( "^\\s" );
+  // this regular expression only matches NOT printable characters minus space
+  // ASCII range goes from 0-127
+  // 0-31 are non printable (including newline, carriage return, EOF,...)
+  // 127 is DEL is another non printable
+  // 32 is space is normal whitespace we also want to ignore
+  private static Regex leadingWhitespace = new Regex( @"^[^\u0021-\u007E]" );
 
   public Parsable(string text) {
     this.text = text;

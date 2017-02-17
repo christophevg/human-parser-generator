@@ -69,6 +69,17 @@ public class Parsable {
     this.Log("Consume(" + text + ") SUCCESS");
     return this.Consume(text.Length);
   }
+
+  public bool TryConsume(string text) {
+    int pos = this.position;   // begin
+    try {
+      this.Consume(text);
+    } catch(ParseException) {
+      this.position = pos;     // rollback
+      return false;
+    }
+    return true;               // commit
+  }
   
   public string Consume(Regex pattern) {
     this.SkipLeadingWhitespace();

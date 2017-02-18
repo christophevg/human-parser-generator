@@ -57,7 +57,7 @@ public class Parsable {
   }
 
   // tries to consume a give string
-  public string Consume(string text) {
+  public bool Consume(string text) {
     this.SkipLeadingWhitespace();
     if(! this.head.StartsWith(text) ) {
       this.Log("Consume(" + text + ") FAILED");
@@ -67,11 +67,7 @@ public class Parsable {
     }
     // do actual consumption
     this.Log("Consume(" + text + ") SUCCESS");
-    return this.Consume(text.Length);
-  }
-
-  public bool CanConsume(string text) {
-    return this.Consume(text).Equals(text);
+    return this.Consume(text.Length).Equals(text);
   }
 
   public bool TryConsume(string text) {

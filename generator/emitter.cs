@@ -247,8 +247,7 @@ using System.Diagnostics;
       Generator.ConsumeString consume = (Generator.ConsumeString)action;
       return this.GenerateAssignment(action) +
         "this.source." +
-          ( consume.IsOptional ? "Try" :
-            ( consume.ReportSuccess ? "Can" : "" ) ) +
+          ( consume.IsOptional ? "Try" : "" ) +
         "Consume(\"" + consume.String + "\");";
     }
 

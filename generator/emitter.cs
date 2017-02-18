@@ -199,6 +199,18 @@ using System.Diagnostics;
     }
   }
 
+  private List<T> Many<T>(Func<T> what) {
+    List<T> list = new List<T>();
+    while(true) {
+      try {
+        list.Add(what());
+      } catch(ParseException) {
+        break;
+      }
+    }
+    return list;
+  }
+
   public Parser Parse(string source) {
     this.source = new Parsable(source);
     this.AST    = this.Parse" + this.PascalCase(this.Model.Root.Name) + @"();
@@ -282,25 +294,18 @@ using System.Diagnostics;
     private string GenerateConsumeEntity(Generator.ParseAction action) {
       Generator.ConsumeEntity consume = (Generator.ConsumeEntity)action;
       if(consume.Property.IsPlural) {
-        return
-          "{\n" +
-            this.GenerateType(consume.Entity) + " temp;\n" +
-          "  while(true) {\n" +
-          "    try {\n" +
-          "      temp = " + this.GenerateConsumeSingleEntity(consume, true) + ";\n" +
-          "    } catch(ParseException) {\n" +
-          "      break;\n" +
-          "    }\n" +
-               this.GenerateLocalVariable(consume.Property) + ".Add(temp);\n" +
-          "  }\n" +
-          "}";
+        return this.GenerateLocalVariable(consume.Property) + 
+          " = Many<" + this.GenerateType(consume.Entity) + ">(" + 
+          this.GenerateConsumeSingleEntity(consume, true, true) +
+          ");";
       }
 
       return this.GenerateConsumeSingleEntity(consume) + ";";
     }
 
     private string GenerateConsumeSingleEntity(Generator.ConsumeEntity consume,
-                                               bool withoutAssignment = false)
+                                               bool withoutAssignment = false,
+                                               bool withoutExecution  = false)
     {
       // if the referenced Entity is Virtual and is an Extractor, consume it 
       // directly
@@ -311,7 +316,8 @@ using System.Diagnostics;
 
       // simple case, dispatch to Parse<Entity>
       return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
-        "this.Parse" + this.PascalCase(consume.Entity.Name) + "()";
+        "this.Parse" + this.PascalCase(consume.Entity.Name) + 
+          (withoutExecution ? "" : "()");
     }
 
     private string GenerateConsumeAll(Generator.ParseAction action) {

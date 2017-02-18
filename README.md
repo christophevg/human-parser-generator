@@ -22,9 +22,15 @@ The project will initially target C#. No other target language is planned at thi
 
 ## Current Status
 
+As of February 18, I tagged the repository `v1.0`. At that point I left that the current code base was capable of the objectives I had set forward at the beginning:
+
 * A trivial example of a small subset of the Pascal language can be parsed.
 * The generator is capable of generating a parser for its own EBNF-like definition language, which means its self-hosting (see also below for more information on this feature). 
 * A parser for a more complex grammar for Cobol record definitions (aka Copybooks) is capable of parsing a set of example Copybooks and outputs an nice corresponding parser.
+
+Since then I've started working on improving things that didn't turn out the way I wanted or expected:
+
+* The emitted generator became less _human_ with more complex grammars, such as the one for Cobol Copybooks. Especially the nested `try { ... } catch { ... }` blocks were no longer nice on the eye and hard to read. So I started implementing an inner-DSL. See below for more info.
 
 ## Example
 
@@ -420,3 +426,65 @@ Tests run: 24, Failures: 0, Not run: 0, Time: 0.262 seconds
 ```
 
 > The unit tests hardly cover the basics of the source tree, but the goal is to have a comprehensive set, covering all possibilities. The unit tests will be the driving force for the continued development :-)
+
+### An inner-parsing-DSL
+
+After `v1.0` I decided to improve the generated parsers, especially for more complex grammars. A few wrapper functions later this _old_ code
+
+```csharp
+public Program ParseProgram() {
+  Identifier identifier = null;
+  List<Assignment> assignments = new List<Assignment>();
+  this.Log("ParseProgram");
+  int pos = this.source.position;
+  try {
+    this.source.Consume("PROGRAM");
+    identifier = this.ParseIdentifier();
+    this.source.Consume("BEGIN");
+    {
+      Assignment temp;
+      while(true) {
+        try {
+          temp = this.ParseAssignment();
+        } catch(ParseException) {
+          break;
+        }
+        assignments.Add(temp);
+      }
+    }
+    this.source.Consume("END.");
+  } catch(ParseException e) {
+    this.source.position = pos;
+    throw this.source.GenerateParseException(
+      "Failed to parse Program.", e
+    );
+  }
+  return new Program() {
+    Identifier  = identifier,
+    Assignments = assignments
+  };
+}
+```
+
+... was turned into ...
+
+```csharp
+public Program ParseProgram() {
+  Identifier identifier = null;
+  List<Assignment> assignments = new List<Assignment>();
+  this.Log( "ParseProgram" );
+  Parse( () => {
+    Consume("PROGRAM");
+    identifier = ParseIdentifier();
+    Consume("BEGIN");
+    assignments = Many<Assignment>(ParseAssignment);
+    Consume("END.");
+  }).OrThrow("Failed to parse Program.");
+  return new Program() {
+    Identifier = identifier,
+    Assignments = assignments
+  };
+}
+```
+
+Although it violates a few of my personal code style rules, in this case the inner-DSL is dominant and requires as little as possible _normal__ C# code ;-) The first results of this change are nice. I'm now continuing investigating the possibilities down this road.

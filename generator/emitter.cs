@@ -246,7 +246,8 @@ using System.Diagnostics;
     private string GenerateConsumeString(Generator.ParseAction action) {
       Generator.ConsumeString consume = (Generator.ConsumeString)action;
       return this.GenerateAssignment(action) +
-        "this.source.Consume(\"" + consume.String + "\");";
+        "this.source." + (consume.IsOptional ? "Try" : "")+ "Consume(\"" +
+          consume.String + "\");";
     }
 
     private string GenerateConsumePattern(Generator.ParseAction action) {
@@ -323,7 +324,9 @@ using System.Diagnostics;
     private static int posIndex = 0;
 
     private string WrapOptional(Generator.ParseAction action, string code) {
-      if( ! action.IsOptional ) { return code; }
+      if( ! action.IsOptional )       { return code; }
+      if( this.isTryConsume(action) ) { return code; }
+
       string positionName = "pos" + (posIndex++);
       return 
         "int " + positionName + " = this.source.position;\n" +
@@ -334,15 +337,21 @@ using System.Diagnostics;
 
     private string AddSuccessReporting(Generator.ParseAction action, string code) {
       if( ! action.ReportSuccess ) { return code; }
+      if( action.IsOptional )      { return code; }
       return code + "\n" +
         this.GenerateLocalVariable(action.Property) + " = true;";
     }
 
     private string GenerateAssignment(Generator.ParseAction action) {
-      if(action.Type == null)     { return ""; }
-      if(action.Property == null) { return ""; }
-      if(action.ReportSuccess)    { return ""; }
+      if(action.Type == null)                                 { return ""; }
+      if(action.Property == null)                             { return ""; }
+      if(action.ReportSuccess && ! this.isTryConsume(action)) { return ""; }
       return this.GenerateLocalVariable(action.Property) + " = ";
+    }
+
+    private bool isTryConsume(Generator.ParseAction action) {
+      return action.IsOptional &&
+             action is HumanParserGenerator.Generator.ConsumeString;
     }
 
     private string GenerateLocalVariable(Generator.Property property) {

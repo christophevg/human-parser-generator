@@ -235,7 +235,7 @@ using System.Diagnostics;
           { "ConsumeAll",     this.GenerateConsumeAll     },
           { "ConsumeAny",     this.GenerateConsumeAny     },
         }[action.GetType().ToString().Replace("HumanParserGenerator.Generator.","")](action);
-        return this.WrapOptional(action, this.AddSuccessReporting(action, code));
+        return this.WrapOptional(action, code);
       } catch(KeyNotFoundException e) {
         throw new NotImplementedException(
           "extracting not implemented for " + action.GetType().ToString(), e
@@ -246,8 +246,10 @@ using System.Diagnostics;
     private string GenerateConsumeString(Generator.ParseAction action) {
       Generator.ConsumeString consume = (Generator.ConsumeString)action;
       return this.GenerateAssignment(action) +
-        "this.source." + (consume.IsOptional ? "Try" : "")+ "Consume(\"" +
-          consume.String + "\");";
+        "this.source." +
+          ( consume.IsOptional ? "Try" :
+            ( consume.ReportSuccess ? "Can" : "" ) ) +
+        "Consume(\"" + consume.String + "\");";
     }
 
     private string GenerateConsumePattern(Generator.ParseAction action) {
@@ -324,8 +326,8 @@ using System.Diagnostics;
     private static int posIndex = 0;
 
     private string WrapOptional(Generator.ParseAction action, string code) {
-      if( ! action.IsOptional )       { return code; }
-      if( this.isTryConsume(action) ) { return code; }
+      if( ! action.IsOptional )             { return code; }
+      if( this.isTryConsumeString(action) ) { return code; }
 
       string positionName = "pos" + (posIndex++);
       return 
@@ -335,21 +337,13 @@ using System.Diagnostics;
         "}";
     }
 
-    private string AddSuccessReporting(Generator.ParseAction action, string code) {
-      if( ! action.ReportSuccess ) { return code; }
-      if( action.IsOptional )      { return code; }
-      return code + "\n" +
-        this.GenerateLocalVariable(action.Property) + " = true;";
-    }
-
     private string GenerateAssignment(Generator.ParseAction action) {
       if(action.Type == null)                                 { return ""; }
       if(action.Property == null)                             { return ""; }
-      if(action.ReportSuccess && ! this.isTryConsume(action)) { return ""; }
       return this.GenerateLocalVariable(action.Property) + " = ";
     }
 
-    private bool isTryConsume(Generator.ParseAction action) {
+    private bool isTryConsumeString(Generator.ParseAction action) {
       return action.IsOptional &&
              action is HumanParserGenerator.Generator.ConsumeString;
     }

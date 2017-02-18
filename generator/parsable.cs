@@ -70,6 +70,10 @@ public class Parsable {
     return this.Consume(text.Length);
   }
 
+  public bool CanConsume(string text) {
+    return this.Consume(text).Equals(text);
+  }
+
   public bool TryConsume(string text) {
     int pos = this.position;   // begin
     try {

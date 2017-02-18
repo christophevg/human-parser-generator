@@ -180,12 +180,22 @@ using System.Diagnostics;
   private Parsable source;
   public " + this.PascalCase(this.Model.Root.Name) + @" AST { get; set; }
 
-  private void Try(Action what) {
+  private void Maybe(Action what) {
     int pos = this.source.position;
     try {
       what();
     } catch {
       this.source.position = pos;
+    }
+  }
+
+  private void Maybe(string message, Action what) {
+    int pos = this.source.position;
+    try {
+      what();
+    } catch(ParseException e) {
+      this.source.position = pos;
+      throw this.source.GenerateParseException(message, e);
     }
   }
 
@@ -230,9 +240,9 @@ using System.Diagnostics;
             ";"
           )
         ) + "\n\n" +
-        "    this.Log(\"Parse" + this.PascalCase(entity.Name) + "\");\n" +
-        "    int pos = this.source.position;\n" +
-        "    try {";
+        "this.Log( \"Parse" + this.PascalCase(entity.Name) + "\" );\n" +
+        "Maybe( \"Failed to parse " + this.PascalCase(entity.Name) + ".\", " +
+        "() => {\n";
     }
 
     private string GenerateParseAction(Generator.ParseAction action) {
@@ -335,7 +345,7 @@ using System.Diagnostics;
       if( ! action.IsOptional )             { return code; }
       if( this.isTryConsumeString(action) ) { return code; }
 
-      return "this.Try( () => {\n" + code + "\n});";
+      return "Maybe( () => {\n" + code + "\n});";
     }
 
     private string GenerateAssignment(Generator.ParseAction action) {
@@ -359,14 +369,7 @@ using System.Diagnostics;
     }
 
     private string GenerateEntityParserFooter(Generator.Entity entity) {
-      return
-        "    } catch(ParseException e) {\n" +
-        "        this.source.position = pos;\n" +
-        "        throw this.source.GenerateParseException(\n" +
-        "          \"Failed to parse " + this.PascalCase(entity.Name) + ".\", e\n" +
-        "        );\n" +
-        "    }\n\n" +
-        this.GenerateEntityParserReturn(entity);
+      return "});\n" + this.GenerateEntityParserReturn(entity);
     }
 
     private string GenerateEntityParserReturn(Generator.Entity entity) {

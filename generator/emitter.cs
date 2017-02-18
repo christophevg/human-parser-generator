@@ -375,15 +375,17 @@ using System.Diagnostics;
     }
     
     private string GenerateRealEntityParserReturn(Generator.Entity entity) {
-      return "    return new " + this.PascalCase(entity.Name) + "() {\n" + 
+      return "    return new " + this.PascalCase(entity.Name) + "()" +
+        ( entity.Properties.Count > 0 ?
+        "{\n" + 
         string.Join( ",\n",
           entity.Properties.Select(x =>
             "      " + this.PascalCase(this.GeneratePropertyName(x)) + " = " + 
               this.GenerateLocalVariable(x)
           )
         ) + "\n" +
-        "    };\n" +
-        "  }";
+        "}" : "") +
+        ";\n}";
     }
 
     private string GenerateVirtualEntityParserReturn(Generator.Entity entity) {

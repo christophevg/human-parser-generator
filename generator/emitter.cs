@@ -180,6 +180,18 @@ using System.Diagnostics;
   private Parsable source;
   public " + this.PascalCase(this.Model.Root.Name) + @" AST { get; set; }
 
+  private bool Consume(string text) {
+    return this.source.Consume(text);
+  }
+
+  private bool MaybeConsume(string text) {
+    return this.source.TryConsume(text);
+  }
+
+  private string Consume(Regex pattern) {
+    return this.source.Consume(pattern);
+  }
+
   private void Maybe(Action what) {
     int pos = this.source.position;
     try {
@@ -277,8 +289,7 @@ using System.Diagnostics;
     private string GenerateConsumeString(Generator.ParseAction action) {
       Generator.ConsumeString consume = (Generator.ConsumeString)action;
       return this.GenerateAssignment(action) +
-        "this.source." +
-          ( consume.IsOptional ? "Try" : "" ) +
+          ( consume.IsOptional ? "Maybe" : "" ) +
         "Consume(\"" + consume.String + "\");";
     }
 
@@ -286,9 +297,8 @@ using System.Diagnostics;
       Generator.ConsumePattern consume = (Generator.ConsumePattern)action;
 
 
-      return this.GenerateAssignment(action) +
-        "this.source.Consume(Extracting." +
-          this.PascalCase(consume.Property.Entity.Name) + ");";
+      return this.GenerateAssignment(action) + "Consume(Extracting." +
+        this.PascalCase(consume.Property.Entity.Name) + ");";
     }
 
     private string GenerateConsumeEntity(Generator.ParseAction action) {
@@ -311,12 +321,12 @@ using System.Diagnostics;
       // directly
       if(consume.Entity.IsVirtual && consume.Entity.ParseAction is Generator.ConsumePattern) {
         return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
-          "this.source.Consume(Extracting." + this.PascalCase(consume.Entity.Name) + ")";
+          "Consume(Extracting." + this.PascalCase(consume.Entity.Name) + ")";
       }
 
       // simple case, dispatch to Parse<Entity>
       return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
-        "this.Parse" + this.PascalCase(consume.Entity.Name) + 
+        "Parse" + this.PascalCase(consume.Entity.Name) + 
           (withoutExecution ? "" : "()");
     }
 

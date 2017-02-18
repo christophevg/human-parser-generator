@@ -81,7 +81,7 @@ public class Parser {
     this.source = new Parsable(source);
     this.AST    = this.ParseProgram();
     if( ! this.source.IsDone ) {
-      throw this.source.GenerateParseException("Could not parse");
+      throw this.source.GenerateParseException("Could not parse remaining data");
     }
     return this;
   }

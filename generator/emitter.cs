@@ -201,14 +201,42 @@ using System.Diagnostics;
     }
   }
 
-  private void Maybe(string message, Action what) {
+  public class Outcome {
+    public Parser Parser { get; set; }
+    public bool Success { get; set; }
+    public Exception Exception { get; set; }
+
+    public Outcome Or(Action what) {
+      if( ! this.Success ) {
+        return this.Parser.Parse(what);
+      }
+      return this;
+    }
+
+    public Outcome OrThrow(string message) {
+      if( ! this.Success ) {
+        throw new ParseException(message, this.Exception);
+      }
+      return this;
+    }
+  }
+
+  public Outcome Parse(Action what) {
     int pos = this.source.position;
     try {
       what();
-    } catch(ParseException e) {
+    } catch(Exception e) {
       this.source.position = pos;
-      throw this.source.GenerateParseException(message, e);
+      return new Outcome() {
+        Success   = false,
+        Exception = e,
+        Parser    = this
+      };
     }
+    return new Outcome() {
+      Success = true,
+      Parser  = this
+    };
   }
 
   private List<T> Many<T>(Func<T> what) {
@@ -265,8 +293,7 @@ using System.Diagnostics;
           )
         ) + "\n\n" +
         "this.Log( \"Parse" + this.PascalCase(entity.Name) + "\" );\n" +
-        "Maybe( \"Failed to parse " + this.PascalCase(entity.Name) + ".\", " +
-        "() => {\n";
+        "Parse( () => {\n";
     }
 
     private string GenerateParseAction(Generator.ParseAction action) {
@@ -341,20 +368,17 @@ using System.Diagnostics;
       Generator.ConsumeAny consume = (Generator.ConsumeAny)action;
 
       string code = "";
-      string closing = "";
+      bool first = true;
       foreach(var option in consume.Actions) {
         code +=
-          "try {\n" +
+          (first ? "Parse" : ".Or") + "( () => { \n" +
             this.GenerateParseAction(option) + "\n" +
-          "} catch(ParseException) {\n";
-        closing += "}\n";
+          "})\n";
+        first = false;
       }
-      code +=
-        "throw this.source.GenerateParseException(\n" +
-        "  \"Expected: " + consume.Label + "\"\n" +
-        ");\n ";
+      code += ".OrThrow(\"Expected: " + consume.Label + "\");\n ";
 
-      return code + closing;
+      return code;
     }
 
     private string WrapOptional(Generator.ParseAction action, string code) {
@@ -385,7 +409,9 @@ using System.Diagnostics;
     }
 
     private string GenerateEntityParserFooter(Generator.Entity entity) {
-      return "});\n" + this.GenerateEntityParserReturn(entity);
+      return "})." +
+        "OrThrow(\"Failed to parse " + this.PascalCase(entity.Name) + ".\");\n" +
+         this.GenerateEntityParserReturn(entity);
     }
 
     private string GenerateEntityParserReturn(Generator.Entity entity) {

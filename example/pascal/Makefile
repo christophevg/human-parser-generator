@@ -17,7 +17,7 @@ run-manual: manual.exe
 $(GENERATED)/$(PARSER): $(GRAMMAR) $(HPG)
 	@echo "*** generating a Pascal parser from $<"
 	@mkdir -p $(GENERATED)
-	@$(RUN) $(HPG) $< > $@
+	@$(RUN) $(HPG) $< | $(ASTYLE) > $@
 
 diff: $(GENERATED)/$(PARSER)
 	@echo "*** comparing to manual version"

@@ -487,4 +487,4 @@ public Program ParseProgram() {
 }
 ```
 
-Although it violates a few of my personal code style rules, in this case the inner-DSL is dominant and requires as little as possible _normal_ C# code ;-) The first results of this change are nice. I'm now continuing to investe possibilities down this road.
+Although it violates a few of my personal code style rules, in this case the inner-DSL is dominant and requires as little as possible _normal_ C# code ;-) The first results of this change are nice. I'm now continuing to investigate possibilities down this road.

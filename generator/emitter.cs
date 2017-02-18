@@ -180,6 +180,15 @@ using System.Diagnostics;
   private Parsable source;
   public " + this.PascalCase(this.Model.Root.Name) + @" AST { get; set; }
 
+  private void Try(Action what) {
+    int pos = this.source.position;
+    try {
+      what();
+    } catch {
+      this.source.position = pos;
+    }
+  }
+
   public Parser Parse(string source) {
     this.source = new Parsable(source);
     this.AST    = this.Parse" + this.PascalCase(this.Model.Root.Name) + @"();
@@ -322,18 +331,11 @@ using System.Diagnostics;
       return code + closing;
     }
 
-    private static int posIndex = 0;
-
     private string WrapOptional(Generator.ParseAction action, string code) {
       if( ! action.IsOptional )             { return code; }
       if( this.isTryConsumeString(action) ) { return code; }
 
-      string positionName = "pos" + (posIndex++);
-      return 
-        "int " + positionName + " = this.source.position;\n" +
-        "try {\n" + code + "\n} catch(ParseException) {\n" +
-        "this.source.position = " + positionName + ";\n" +
-        "}";
+      return "this.Try( () => {\n" + code + "\n});";
     }
 
     private string GenerateAssignment(Generator.ParseAction action) {

@@ -22,7 +22,7 @@ The project will initially target C#. No other target language is planned at thi
 
 ## Current Status
 
-As of February 18, I tagged the repository `v1.0`. At that point I left that the current code base was capable of the objectives I had set forward at the beginning:
+As of February 18, I tagged the repository `v1.0`. At that point I felt that the current code base was capable of fulfilling the objectives I had set forward at the beginning:
 
 * A trivial example of a small subset of the Pascal language can be parsed.
 * The generator is capable of generating a parser for its own EBNF-like definition language, which means its self-hosting (see also below for more information on this feature). 

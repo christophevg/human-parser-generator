@@ -74,34 +74,35 @@ public class Number : Expression {
 }
 
 public class Parser {
-  private Parsable source;
+  public Parsable Source { get; private set; }
   public Program AST { get; set; }
+  public List<ParseException> Errors = new List<ParseException>();
 
   private bool Consume(string text) {
-    return this.source.Consume(text);
+    return this.Source.Consume(text);
   }
 
   private bool MaybeConsume(string text) {
-    return this.source.TryConsume(text);
+    return this.Source.TryConsume(text);
   }
 
   private  string Consume(Regex pattern) {
-    return this.source.Consume(pattern);
+    return this.Source.Consume(pattern);
   }
 
   private void Maybe(Action what) {
-    int pos = this.source.position;
+    int pos = this.Source.Position;
     try {
       what();
     } catch {
-      this.source.position = pos;
+      this.Source.Position = pos;
     }
   }
 
   public class Outcome {
     public Parser Parser { get; set; }
     public bool Success { get; set; }
-    public Exception Exception { get; set; }
+    public ParseException Exception { get; set; }
 
     public Outcome Or(Action what) {
       if( ! this.Success ) {
@@ -112,22 +113,22 @@ public class Parser {
 
     public Outcome OrThrow(string message) {
       if( ! this.Success ) {
-        throw new ParseException(message, this.Exception);
+        throw this.Parser.Source.GenerateParseException(message);
       }
       return this;
     }
   }
 
   public Outcome Parse(Action what) {
-    int pos = this.source.position;
+    int pos = this.Source.Position;
     try {
       what();
-    } catch(Exception e) {
-      this.source.position = pos;
+    } catch(ParseException e) {
+      this.Source.Position = pos;
       return new Outcome() {
-        Success = false,
+        Success   = false,
         Exception = e,
-        Parser = this
+        Parser    = this
       };
     }
     return new Outcome() {
@@ -141,7 +142,10 @@ public class Parser {
     while(true) {
       try {
         list.Add(what());
-      } catch(ParseException) {
+      } catch(ParseException e) {
+        // add the error to the errors list, because we shadow it
+        // it still might be the best we've got ;-)
+        this.Errors.Add(e);
         break;
       }
     }
@@ -149,10 +153,15 @@ public class Parser {
   }
 
   public Parser Parse(string source) {
-    this.source = new Parsable(source);
-    this.AST    = this.ParseProgram();
-    if( ! this.source.IsDone ) {
-      throw this.source.GenerateParseException("Could not parse remaining data");
+    this.Source = new Parsable(source);
+    try {
+      this.AST = this.ParseProgram();
+    } catch(ParseException e) {
+      this.Errors.Add(e);
+      throw this.Source.GenerateParseException("Failed to parse.");
+    }
+    if( ! this.Source.IsDone ) {
+      throw this.Source.GenerateParseException("Could not parse remaining data.");
     }
     return this;
   }
@@ -244,12 +253,12 @@ public class Parser {
 
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
-    Console.Error.WriteLine("!!! " + msg + " @ " + this.source.Peek(10).Replace('\n', 'n'));
+    Console.Error.WriteLine("!!! " + msg + " @ " + this.Source.Peek(10).Replace('\n', 'n'));
   }
 }
 
 public class Extracting {
   public static Regex Identifier = new Regex(@"^([A-Z][A-Z0-9]*)");
-  public static Regex String = new Regex(@"^""([^""]*)""|'([^']*)'");
-  public static Regex Number = new Regex(@"^(-?[1-9][0-9]*)");
+  public static Regex String     = new Regex(@"^""([^""]*)""|'([^']*)'");
+  public static Regex Number     = new Regex(@"^(-?[1-9][0-9]*)");
 }

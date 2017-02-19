@@ -10,8 +10,18 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using System.Linq;
 
 public class ParseException : System.Exception {
+  public int Position     { get; set; }
+  public int Line         { get; set; }
+  public int LinePosition { get; set; }
+  public int MaxPosition  {
+    get {
+      return (this.InnerException != null) ?
+        ((ParseException)this.InnerException).MaxPosition : this.Position;
+    }
+  }
   public ParseException() : base() { }
   public ParseException(string message) : base(message) { }
   public ParseException(string message, System.Exception inner) : base(message, inner) { }
@@ -20,15 +30,54 @@ public class ParseException : System.Exception {
 public class Parsable {
 
   // the parsable text
-  private string text = "";
+  private string _text;
+  private string text {
+    set {
+      this._text = value;
+      // keep list of cummulative line-lengths for easy mapping position to line
+      int sum = 0;
+      foreach(var line in value.Split('\n')) {
+        sum += line.Length + 1;
+        this.lines.Add(new Tuple<string,int>(line, sum));
+      }
+    }
+    get {
+      return this._text;
+    }
+  }
 
-  public int position { get; set; }
+  private List<Tuple<string,int>> lines = new List<Tuple<string,int>>();
+
+  public int Position { get; set; }
+
+  public int Line {
+    get { return this.LineOf(this.Position); }
+  }
+
+  public int LinePosition {
+    get {
+      return this.Position -
+        (this.Line > 0 ? this.lines[this.Line - 1].Item2 : 0);
+    }
+  }
+
+  public int LineOf(int position) {
+    var index = this.lines.Select(x => x.Item2).ToList().BinarySearch(position);
+    if(index < 0 ) {      // the position wasn't found, e.g. not start of line
+      index = ~index;
+    }
+    return index;
+  }
+
+  public string this[int index] {
+    get {
+      return this.lines[index].Item1;
+    }
+  }
 
   // returns the part of the text that still needs parsing
   private string head {
-    get {
-      return this.text.Substring(this.position);
-    }
+    get { return this.text.Substring(this.Position); }
   }
   
   // helper Regular Expressions for general clean-up
@@ -43,12 +92,6 @@ public class Parsable {
     this.text = text;
   }
 
-  public string Context {
-    get {
-      return "position " + this.position.ToString() + "\n..X\n  " + (this.Peek(80).Trim() + " [...]");
-    }
-  }
-
   // skips any whitespace at the start of the current text buffer
   public void SkipLeadingWhitespace() {
     while(Parsable.leadingWhitespace.Match(this.head).Success) {
@@ -61,9 +104,7 @@ public class Parsable {
     this.SkipLeadingWhitespace();
     if(! this.head.StartsWith(text) ) {
       this.Log("Consume(" + text + ") FAILED");
-      throw new ParseException(
-        "could not consume '" + text + "' at " + this.Context
-      );
+      throw this.GenerateParseException( "Expected '" + text + "'" );
     }
     // do actual consumption
     this.Log("Consume(" + text + ") SUCCESS");
@@ -71,11 +112,11 @@ public class Parsable {
   }
 
   public bool TryConsume(string text) {
-    int pos = this.position;   // begin
+    int pos = this.Position;   // begin
     try {
       this.Consume(text);
     } catch(ParseException) {
-      this.position = pos;     // rollback
+      this.Position = pos;     // rollback
       return false;
     }
     return true;               // commit
@@ -91,7 +132,7 @@ public class Parsable {
       // we "re-add" what is marked "to-keep"
       // TODO make more generic, for now, we rewind the length, expecting keep
       //      to be at the end
-      this.position -= m.Groups["keep"].Length;
+      this.Position -= m.Groups["keep"].Length;
       // temp solution for regexps with two groups of which only one "captures"
       try {
         return m.Groups[1].Value; // only selected part
@@ -101,22 +142,35 @@ public class Parsable {
     } else {
       this.Log("Consume(" + pattern.ToString() + ") FAILED ");
     }
-    throw new ParseException( "could not consume pattern " + pattern.ToString() + " at " + this.Context );    
+    throw this.GenerateParseException( "Expected '" + pattern.ToString() + "'" );
   }
 
   // returns an amount of characters, without consuming, not trimming!
-  public string Peek(int amount) {
-    return this.head.Substring(0, Math.Min(amount, this.head.Length));
+  public string Peek(int amount, int start=0) {
+    return this.head.Substring(start, Math.Min(amount, this.head.Length));
+  }
+
+  // returns lines that cover [start,end] positions in the source
+  public List<string> Context(int start, int end) {
+    start = this.LineOf(start);
+    end   = this.LineOf(end);
+    Console.Error.WriteLine(start + " " + end);
+    return this.lines.Select(x=>x.Item1).ToList().GetRange(start, end-start+1);
   }
 
   public ParseException GenerateParseException(string message, Exception inner=null) {
-    return new ParseException( message + " at " + this.Context, inner );
+    // Console.Error.WriteLine("ParseException: " + message + " at " + this.Line + "/" + this.LinePosition + " " + this.Position);
+    return new ParseException(message, inner ) {
+      Position     = this.Position,
+      Line         = this.Line,
+      LinePosition = this.LinePosition
+    };
   }
 
   public bool IsDone {
     get {
       this.SkipLeadingWhitespace();
-      return this.position == this.text.Length;
+      return this.Position == this.text.Length;
     }
   }
 
@@ -130,13 +184,13 @@ public class Parsable {
     string consumed = this.head.Substring(0, amount);
 
     // drop
-    this.position += amount;
+    this.Position += amount;
 
     return consumed;
   }
   
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
-    Console.Error.WriteLine("!!! " + msg + " @ " + this.Context);
+    Console.Error.WriteLine("!!! " + msg + " @ " + this.Position);
   }
 }

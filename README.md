@@ -488,3 +488,21 @@ public Program ParseProgram() {
 ```
 
 Although it violates a few of my personal code style rules, in this case the inner-DSL is dominant and requires as little as possible _normal_ C# code ;-) The first results of this change are nice. I'm now continuing to investigate possibilities down this road.
+
+### Error Reporting
+
+Another aspect I'm working on is to improve the Error Reporting. Currently the new code is already a lot more expressive. A few examples:
+
+```
+Parsing failed, best effort parser error:
+Failed to parse Assignment. at line 6/7
+7 : D123:=B34A .
+────╯
+```
+
+```
+Parsing failed, best effort parser error:
+Failed to parse Option. at line 3/70
+3 : 10 LL-VELD                             PIC S9(04) COMP-5    ;           
+────────────────────────────────────────────────────────────╯
+```

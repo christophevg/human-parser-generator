@@ -333,7 +333,7 @@ public Parser Parse(string source) {
 
     private string GenerateEntityParserFooter(Generator.Entity entity) {
       return "})." +
-        "OrThrow(\"Failed to parse " + this.PascalCase(entity.Name) + ".\");\n" +
+        "OrThrow(\"Failed to parse " + this.PascalCase(entity.Name) + "\");\n" +
          this.GenerateEntityParserReturn(entity);
     }
 

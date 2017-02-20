@@ -99,7 +99,7 @@ public class Parser : ParserBase {
       Consume("BEGIN");
       assignments = Many<Assignment>(ParseAssignment);
       Consume("END.");
-    }).OrThrow("Failed to parse Program.");
+    }).OrThrow("Failed to parse Program");
     return new Program() {
       Identifier = identifier,
       Assignments = assignments
@@ -115,7 +115,7 @@ public class Parser : ParserBase {
       Consume(":=");
       expression = ParseExpression();
       Consume(";");
-    }).OrThrow("Failed to parse Assignment.");
+    }).OrThrow("Failed to parse Assignment");
     return new Assignment() {
       Identifier = identifier,
       Expression = expression
@@ -136,7 +136,7 @@ public class Parser : ParserBase {
         alternative = ParseNumber();
       })
       .OrThrow("Expected: identifier | string | number");
-    }).OrThrow("Failed to parse Expression.");
+    }).OrThrow("Failed to parse Expression");
     return alternative;
   }
 
@@ -145,7 +145,7 @@ public class Parser : ParserBase {
     this.Log( "ParseIdentifier" );
     Parse( () => {
       name = Consume(Extracting.Identifier);
-    }).OrThrow("Failed to parse Identifier.");
+    }).OrThrow("Failed to parse Identifier");
     return new Identifier() {
       Name = name
     };
@@ -156,7 +156,7 @@ public class Parser : ParserBase {
     this.Log( "ParseString" );
     Parse( () => {
       text = Consume(Extracting.String);
-    }).OrThrow("Failed to parse String.");
+    }).OrThrow("Failed to parse String");
     return new String() {
       Text = text
     };
@@ -167,7 +167,7 @@ public class Parser : ParserBase {
     this.Log( "ParseNumber" );
     Parse( () => {
       value = Consume(Extracting.Number);
-    }).OrThrow("Failed to parse Number.");
+    }).OrThrow("Failed to parse Number");
     return new Number() {
       Value = value
     };

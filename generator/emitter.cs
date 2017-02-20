@@ -59,7 +59,7 @@ using System.Diagnostics;
     }
 
     private string GenerateEntity(Generator.Entity entity) {
-      return string.Join( "\n",
+      return string.Join( "",
         new List<string>() {
           this.GenerateSignature(entity),
           this.GenerateProperties(entity),
@@ -84,7 +84,7 @@ using System.Diagnostics;
 
     private string GenerateProperties(Generator.Entity entity) {
       if(entity.IsVirtual) { return null; }
-      return string.Join("\n",
+      return "\n" + string.Join("\n",
         entity.Properties.Select(x => this.GenerateProperty(x))
       );
     }
@@ -114,7 +114,7 @@ using System.Diagnostics;
     private string GenerateConstructor(Generator.Entity entity) {
       if(entity.IsVirtual) { return null; }
       if( ! entity.HasPluralProperty() ) { return null; }
-      return "  public " + this.PascalCase(entity.Name) + "() {\n" +
+      return "\n  public " + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
           entity.Properties.Where(x => x.IsPlural).Select(x => 
             "    this." + this.PascalCase(this.GeneratePropertyName(x)) + " = new " + 
@@ -126,14 +126,14 @@ using System.Diagnostics;
 
     private string GenerateToString(Generator.Entity entity) {
       if(entity.IsVirtual) { return null; }
-      return "  public override string ToString() {\n" +
+      return "\n  public override string ToString() {\n" +
         "    return\n" +
         "      \"" + this.PascalCase(entity.Name) + "(\" +\n" + 
         string.Join(" + \",\" +\n",
           entity.Properties.Select(x => this.GenerateToString(x))
         ) + ( entity.Properties.Count > 0 ? " + \n" : "" ) +
         "      \")\";\n" +
-        "  }";
+        "  }\n";
     }
 
     private string GenerateToString(Generator.Property property) {
@@ -167,98 +167,21 @@ using System.Diagnostics;
     }
 
     private string GenerateParserHeader() {
-      return @"public class Parser {
-  public Parsable Source { get; private set; }
-  public " + this.PascalCase(this.Model.Root.Name) + @" AST { get; set; }
-  public List<ParseException> Errors = new List<ParseException>();
-
-  private bool Consume(string text) {
-    return this.Source.Consume(text);
+      return @"public class Parser : ParserBase {
+public " + this.PascalCase(this.Model.Root.Name) + @" AST { get; set; }
+public Parser Parse(string source) {
+  this.Source = new Parsable(source);
+  try {
+    this.AST    = this.Parse" + this.PascalCase(this.Model.Root.Name) + @"();
+  } catch(ParseException e) {
+    this.Errors.Add(e);
+    throw this.Source.GenerateParseException(""Failed to parse."");
   }
-
-  private bool MaybeConsume(string text) {
-    return this.Source.TryConsume(text);
+  if( ! this.Source.IsDone ) {
+    throw this.Source.GenerateParseException(""Could not parse remaining data."");
   }
-
-  private  string Consume(Regex pattern) {
-    return this.Source.Consume(pattern);
-  }
-
-  private void Maybe(Action what) {
-    int pos = this.Source.Position;
-    try {
-      what();
-    } catch {
-      this.Source.Position = pos;
-    }
-  }
-
-  public class Outcome {
-    public Parser Parser { get; set; }
-    public bool Success { get; set; }
-    public ParseException Exception { get; set; }
-
-    public Outcome Or(Action what) {
-      if( ! this.Success ) {
-        return this.Parser.Parse(what);
-      }
-      return this;
-    }
-
-    public Outcome OrThrow(string message) {
-      if( ! this.Success ) {
-        throw this.Parser.Source.GenerateParseException(message);
-      }
-      return this;
-    }
-  }
-
-  public Outcome Parse(Action what) {
-    int pos = this.Source.Position;
-    try {
-      what();
-    } catch(ParseException e) {
-      this.Source.Position = pos;
-      return new Outcome() {
-        Success   = false,
-        Exception = e,
-        Parser    = this
-      };
-    }
-    return new Outcome() {
-      Success = true,
-      Parser  = this
-    };
-  }
-
-  private List<T> Many<T>(Func<T> what) {
-    List<T> list = new List<T>();
-    while(true) {
-      try {
-        list.Add(what());
-      } catch(ParseException e) {
-        // add the error to the errors list, because we shadow it
-        // it still might be the best we've got ;-)
-        this.Errors.Add(e);
-        break;
-      }
-    }
-    return list;
-  }
-
-  public Parser Parse(string source) {
-    this.Source = new Parsable(source);
-    try {
-      this.AST    = this.Parse" + this.PascalCase(this.Model.Root.Name) + @"();
-    } catch(ParseException e) {
-      this.Errors.Add(e);
-      throw this.Source.GenerateParseException(""Failed to parse."");
-    }
-    if( ! this.Source.IsDone ) {
-      throw this.Source.GenerateParseException(""Could not parse remaining data."");
-    }
-    return this;
-  }";
+  return this;
+}";
     }
   
     private string GenerateEntityParsers() {

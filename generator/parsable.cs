@@ -194,3 +194,82 @@ public class Parsable {
     Console.Error.WriteLine("!!! " + msg + " @ " + this.Position);
   }
 }
+
+public abstract class ParserBase {
+  public Parsable Source { get; protected set; }
+  public List<ParseException> Errors = new List<ParseException>();
+
+  protected bool Consume(string text) {
+    return this.Source.Consume(text);
+  }
+
+  protected bool MaybeConsume(string text) {
+    return this.Source.TryConsume(text);
+  }
+
+  protected string Consume(Regex pattern) {
+    return this.Source.Consume(pattern);
+  }
+
+  protected void Maybe(Action what) {
+    int pos = this.Source.Position;
+    try {
+      what();
+    } catch {
+      this.Source.Position = pos;
+    }
+  }
+
+  public class Outcome {
+    public ParserBase Parser { get; set; }
+    public bool Success { get; set; }
+    public ParseException Exception { get; set; }
+
+    public Outcome Or(Action what) {
+      if( ! this.Success ) {
+        return this.Parser.Parse(what);
+      }
+      return this;
+    }
+
+    public Outcome OrThrow(string message) {
+      if( ! this.Success ) {
+        throw this.Parser.Source.GenerateParseException(message);
+      }
+      return this;
+    }
+  }
+
+  public Outcome Parse(Action what) {
+    int pos = this.Source.Position;
+    try {
+      what();
+    } catch(ParseException e) {
+      this.Source.Position = pos;
+      return new Outcome() {
+        Success   = false,
+        Exception = e,
+        Parser    = this
+      };
+    }
+    return new Outcome() {
+      Success = true,
+      Parser  = this
+    };
+  }
+
+  protected List<T> Many<T>(Func<T> what) {
+    List<T> list = new List<T>();
+    while(true) {
+      try {
+        list.Add(what());
+      } catch(ParseException e) {
+        // add the error to the errors list, because we shadow it
+        // it still might be the best we've got ;-)
+        this.Errors.Add(e);
+        break;
+      }
+    }
+    return list;
+  }
+}

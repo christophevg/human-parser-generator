@@ -28,6 +28,8 @@ namespace HumanParserGenerator {
     enum Format { Text, Dot };
     private Format format = Format.Text;
 
+    private bool         emitInfo = true;
+    private List<string> sources  = new List<string>();
 
     // argument processing
 
@@ -63,6 +65,7 @@ namespace HumanParserGenerator {
           { "-m",       this.OutputModel  }, { "--model",  this.OutputModel  },
           { "-t",       this.FormatText   }, { "--text",   this.FormatText   },
           { "-d",       this.FormatDot    }, { "--dot",    this.FormatDot    },
+          { "-i",       this.SuppressInfo }, { "--info",   this.SuppressInfo }
         }[option]();
       } catch(KeyNotFoundException) {}
 
@@ -74,6 +77,7 @@ namespace HumanParserGenerator {
         return this.Fail("Unknown file: " + file);
       }
       input += System.IO.File.ReadAllText(file);
+      this.sources.Add(file);
       return true;
     }
 
@@ -95,14 +99,17 @@ namespace HumanParserGenerator {
       Console.WriteLine("Formatting options.");
       Console.WriteLine("    --text, -t              Generate textual output (DEFAULT).");
       Console.WriteLine("    --dot, -d               Generate Graphviz/Dot format output. (model)");
+      Console.WriteLine("Emission options.");
+      Console.WriteLine("    --info, -i              Suppress generation of info header");
       return false;
     }
 
-    private bool OutputParser(){ this.output = Output.Parser; return true; }
-    private bool OutputAST()   { this.output = Output.AST;    return true; }
-    private bool OutputModel() { this.output = Output.Model;  return true; }
-    private bool FormatText()  { this.format = Format.Text;   return true; }
-    private bool FormatDot()   { this.format = Format.Dot;    return true; }
+    private bool OutputParser() { this.output = Output.Parser; return true; }
+    private bool OutputAST()    { this.output = Output.AST;    return true; }
+    private bool OutputModel()  { this.output = Output.Model;  return true; }
+    private bool FormatText()   { this.format = Format.Text;   return true; }
+    private bool FormatDot()    { this.format = Format.Dot;    return true; }
+    private bool SuppressInfo() { this.emitInfo = false;       return true; }
 
     // Generation of Model and Parser
 
@@ -130,7 +137,11 @@ namespace HumanParserGenerator {
       }
 
       // Generator/Parser Model -> CSharp code
-      Emitter.CSharp code = new Emitter.CSharp().Generate(model);
+      Emitter.CSharp code = new Emitter.CSharp() {
+        EmitInfo = this.emitInfo,
+        Sources  = this.sources
+      }
+      .Generate(model);
 
       Console.WriteLine(code.ToString());
     }

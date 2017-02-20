@@ -51,4 +51,4 @@ parse: $(HPG)
 	@$(RUN) $< -m | $(FORMATTER)
 
 clean:
-	@rm -rf $(HPG) $(GEN1PARSER) $(PARSER)
+	@rm -rf $(HPG) $(GEN1PARSER) $(PARSER) *.mdb

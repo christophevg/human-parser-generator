@@ -33,3 +33,7 @@
 - replace Make by xbuild
 
 - check building in Windows environment
+
+- create bit-parsable support
+
+- add DDL Parser as example

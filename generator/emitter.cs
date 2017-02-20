@@ -59,12 +59,6 @@ using System.Diagnostics;
     }
 
     private string GenerateEntity(Generator.Entity entity) {
-      return entity.IsVirtual ?
-        this.GenerateVirtualEntity(entity) :
-        this.GenerateRealEntity(entity);
-    }
-
-    private string GenerateRealEntity(Generator.Entity entity) {
       return string.Join( "\n",
         new List<string>() {
           this.GenerateSignature(entity),
@@ -74,12 +68,6 @@ using System.Diagnostics;
           this.GenerateFooter(entity)
         }.Where(x => x != null)
       );
-    }
-
-    private string GenerateVirtualEntity(Generator.Entity entity) {
-      return
-        this.GenerateSignature(entity) +
-        this.GenerateFooter(entity);
     }
 
     private string GenerateSignature(Generator.Entity entity) {
@@ -95,6 +83,7 @@ using System.Diagnostics;
     }
 
     private string GenerateProperties(Generator.Entity entity) {
+      if(entity.IsVirtual) { return null; }
       return string.Join("\n",
         entity.Properties.Select(x => this.GenerateProperty(x))
       );
@@ -123,6 +112,7 @@ using System.Diagnostics;
     }
 
     private string GenerateConstructor(Generator.Entity entity) {
+      if(entity.IsVirtual) { return null; }
       if( ! entity.HasPluralProperty() ) { return null; }
       return "  public " + this.PascalCase(entity.Name) + "() {\n" +
         string.Join("\n",
@@ -135,6 +125,7 @@ using System.Diagnostics;
     }
 
     private string GenerateToString(Generator.Entity entity) {
+      if(entity.IsVirtual) { return null; }
       return "  public override string ToString() {\n" +
         "    return\n" +
         "      \"" + this.PascalCase(entity.Name) + "(\" +\n" + 

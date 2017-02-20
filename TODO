@@ -1,11 +1,12 @@
-- improve generation of source rollback integers
-  - remove redundant {} around position tracking
+- check if besides OrThrow another Thrower is needed to include more context
 
-- replace PascalCase and CamelCase by function names: e.g. GenerateClassName(Entity)
+- more error reporting to parser
+
+- replace PascalCase and CamelCase by function names:
+  e.g. GenerateClassName(Entity)
 
 - Parser:
   - while parsing, check existence of identifier in identifier-expression (constr)
-  - add header to generated files
 
 - hpg: command line switches:
   - n(amespace) : generate namespace

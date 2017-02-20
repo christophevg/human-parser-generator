@@ -365,6 +365,9 @@ Select one of the following:
 Formatting options.
     --text, -t              Generate textual output (DEFAULT).
     --dot, -d               Generate Graphviz/Dot format output. (model)
+Emission options.
+    --info, -i              Suppress generation of info header
+    --namespace, -n NAME    Embed parser in namespace
 ```
 
 Providing it with an EBNF-like language definition, will simple generate a corresponding parser to standard output:

@@ -1,0 +1,9 @@
+config       ::= { section } ;
+section      ::= "[" name @ identifier "]" { setting } ;
+setting      ::= key @ identifier ":" value ;
+value        ::= string
+               | number
+               ;
+identifier   ::= name  @ /([A-Za-z][A-Za-z0-9]*)/ ;
+string       ::= text  @ /"([^"]*)"|'([^']*)'/ ;
+number       ::= value @ /(-?[1-9][0-9]*)/ ;

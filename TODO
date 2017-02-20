@@ -35,8 +35,6 @@
 - generate comments
   - rules in front of Parse<Entity> methods
 
-- add license
-
 - replace Make by xbuild
 
 - check building in Windows environment

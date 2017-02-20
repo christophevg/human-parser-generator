@@ -179,3 +179,5 @@ public class Extracting {
   public static Regex String     = new Regex(@"^""([^""]*)""|'([^']*)'");
   public static Regex Number     = new Regex(@"^(-?[1-9][0-9]*)");
 }
+
+

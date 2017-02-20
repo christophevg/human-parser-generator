@@ -13,8 +13,9 @@ namespace HumanParserGenerator.Emitter {
   
   public class CSharp {
     
-    public bool         EmitInfo { get; set; }
-    public List<string> Sources  { get; set; }
+    public bool         EmitInfo  { get; set; }
+    public List<string> Sources   { get; set; }
+    public string       Namespace { get; set; }
 
     private Generator.Model Model;
 
@@ -30,9 +31,11 @@ namespace HumanParserGenerator.Emitter {
         new List<string>() { 
           this.GenerateHeader(),
           this.GenerateReferences(),
+          this.GenerateNamespace(),
           this.GenerateEntities(),
           this.GenerateParsers(),
-          this.GenerateExtracting()
+          this.GenerateExtracting(),
+          this.GenerateFooter()
         }.Where(x => x != null)
       );
     }
@@ -63,6 +66,11 @@ using System.Diagnostics;
 ";
     }
 
+    private string GenerateNamespace() {
+      if(this.Namespace == null) { return null; }
+      return "namespace " + this.Namespace + " {";
+    }
+
     private string GenerateEntities() {
       return string.Join( "\n\n",
         this.Model.Entities.Select(x => this.GenerateEntity(x))
@@ -76,7 +84,7 @@ using System.Diagnostics;
           this.GenerateProperties(entity),
           this.GenerateConstructor(entity),
           this.GenerateToString(entity),
-          this.GenerateFooter(entity)
+          this.GenerateEntityFooter(entity)
         }.Where(x => x != null)
       );
     }
@@ -163,7 +171,7 @@ using System.Diagnostics;
       }
     }
 
-    private string GenerateFooter(Generator.Entity entity) {
+    private string GenerateEntityFooter(Generator.Entity entity) {
       return "}";
     }
 
@@ -399,6 +407,12 @@ public Parser Parse(string source) {
     Console.Error.WriteLine(""!!! "" + msg + "" @ "" + this.Source.Peek(10).Replace('\n', 'n'));
   }
 }";
+    }
+    
+    private string GenerateFooter() {
+      string footer = "";
+      footer += this.Namespace == null ? "" : "}";
+      return footer;
     }
 
     // function to make sure that Properties don't have the same name as their

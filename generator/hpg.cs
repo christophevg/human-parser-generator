@@ -28,18 +28,28 @@ namespace HumanParserGenerator {
     enum Format { Text, Dot };
     private Format format = Format.Text;
 
-    private bool         emitInfo = true;
-    private List<string> sources  = new List<string>();
+    private bool         emitInfo      = true;
+    private List<string> sources       = new List<string>();
+    private string       emitNamespace = null;
 
     // argument processing
-
+    
     private HPG(string[] args) {
-      foreach(string arg in args) {
-        if(arg.StartsWith("-")) {
-          if( ! this.ProcessOption(arg) ) { return; }
+      int i=0;
+      while( i < args.Length ) {
+        if(args[i].StartsWith("-")) {
+          if( this.HasArgument(args[i]) ) {
+            if( i+1 < args.Length ) {
+              this.ProcessOption(args[i], args[i+1]);
+              i++;
+            } else { return; }
+          } else {
+            if( ! this.ProcessOption(args[i]) ) { return; }
+          }
         } else {
-          if( ! this.ProcessFile(arg) ) { return; }
+          if( ! this.ProcessFile(args[i]) ) { return; }
         }
+        i++;
       }
 
       // no file-based input? => try stdin
@@ -55,8 +65,13 @@ namespace HumanParserGenerator {
       }
     }
     
+    private bool HasArgument(string option) {
+      return new List<string>() {
+        "-n", "--namespace"
+      }.Contains(option);
+    }
+
     private bool ProcessOption(string option) {
-      // try switches first
       try {
         return new Dictionary<string, Func<bool>>() {
           { "-h",       this.ShowHelp     }, { "--help",   this.ShowHelp     },
@@ -70,6 +85,16 @@ namespace HumanParserGenerator {
       } catch(KeyNotFoundException) {}
 
       return this.Fail("Unknown option: " + option);
+    }
+
+    private bool ProcessOption(string option, string arg) {
+      try {
+        return new Dictionary<string, Func<string,bool>>() {
+          { "-n",  this.UseNamespace }, { "--namespace", this.UseNamespace }
+        }[option](arg);
+      } catch(KeyNotFoundException) {}
+
+      return this.Fail("Unknown option: " + option);      
     }
     
     private bool ProcessFile(string file) {
@@ -101,6 +126,7 @@ namespace HumanParserGenerator {
       Console.WriteLine("    --dot, -d               Generate Graphviz/Dot format output. (model)");
       Console.WriteLine("Emission options.");
       Console.WriteLine("    --info, -i              Suppress generation of info header");
+      Console.WriteLine("    --namespace, -n NAME    Embed parser in namespace");
       return false;
     }
 
@@ -110,6 +136,10 @@ namespace HumanParserGenerator {
     private bool FormatText()   { this.format = Format.Text;   return true; }
     private bool FormatDot()    { this.format = Format.Dot;    return true; }
     private bool SuppressInfo() { this.emitInfo = false;       return true; }
+    private bool UseNamespace(string name) {
+      this.emitNamespace = name;
+      return true;
+    }
 
     // Generation of Model and Parser
 
@@ -138,8 +168,9 @@ namespace HumanParserGenerator {
 
       // Generator/Parser Model -> CSharp code
       Emitter.CSharp code = new Emitter.CSharp() {
-        EmitInfo = this.emitInfo,
-        Sources  = this.sources
+        EmitInfo  = this.emitInfo,
+        Namespace = this.emitNamespace,
+        Sources   = this.sources
       }
       .Generate(model);
 

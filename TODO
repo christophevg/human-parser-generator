@@ -13,11 +13,6 @@
 
 - setup building of standalone hpg executable at top-level
 
-- improve top-level error reporting
-  - include entire stack of exceptions
-  - interprete and format nicely
-  - add position/line numbers, improve excerpt, cfr unit results
-
 - don't generate interfaces for extractors
 - collect "inline extractors", add to Extracting class
 
@@ -38,6 +33,3 @@
 - replace Make by xbuild
 
 - check building in Windows environment
-
-- add Parsable.CanConsume -> bool
-  -> directly into Has<Entity>

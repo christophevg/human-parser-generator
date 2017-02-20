@@ -26,11 +26,12 @@ As of February 18, I tagged the repository `v1.0`. At that point I felt that the
 
 * A trivial example of a small subset of the Pascal language can be parsed.
 * The generator is capable of generating a parser for its own EBNF-like definition language, which means its self-hosting (see also below for more information on this feature). 
-* A parser for a more complex grammar for Cobol record definitions (aka Copybooks) is capable of parsing a set of example Copybooks and outputs an nice corresponding parser.
+* A parser for a more complex grammar for Cobol record definitions (aka Copybooks) is capable of parsing a set of example Copybooks and outputs a nice corresponding parser.
 
 Since then I've started working on improving things that didn't turn out the way I wanted or expected:
 
 * The emitted generator became less _human_ with more complex grammars, such as the one for Cobol Copybooks. Especially the nested `try { ... } catch { ... }` blocks were no longer nice on the eye and hard to read. So I started implementing an inner-DSL. See below for more info.
+* Error reporting was not so "useful". Towards `v1.1` I'm aiming for much improved error reporting. See below for more info.
 
 ## Example
 
@@ -99,7 +100,7 @@ The extensions that are applied are:
 * spaces in rule names (left hand side) are not allowed (e.g. use dashes)
 * ignoring whitespace, removing the need for explicit whitespace description
 * definition of "extracting terminals" using regular expressions
-* introduction of implicit "virtual" entities, which don't show up in the AST (`expression` is an example)
+* introduction of _implicit_ "virtual" entities, which don't show up in the AST (`expression` is an example)
 
 ## Demos
 
@@ -107,7 +108,7 @@ A few demos show the capabilities and results of the generated parsers.
 
 ### Pascal
 
-In the [`example/pascal`](example/pascal) folder I've started by writing a manual implementation [`pascal.cs`](example/pascal/pascal.cs), taking into account how I think this could be generated. The output of the example program, parses the example Pascal file and outputs an AST-like structure:
+In the [`example/pascal`](example/pascal) folder I've started by writing a manual implementation for the embryonal Pascal example, [`pascal.cs`](example/pascal/pascal.cs), taking into account how I think this could be generated. The output of the example program, parses the example Pascal file and outputs an AST-like structure.
 
 ```bash
 $ cd example/pascal
@@ -305,14 +306,16 @@ terminal-expression       ::= identifier-expression
                             | extractor-expression
                             ;
 
-identifier-expression     ::= identifier ;
-string-expression         ::= string ;
+identifier-expression     ::= [ name ] identifier ;
+string-expression         ::= [ name ] string;
 
-extractor-expression      ::= "/" regex "/" ;
+extractor-expression      ::= [ name ] "/" pattern "/" ;
 
-identifier                ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
+name                      ::= identifier "@" ;
+
+identifier                ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
 string                    ::= /"([^"]*)"|^'([^']*)'/ ;
-regex                     ::= /(.*?)(?<keep>/\s*;)/ ;
+pattern                   ::= /(.*?)(?<keep>/\s*;)/ ;
 ```
 
 To bootstrap the generator, to allow it to generate a parser for the EBNF-like definition language, a grammar modelled by hand is used. It is located in `generator/grammar.cs` in the `AsModel` class, retrievable via the `BNF` property.
@@ -346,7 +349,7 @@ $ make
 *** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
 ```
 
-This compiles a second generation generator, called `hpg.exe`:
+This compiles a second generation parser generator, called `hpg.exe`:
 
 ```bash
 $ mono hpg.exe --help
@@ -427,7 +430,7 @@ Tests run: 24, Failures: 0, Not run: 0, Time: 0.262 seconds
 
 > The unit tests hardly cover the basics of the source tree, but the goal is to have a comprehensive set, covering all possibilities. The unit tests will be the driving force for the continued development :-)
 
-### An inner-parsing-DSL
+### An inner-(parsing)-DSL
 
 After `v1.0` I decided to improve the generated parsers, especially for more complex grammars. A few wrapper functions later this _old_ code
 
@@ -491,7 +494,7 @@ Although it violates a few of my personal code style rules, in this case the inn
 
 ### Error Reporting
 
-Another aspect I'm working on is to improve the Error Reporting. Currently the new code is already a lot more expressive. A few examples:
+Another aspect I'm working on is improving the Error Reporting. Currently the new code is already a lot more expressive. A few examples:
 
 ```
 Parsing failed, best effort parser error:

@@ -25,6 +25,11 @@ public class ParseException : System.Exception {
   public ParseException() : base() { }
   public ParseException(string message) : base(message) { }
   public ParseException(string message, System.Exception inner) : base(message, inner) { }
+
+  public override string ToString() {
+    return this.Message +
+      " at line " + (this.Line + 1) + "/" + (this.LinePosition + 1);
+  }
 }
 
 public class Parsable {
@@ -271,5 +276,57 @@ public abstract class ParserBase {
       }
     }
     return list;
+  }
+
+  public string AllErrorsToString() {
+    string report = "";
+    foreach(ParseException error in this.Errors) {
+      var e = error;
+      var indent = "";
+      while(e!=null) {
+        report += indent + e.Message +
+          " at line " + e.Line + "/" + e.LinePosition +
+          " (" + e.Position + ")";
+        indent += "  ";
+        e = e.InnerException as ParseException;
+      }
+    }
+    return report;
+  }
+
+  public string BestErrorToString() {
+    string report = "";
+    // find best top-level exception, the one that parsed the farest
+    var best = this.Errors.OrderByDescending(x => x.MaxPosition).First();
+    // recurse down the exception tree down to the lowest detail
+    report = best.ToString() + "\n";
+    var indent = "";
+    while(best.InnerException != null) {
+      indent += "  ";
+      best = best.InnerException as ParseException;
+      report += indent + best.ToString() + "\n";
+    }
+    // dump relevant part of source
+    var lineIndex    = best.Line;
+    var line         = this.Source[lineIndex];
+    var trimmedLine  = line.TrimStart();
+    var trimmed      = line.Length - trimmedLine.Length;
+    var linePosition = best.LinePosition - trimmed;
+
+    // when positioned at the last char of a line (e.g. \n), show error at
+    // beginning of next line
+    if(linePosition >= trimmedLine.Length) {
+      lineIndex++;
+      line = this.Source[lineIndex];
+      trimmedLine  = line.TrimStart();
+      linePosition = 0;
+    }
+
+    report += (lineIndex + 1) + " : " + trimmedLine + "\n";
+    report += new System.String(
+        '\u2500', 3 + (lineIndex + 1).ToString().Length + linePosition
+      ) + "\u256f";
+    
+    return report;
   }
 }

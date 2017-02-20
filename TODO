@@ -1,7 +1,5 @@
 - check if besides OrThrow another Thrower is needed to include more context
 
-- more error reporting to parser
-
 - replace PascalCase and CamelCase by function names:
   e.g. GenerateClassName(Entity)
 

@@ -442,15 +442,20 @@ public Parser Parse(string source) {
       return x.First().ToString().ToLower() + x.Substring(1);
     }
 
-    private void Warn(string msg) {
-      Console.Error.WriteLine("~~~ C# Emitter Warning: " + msg);
-    }
-
     private string PluralSuffix(Generator.Property property) {
       if(! property.IsPlural ) { return ""; }
       if( property.Name.EndsWith("x") ) { return "es"; }
       return "s";
     }
 
+    // logging functionality
+
+    private void Warn(string msg) {
+      this.Log("warning: " + msg);
+    }
+
+    private void Log(string msg) {
+      Console.Error.WriteLine("hpg-emitter: " + msg);
+    }
   }
 }

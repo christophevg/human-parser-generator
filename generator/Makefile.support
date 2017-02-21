@@ -36,6 +36,10 @@ grammar-model: $(HPG)
 
 model-dot: $(HPG)
 	@echo "*** generating visual model diagram"
+	@$(RUN) $(HPG) -m -d $(GRAMMAR) > $(GRAMMAR).dot
+
+model-png: $(HPG)
+	@echo "*** generating visual model diagram"
 	@$(RUN) $(HPG) -m -d $(GRAMMAR) | $(DOT) $(GRAMMAR).png
 else
 grammar-model:

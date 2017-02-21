@@ -31,7 +31,12 @@ public class AsModel {
           Expression = new SequentialExpression() {
             NonSequentialExpression = new IdentifierExpression() { Identifier = "identifier" },
             Expression              = new SequentialExpression() {
-              NonSequentialExpression = new StringExpression() { String = "::=" },
+              NonSequentialExpression = new GroupExpression() {
+                Expression = new AlternativesExpression() {
+                  AtomicExpression        = new StringExpression() { Name = "_", String = "::=" },
+                  NonSequentialExpression = new StringExpression() { Name = "_", String = "=" }
+                }
+              },
               Expression              = new SequentialExpression() {
                 NonSequentialExpression = new IdentifierExpression() { Identifier = "expression" },
                 Expression              = new StringExpression() { String = ";" }

@@ -1,6 +1,6 @@
 grammar                   ::= { rule } ;
 
-rule                      ::= identifier "::=" expression ";" ;
+rule                      ::= identifier ( _ @ "::=" | _ @ "=" ) expression ";" ;
 
 expression                ::= sequential-expression
                             | non-sequential-expression

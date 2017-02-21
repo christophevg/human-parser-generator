@@ -6,7 +6,7 @@ expression                ::= sequential-expression
                             | non-sequential-expression
                             ;
 
-sequential-expression     ::= non-sequential-expression expression ;
+sequential-expression     ::= non-sequential-expression [ _ @ "," ] expression ;
 
 non-sequential-expression ::= alternatives-expression
                             | atomic-expression

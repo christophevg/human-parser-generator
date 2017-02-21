@@ -59,7 +59,12 @@ public class AsModel {
           Identifier = "sequential-expression",
           Expression = new SequentialExpression() {
             NonSequentialExpression = new IdentifierExpression() { Identifier = "non-sequential-expression" },
-            Expression              = new IdentifierExpression() { Identifier = "expression" }
+            Expression              = new SequentialExpression() {
+              NonSequentialExpression = new OptionalExpression() {
+                Expression = new StringExpression() { Name = "_", String = "," }
+              },
+              Expression              = new IdentifierExpression() { Identifier = "expression" }
+            }
           }
         },
         // non-sequential-expression ::= alternatives-expression

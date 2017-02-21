@@ -53,6 +53,12 @@ namespace HumanParserGenerator.Generator {
       this.properties.Clear();
     }
 
+    public Property this[string name] {
+      get {
+        return this.Properties.FirstOrDefault(p => p.Name.Equals(name));
+      }
+    }
+
     // to populate the Properties, ParseActions have to be generated
     // ParseActions are a tree-structure with a single top-level ParseAction
     public ParseAction ParseAction { get; set; }

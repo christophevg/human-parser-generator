@@ -14,8 +14,8 @@ namespace HumanParserGenerator {
 
   public class HPG {
 
-    public static void Main(string[] args) {
-      new HPG(args).Generate();
+    public static int Main(string[] args) {
+      return new HPG(args).Generate();
     }
 
     // configuration
@@ -150,15 +150,21 @@ namespace HumanParserGenerator {
 
     // Generation of Model and Parser
 
-    private void Generate() {
-      if(this.input == null) { return; }
+    private int Generate() {
+      if(this.input == null) { return 1; }
 
       // EBNF-like file -> AST/Grammar Model
-      Grammar grammar = new Parser().Parse(this.input).AST;
+      Grammar grammar = null;
+      try {
+        grammar = new Parser().Parse(this.input).AST;
+      } catch(ParseException e) {
+        Console.Error.WriteLine(e.Message);
+        return 1;
+      }
 
       if( this.output == Output.AST ) {
         Console.WriteLine(grammar.ToString());
-        return;
+        return 0;
       }
 
       if( this.output == Output.Grammar ) {
@@ -169,7 +175,7 @@ namespace HumanParserGenerator {
           }
           .Generate(grammar)
           .ToString());
-        return;
+        return 0;
       }
 
       // Grammar Model -> Generator/Parser Model
@@ -178,10 +184,10 @@ namespace HumanParserGenerator {
       if( this.output == Output.Model ) {
         if(this.format == Format.Dot) {
           Console.WriteLine(this.Dotify(model));
-          return;
+          return 0;
         }
         Console.WriteLine(model.ToString());
-        return;
+        return 0;
       }
 
       // Generator/Parser Model -> CSharp code
@@ -194,6 +200,7 @@ namespace HumanParserGenerator {
       .Generate(model);
 
       Console.WriteLine(code.ToString());
+      return 0;
     }
     
     private string Dotify(Model model) {

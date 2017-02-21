@@ -2,7 +2,7 @@ TARGET     ?= ini
 PARSER     ?= $(TARGET).cs
 GRAMMAR    ?= $(TARGET).bnf
 GENERATOR  ?= ../../generator
-TARGET     ?= parse-$(TARGET).exe
+EXE        ?= parse-$(TARGET).exe
 INPUT      ?= example.$(TARGET)
 
 -include ../../generator/Makefile.support
@@ -20,11 +20,11 @@ test.dll: $(TEST_SRCS)
 	@echo "*** building unit tests"
 	@$(CC) $(CFLAGS) -t:library -r:nunit.framework.dll -out:$@ $^
 
-parse: $(TARGET)
+parse: $(EXE)
 	@echo "*** running $<"
 	@$(RUN) $< $(INPUT) | $(FORMATTER)
 
-$(TARGET): $(GRAMMAR) $(SRCS)
+$(EXE): $(GRAMMAR) $(SRCS)
 	@echo "*** building $@ from $(filter-out $<,$^)"
 	@$(CC) $(CFLAGS) -out:$@ $(filter-out $<,$^)
 
@@ -33,6 +33,6 @@ $(PARSER): $(GRAMMAR) $(HPG)
 	@$(RUN) $(HPG) $< | $(ASTYLE) > $@
 
 clean:
-	@rm -rf $(BUILD) TestResult.xml $(PARSER) test.dll $(TARGET)
+	@rm -rf $(BUILD) TestResult.xml $(PARSER) test.dll $(EXE)
 
 -include Makefile.local

@@ -20,7 +20,9 @@ namespace HumanParserGenerator.Emitter.Format {
     }
 
     public static string Type(Property property) {
-      if(property.IsPlural) { return "List<" + Type(property.Type) + ">"; }
+      if(property.IsPlural || property.Source.HasPluralParent) {
+        return "List<" + Type(property.Type) + ">";
+      }
       return Type(property.Type);
     }
 
@@ -80,7 +82,7 @@ namespace HumanParserGenerator.Emitter.Format {
     }
 
     private static string PluralSuffix(Property property) {
-      if(! property.IsPlural )          { return "";    }
+      if(! property.IsPlural && ! property.Source.HasPluralParent) { return "";    }
       if( property.Name.EndsWith("x") ) { return "es";  }
       return "s";
     }

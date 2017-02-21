@@ -271,4 +271,27 @@ Model(
 )"
     );
   }
+
+  [Test]
+  public void testComplexRepetitions() {
+    Model model = this.process(
+      "grammar = { \"prefix\" rule }; rule = /a/;"
+    );
+    Assert.IsFalse( model["grammar"]["rule"].IsPlural);
+
+    Assert.IsTrue ( model["grammar"]["rule"].Source.HasPluralParent);
+  }
+
+  [Test]
+  public void testNestedRepetitions() {
+    Model model = this.process(
+      "grammar = { rule { postfix } }; rule = /a/; postfix = /b/;"
+    );
+    Assert.IsFalse( model["grammar"]["rule"].IsPlural);
+
+    Assert.IsTrue ( model["grammar"]["postfix"].IsPlural);
+    Assert.IsTrue ( model["grammar"]["rule"].Source.HasPluralParent);
+    Assert.IsTrue ( model["grammar"]["postfix"].Source.HasPluralParent);
+  }
+
 }

@@ -118,7 +118,7 @@ using System.Linq;";
       if( ! entity.HasPluralProperty() ) { return null; }
       return "\n  public " + Format.CSharp.Class(entity) + "() {\n" +
         string.Join("\n",
-          entity.Properties.Where(x => x.IsPlural).Select(x => 
+          entity.Properties.Where(x => x.IsPlural || x.Source.HasPluralParent).Select(x => 
             "this." + Format.CSharp.Property(x) + " = new " + 
               Format.CSharp.Type(x) + "();\n"
           )
@@ -139,7 +139,7 @@ using System.Linq;";
     }
 
     private string GenerateToString(Property property) {
-      if(property.IsPlural) {
+      if(property.IsPlural || property.Source.HasPluralParent) {
         return string.Format(
           "\"{0}=\" + \"[\" + \nstring.Join(\",\", " +
           "this.{0}.Select(x => x.ToString())) +\n" +
@@ -212,7 +212,7 @@ public Parser Parse(string source) {
         string.Join("\n",
           entity.Properties.Select(x =>
             Format.CSharp.Type(x) + " " + Format.CSharp.Variable(x) + 
-            ( x.IsPlural ? " = new " + Format.CSharp.Type(x) + "()" : " = " +
+            ( x.IsPlural || x.Source.HasPluralParent ? " = new " + Format.CSharp.Type(x) + "()" : " = " +
                 (Format.CSharp.Type(x).Equals("bool") ? "false" : "null")
             ) +
             ";"
@@ -241,15 +241,17 @@ public Parser Parse(string source) {
 
     private string GenerateConsumeString(ParseAction action) {
       ConsumeString consume = (ConsumeString)action;
-      return this.GenerateAssignment(action) +
-          ( consume.IsOptional ? "Maybe" : "" ) +
-        "Consume(\"" + consume.String + "\");";
+      return this.WrapAssignment(action, 
+        ( consume.IsOptional ? "Maybe" : "" ) + "Consume(\"" + consume.String + "\")"
+      ) + ";";
     }
 
     private string GenerateConsumePattern(ParseAction action) {
       ConsumePattern consume = (ConsumePattern)action;
-      return this.GenerateAssignment(action) + "Consume(Extracting." +
-        Format.CSharp.Class(consume.Property.Entity) + ");";
+      return this.WrapAssignment(action,
+        "Consume(Extracting." +
+        Format.CSharp.Class(consume.Property.Entity) + ");"
+      );
     }
 
     private string GenerateConsumeEntity(ParseAction action) {
@@ -272,21 +274,25 @@ public Parser Parse(string source) {
       if( consume.Entity.IsVirtual &&
           consume.Entity.ParseAction is ConsumePattern)
       {
-        return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
-          "Consume(Extracting." + Format.CSharp.Class(consume.Entity) + ")";
+        string code = "Consume(Extracting." + Format.CSharp.Class(consume.Entity) + ")";
+        return withoutAssignment ? code : this.WrapAssignment(consume, code);
       }
 
       // simple case, dispatch to Parse<Entity>
-      return (withoutAssignment ? "" : this.GenerateAssignment(consume) ) +
-        "Parse" + Format.CSharp.Class(consume.Entity) + 
-          (withoutExecution ? "" : "()");
+      string code2 = "Parse" + Format.CSharp.Class(consume.Entity) + 
+        (withoutExecution ? "" : "()");
+
+      return withoutAssignment ? code2 : this.WrapAssignment(consume, code2);
     }
 
     private string GenerateConsumeAll(ParseAction action) {
       ConsumeAll consume = (ConsumeAll)action;
-      return string.Join("\n\n",
-        consume.Actions.Select(next => this.GenerateParseAction(next))
-      );
+      return 
+        ( consume.IsPlural ? "Repeat( () => {\n" : "" ) +
+        string.Join("\n\n",
+          consume.Actions.Select(next => this.GenerateParseAction(next))
+        ) +
+        ( consume.IsPlural ? "\n});" : "" );
     }
 
     private string GenerateConsumeAny(ParseAction action) {
@@ -301,7 +307,11 @@ public Parser Parse(string source) {
         first = false;
       }
       code += ".OrThrow(\"Expected: " + consume.Label + "\");\n ";
-      return code;
+
+      return 
+        ( consume.IsPlural ? "Repeat( () => {\n" : "" ) +
+        code +
+        ( consume.IsPlural ? "\n});" : "" );
     }
 
     private string WrapOptional(ParseAction action, string code) {
@@ -310,10 +320,14 @@ public Parser Parse(string source) {
       return "Maybe( () => {\n" + code + "\n});";
     }
 
-    private string GenerateAssignment(ParseAction action) {
-      if(action.Type == null)     { return ""; }
-      if(action.Property == null) { return ""; }
-      return Format.CSharp.Variable(action.Property) + " = ";
+    private string WrapAssignment(ParseAction action, string code) {
+      if(action.Type == null)     { return code; }
+      if(action.Property == null) { return code; }
+      return Format.CSharp.Variable(action.Property) +
+        ( action.HasPluralParent ?
+          ".Add" + (action.Property.IsPlural ? "Range" : "") + "("
+          : " = "
+        ) + code + (action.HasPluralParent ? ")" : "");
     }
 
     private bool isTryConsumeString(ParseAction action) {

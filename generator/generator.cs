@@ -168,7 +168,7 @@ namespace HumanParserGenerator.Generator {
     }
 
     public bool HasPluralProperty() {
-      return this.Properties.Where(x => x.IsPlural).ToList().Count > 0;
+      return this.Properties.Where(x => x.IsPlural || x.Source.HasPluralParent).ToList().Count > 0;
     }
   }
 

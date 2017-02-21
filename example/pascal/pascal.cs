@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.Diagnostics;
 
-
 public class Program {
   public Identifier Identifier { get; set; }
   public List<Assignment> Assignments { get; set; }
@@ -167,7 +166,6 @@ public class Parser : ParserBase {
     };
   }
 
-
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
     Console.Error.WriteLine("!!! " + msg + " @ " + this.Source.Peek(10).Replace('\n', 'n'));
@@ -179,5 +177,3 @@ public class Extracting {
   public static Regex String     = new Regex(@"^""([^""]*)""|'([^']*)'");
   public static Regex Number     = new Regex(@"^(-?[1-9][0-9]*)");
 }
-
-

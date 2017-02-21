@@ -246,6 +246,7 @@ public abstract class ParserBase {
 
     public Outcome OrThrow(string message) {
       if( ! this.Success ) {
+        this.Parser.Log(message);
         throw this.Parser.Source.GenerateParseException(message);
       }
       return this;

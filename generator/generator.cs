@@ -271,6 +271,18 @@ namespace HumanParserGenerator.Generator {
     // the Parsing should be repeated as much as possible
     public bool IsPlural { get; set; }
 
+    // an action can be embedded in a plural parent, while NOT plural itself
+    public bool HasPluralParent {
+      get {
+        ParseAction parent = this.Parent;
+        while(parent != null) {
+          if( parent.IsPlural ) { return true; }
+          parent = parent.Parent;
+        }
+        return false;
+      }
+    }
+
     // Label can be used for external string representation, other than ToString
     public abstract string Label { get; }
 

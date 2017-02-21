@@ -29,6 +29,7 @@ namespace HumanParserGenerator {
     private Format format = Format.Text;
 
     private bool         emitInfo      = true;
+    private bool         emitRule      = true;
     private List<string> sources       = new List<string>();
     private string       emitNamespace = null;
 
@@ -81,7 +82,8 @@ namespace HumanParserGenerator {
           { "-g",       this.OutputGrammar }, { "--grammar", this.OutputGrammar },
           { "-t",       this.FormatText    }, { "--text",    this.FormatText    },
           { "-d",       this.FormatDot     }, { "--dot",     this.FormatDot     },
-          { "-i",       this.SuppressInfo  }, { "--info",    this.SuppressInfo  }
+          { "-i",       this.SuppressInfo  }, { "--info",    this.SuppressInfo  },
+          { "-r",       this.SuppressRule  }, { "--rule",    this.SuppressRule  }
         }[option]();
       } catch(KeyNotFoundException) {}
 
@@ -128,6 +130,7 @@ namespace HumanParserGenerator {
       Console.WriteLine("    --dot, -d               Generate Graphviz/Dot format output. (model)");
       Console.WriteLine("Emission options.");
       Console.WriteLine("    --info, -i              Suppress generation of info header");
+      Console.WriteLine("    --rule, -r              Suppress generation of rule comment");
       Console.WriteLine("    --namespace, -n NAME    Embed parser in namespace");
       return false;
     }
@@ -139,6 +142,7 @@ namespace HumanParserGenerator {
     private bool FormatText()    { this.format = Format.Text;    return true; }
     private bool FormatDot()     { this.format = Format.Dot;     return true; }
     private bool SuppressInfo()  { this.emitInfo = false;        return true; }
+    private bool SuppressRule()  { this.emitRule = false;        return true; }
     private bool UseNamespace(string name) {
       this.emitNamespace = name;
       return true;
@@ -183,6 +187,7 @@ namespace HumanParserGenerator {
       // Generator/Parser Model -> CSharp code
       Emitter.CSharp code = new Emitter.CSharp() {
         EmitInfo  = this.emitInfo,
+        EmitRule  = this.emitRule,
         Namespace = this.emitNamespace,
         Sources   = this.sources
       }

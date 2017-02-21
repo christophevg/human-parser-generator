@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using System.Diagnostics;
 
+// program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
 public class Program {
   public Identifier Identifier { get; set; }
   public List<Assignment> Assignments { get; set; }
@@ -22,6 +23,7 @@ public class Program {
   }
 }
 
+// assignment ::= identifier ":=" expression ";" ;
 public class Assignment {
   public Identifier Identifier { get; set; }
   public Expression Expression { get; set; }
@@ -34,8 +36,10 @@ public class Assignment {
   }
 }
 
+// expression ::= identifier | string | number ;
 public interface Expression {}
 
+// identifier ::= name @ /([A-Z][A-Z0-9]*)/ ;
 public class Identifier : Expression {
   public string Name { get; set; }
   public override string ToString() {
@@ -46,6 +50,7 @@ public class Identifier : Expression {
   }
 }
 
+// string ::= text @ /"([^"]*)"|'([^']*)'/ ;
 public class String : Expression {
   public string Text { get; set; }
   public override string ToString() {
@@ -56,6 +61,7 @@ public class String : Expression {
   }
 }
 
+// number ::= value @ /(-?[1-9][0-9]*)/ ;
 public class Number : Expression {
   public string Value { get; set; }
   public override string ToString() {
@@ -82,6 +88,7 @@ public class Parser : ParserBase {
     return this;
   }
 
+  // program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
   public Program ParseProgram() {
     Identifier identifier = null;
     List<Assignment> assignments = new List<Assignment>();
@@ -99,6 +106,7 @@ public class Parser : ParserBase {
     };
   }
 
+  // assignment ::= identifier ":=" expression ";" ;
   public Assignment ParseAssignment() {
     Identifier identifier = null;
     Expression expression = null;
@@ -115,6 +123,7 @@ public class Parser : ParserBase {
     };
   }
 
+  // expression ::= identifier | string | number ;
   public Expression ParseExpression() {
     Expression alternative = null;
     this.Log( "ParseExpression" );
@@ -133,6 +142,7 @@ public class Parser : ParserBase {
     return alternative;
   }
 
+  // identifier ::= name @ /([A-Z][A-Z0-9]*)/ ;
   public Identifier ParseIdentifier() {
     string name = null;
     this.Log( "ParseIdentifier" );
@@ -144,6 +154,7 @@ public class Parser : ParserBase {
     };
   }
 
+  // string ::= text @ /"([^"]*)"|'([^']*)'/ ;
   public String ParseString() {
     string text = null;
     this.Log( "ParseString" );
@@ -155,6 +166,7 @@ public class Parser : ParserBase {
     };
   }
 
+  // number ::= value @ /(-?[1-9][0-9]*)/ ;
   public Number ParseNumber() {
     string value = null;
     this.Log( "ParseNumber" );

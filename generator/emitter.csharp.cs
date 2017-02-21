@@ -14,6 +14,7 @@ namespace HumanParserGenerator.Emitter {
   public class CSharp {
     
     public bool         EmitInfo  { get; set; }
+    public bool         EmitRule  { get; set; }
     public List<string> Sources   { get; set; }
     public string       Namespace { get; set; }
 
@@ -89,8 +90,8 @@ using System.Diagnostics;";
     }
 
     private string GenerateSignature(Entity entity) {
-      return "public " +
-        ( entity.IsVirtual ? "interface" : "class" ) + " " +
+      return this.GenerateRule(entity.Rule) +
+        "public " + ( entity.IsVirtual ? "interface" : "class" ) + " " +
         Format.CSharp.Class(entity) + 
         ( entity.Supers.Where(s=>s.IsVirtual).Count() > 0 ?
           " : " + string.Join( ", ",
@@ -206,7 +207,8 @@ public Parser Parse(string source) {
     }
 
     private string GenerateEntityParserHeader(Entity entity) {
-      return "  public " + Format.CSharp.Type(entity) + 
+      return this.GenerateRule(entity.Rule) +
+        "public " + Format.CSharp.Type(entity) +
         " Parse" + Format.CSharp.Class(entity) + "() {\n" +
         string.Join("\n",
           entity.Properties.Select(x =>
@@ -383,6 +385,13 @@ public Parser Parse(string source) {
       string footer = null;
       if( this.Namespace != null ) { footer += "}"; }
       return footer;
+    }
+
+    private Emitter.BNF bnf = new Emitter.BNF();
+
+    private string GenerateRule(Rule rule) {
+      if( ! this.EmitRule ) { return ""; }
+      return "// " + this.bnf.GenerateRule(rule) + "\n";
     }
 
     // logging functionality

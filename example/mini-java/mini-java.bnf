@@ -1,0 +1,57 @@
+Program	::=	MainClass { ClassDeclaration } ;
+
+MainClass	::=	"class" Identifier "{"
+                "public" "static" "void" "main" "(" "String" "[" "]" Identifier ")" "{"
+                  Statement
+                "}"
+              "}" ;
+
+ClassDeclaration	::=	"class" Identifier [ "extends" Identifier ] "{"
+                         { VarDeclaration }
+                         { MethodDeclaration }
+                      "}" ;
+
+VarDeclaration	::=	Type Identifier ";" ;
+
+MethodDeclaration	::=	"public" Type Identifier "(" [ Type Identifier { "," Type Identifier } ] ")" "{"
+                        { VarDeclaration }
+                        { Statement }
+                        "return" Expression ";"
+                      "}" ;
+
+Type	::=	( "int" "[" "]" )
+        |	"boolean"
+        |	"int"
+        |	Identifier
+        ;
+
+Statement	::=	( "{" { Statement } "}" )
+            |	( "if" "(" Expression ")" Statement "else" Statement )
+            |	( "while" "(" Expression ")" Statement )
+            |	( "System.out.println" "(" Expression ")" ";" )
+            |	( Identifier "=" Expression ";" )
+            |	( Identifier "[" Expression "]" "=" Expression ";" )
+            ;
+
+Expression         ::= AndExpression ;
+AndExpression      ::= LessThanExpression { "&&" LessThanExpression } ;
+LessThanExpression ::= AdditiveExpression [ "<" AdditiveExpression ] ;
+AdditiveExpression ::= TimesExpression { [ "+" | "-" ] TimesExpression } ;
+TimesExpression    ::= PrefixExpression { "*" PrefixExpression } ;
+PrefixExpression   ::= NotExpression | PostfixExpression;
+NotExpression      ::= "!" { "!" } PostfixExpression ;
+PostfixExpression  ::= PrimaryExpression { ( "[" Expression "]" )
+                                         | ( "." Identifier "(" [ Expression { "," Expression } ] ")" )
+                                         | ( "." "length" ) } ;
+PrimaryExpression ::= Integer
+                    | "true"
+                    | "false"
+                    | "this"
+                    | ( "(" Expression ")" )
+                    | ( "new" "int" "[" Expression "]" )
+                    | ( "new" Identifier "(" ")" )
+                    | Identifier
+                    ;
+
+Identifier  ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
+Integer     ::= /(-?[1-9][0-9]*)/ ;

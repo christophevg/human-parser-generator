@@ -579,6 +579,13 @@ namespace HumanParserGenerator.Generator {
         name = name.Replace("{", "open-brace");
         name = name.Replace("}", "close-brace");
         name = name.Replace(":", "colon");
+        name = name.Replace("=", "equals");
+        name = name.Replace("&", "ampersand");
+        name = name.Replace("<", "less-than");
+        name = name.Replace(">", "greater-than");
+        name = name.Replace("+", "plus");
+        name = name.Replace("*", "star");
+        name = name.Replace("!", "exclamation");
         name = name.Replace(";", "semi-colon");
         name = name.Replace(",", "comma");
         name = name.Replace(".", "dot");

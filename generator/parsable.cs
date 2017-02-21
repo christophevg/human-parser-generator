@@ -286,6 +286,17 @@ public abstract class ParserBase {
     return list;
   }
 
+  protected void Repeat(Action what) {
+    while(true) {
+      try {
+        what();
+      } catch(ParseException e) {
+        this.Errors.Add(e);
+        break;
+      }
+    }
+  }
+
   public string AllErrorsToString() {
     string report = "";
     foreach(ParseException error in this.Errors) {

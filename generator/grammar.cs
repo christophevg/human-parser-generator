@@ -207,7 +207,7 @@ public class AsModel {
         // identifier ::= /([A-Za-z][A-Za-z0-9-]*)/ ;
         new Rule() {
           Identifier = "identifier",
-          Expression = new ExtractorExpression() { Pattern = @"([A-Za-z][A-Za-z0-9-]*)" }
+          Expression = new ExtractorExpression() { Pattern = @"([A-Za-z_][A-Za-z0-9-_]*)" }
         },
         // string ::= /"([^"]*)"|^'([^']*)'/ ;
         new Rule() {

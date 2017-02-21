@@ -22,7 +22,7 @@ namespace HumanParserGenerator {
 
     private string input          = null;
 
-    enum Output { Parser, AST, Model };
+    enum Output { Parser, AST, Model, Grammar };
     private Output output = Output.Parser;
 
     enum Format { Text, Dot };
@@ -74,13 +74,14 @@ namespace HumanParserGenerator {
     private bool ProcessOption(string option) {
       try {
         return new Dictionary<string, Func<bool>>() {
-          { "-h",       this.ShowHelp     }, { "--help",   this.ShowHelp     },
-          { "-p",       this.OutputParser }, { "--parser", this.OutputParser },
-          { "-a",       this.OutputAST    }, { "--ast",    this.OutputAST    },
-          { "-m",       this.OutputModel  }, { "--model",  this.OutputModel  },
-          { "-t",       this.FormatText   }, { "--text",   this.FormatText   },
-          { "-d",       this.FormatDot    }, { "--dot",    this.FormatDot    },
-          { "-i",       this.SuppressInfo }, { "--info",   this.SuppressInfo }
+          { "-h",       this.ShowHelp      }, { "--help",    this.ShowHelp      },
+          { "-p",       this.OutputParser  }, { "--parser",  this.OutputParser  },
+          { "-a",       this.OutputAST     }, { "--ast",     this.OutputAST     },
+          { "-m",       this.OutputModel   }, { "--model",   this.OutputModel   },
+          { "-g",       this.OutputGrammar }, { "--grammar", this.OutputGrammar },
+          { "-t",       this.FormatText    }, { "--text",    this.FormatText    },
+          { "-d",       this.FormatDot     }, { "--dot",     this.FormatDot     },
+          { "-i",       this.SuppressInfo  }, { "--info",    this.SuppressInfo  }
         }[option]();
       } catch(KeyNotFoundException) {}
 
@@ -121,6 +122,7 @@ namespace HumanParserGenerator {
       Console.WriteLine("    --parser, -p            Generate parser (DEFAULT)");
       Console.WriteLine("    --ast, -a               Show AST");
       Console.WriteLine("    --model, -m             Show parser model");
+      Console.WriteLine("    --grammar, -g           Show grammar");
       Console.WriteLine("Formatting options.");
       Console.WriteLine("    --text, -t              Generate textual output (DEFAULT).");
       Console.WriteLine("    --dot, -d               Generate Graphviz/Dot format output. (model)");
@@ -130,12 +132,13 @@ namespace HumanParserGenerator {
       return false;
     }
 
-    private bool OutputParser() { this.output = Output.Parser; return true; }
-    private bool OutputAST()    { this.output = Output.AST;    return true; }
-    private bool OutputModel()  { this.output = Output.Model;  return true; }
-    private bool FormatText()   { this.format = Format.Text;   return true; }
-    private bool FormatDot()    { this.format = Format.Dot;    return true; }
-    private bool SuppressInfo() { this.emitInfo = false;       return true; }
+    private bool OutputParser()  { this.output = Output.Parser;  return true; }
+    private bool OutputAST()     { this.output = Output.AST;     return true; }
+    private bool OutputModel()   { this.output = Output.Model;   return true; }
+    private bool OutputGrammar() { this.output = Output.Grammar; return true; }
+    private bool FormatText()    { this.format = Format.Text;    return true; }
+    private bool FormatDot()     { this.format = Format.Dot;     return true; }
+    private bool SuppressInfo()  { this.emitInfo = false;        return true; }
     private bool UseNamespace(string name) {
       this.emitNamespace = name;
       return true;
@@ -151,6 +154,17 @@ namespace HumanParserGenerator {
 
       if( this.output == Output.AST ) {
         Console.WriteLine(grammar.ToString());
+        return;
+      }
+
+      if( this.output == Output.Grammar ) {
+        Console.WriteLine(
+          new Emitter.BNF() {
+            EmitInfo  = this.emitInfo,
+            Sources   = this.sources
+          }
+          .Generate(grammar)
+          .ToString());
         return;
       }
 

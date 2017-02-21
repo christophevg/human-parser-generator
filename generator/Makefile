@@ -12,7 +12,7 @@ LANG       ?= $(EBNF)
 HPG        ?= hpg.exe
 
 # configuration of generations of sources
-COMMONSRCS  = generator.cs format.cs emitter.csharp.cs
+COMMONSRCS  = generator.cs format.cs emitter.csharp.cs emitter.bnf.cs
 GEN1SRCS    = $(COMMONSRCS) grammar.cs bootstrap.cs
 GEN2SRCS    = $(COMMONSRCS) parsable.cs $(GEN1PARSER) hpg.cs 
 SRCS       ?= $(COMMONSRCS) parsable.cs $(PARSER) hpg.cs 

@@ -81,7 +81,7 @@ namespace HumanParserGenerator.Emitter {
 
     private string GenerateGroupExpression(Expression expression) {
       GroupExpression group = expression as GroupExpression;
-      return "{ " + this.GenerateExpression(group.Expression) + " }";
+      return "( " + this.GenerateExpression(group.Expression) + " )";
     }
 
     private string GenerateIdentifierExpression(Expression expression) {

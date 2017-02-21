@@ -204,6 +204,13 @@ public abstract class ParserBase {
   public Parsable Source { get; protected set; }
   public List<ParseException> Errors = new List<ParseException>();
 
+  [ConditionalAttribute("DEBUG")]
+  protected void Log(string msg) {
+    Console.Error.WriteLine(
+      msg + " @ " + this.Source.Peek(20).Replace('\n', 'n')
+    );
+  }
+
   protected bool Consume(string text) {
     return this.Source.Consume(text);
   }

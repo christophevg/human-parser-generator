@@ -3,7 +3,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
-using System.Diagnostics;
 
 // program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
 public class Program {
@@ -178,10 +177,6 @@ public class Parser : ParserBase {
     };
   }
 
-  [ConditionalAttribute("DEBUG")]
-  private void Log(string msg) {
-    Console.Error.WriteLine("!!! " + msg + " @ " + this.Source.Peek(10).Replace('\n', 'n'));
-  }
 }
 
 public class Extracting {

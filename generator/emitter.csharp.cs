@@ -62,8 +62,7 @@ namespace HumanParserGenerator.Emitter {
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Linq;
-using System.Diagnostics;";
+using System.Linq;";
     }
 
     private string GenerateNamespace() {
@@ -374,13 +373,9 @@ public Parser Parse(string source) {
     }
 
     private string GenerateParserFooter() {
-      return @"[ConditionalAttribute(""DEBUG"")]
-  private void Log(string msg) {
-    Console.Error.WriteLine(""!!! "" + msg + "" @ "" + this.Source.Peek(10).Replace('\n', 'n'));
-  }
-}";
+      return "}";
     }
-    
+
     private string GenerateFooter() {
       string footer = null;
       if( this.Namespace != null ) { footer += "}"; }

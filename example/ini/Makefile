@@ -1,8 +1,9 @@
-PARSER     ?= ini.cs
-GRAMMAR    ?= ini.bnf
+TARGET     ?= ini
+PARSER     ?= $(TARGET).cs
+GRAMMAR    ?= $(TARGET).bnf
 GENERATOR  ?= ../../generator
-TARGET     ?= parse-ini.exe
-INPUT      ?= example.ini
+TARGET     ?= parse-$(TARGET).exe
+INPUT      ?= example.$(TARGET)
 
 -include ../../generator/Makefile.support
 
@@ -28,7 +29,7 @@ $(TARGET): $(GRAMMAR) $(SRCS)
 	@$(CC) $(CFLAGS) -out:$@ $(filter-out $<,$^)
 
 $(PARSER): $(GRAMMAR) $(HPG)
-	@echo "*** generating a Cobol parser from $<"
+	@echo "*** generating a $(TARGET) parser from $<"
 	@$(RUN) $(HPG) $< | $(ASTYLE) > $@
 
 clean:

@@ -196,7 +196,7 @@ public class Parsable {
   
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
-    Console.Error.WriteLine("!!! " + msg + " @ " + this.Position);
+    Console.Error.WriteLine(msg + " @ " + this.Peek(10).Replace('\n', 'n'));
   }
 }
 

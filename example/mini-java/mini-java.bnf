@@ -7,8 +7,8 @@ MainClass	::=	"class" Identifier "{"
               "}" ;
 
 ClassDeclaration	::=	"class" Identifier [ "extends" Identifier ] "{"
-                         { VarDeclaration }
-                         { MethodDeclaration }
+                        { VarDeclaration }
+                        { MethodDeclaration }
                       "}" ;
 
 VarDeclaration	::=	Type Identifier ";" ;

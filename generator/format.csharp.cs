@@ -41,13 +41,29 @@ namespace HumanParserGenerator.Emitter.Format {
       return PascalCase(property.Name + PluralSuffix(property));
     }
 
+    // TODO refactor: there is too much logic in here
+    public static string EntityProperty(Property property) {
+      return Variable(property.Entity) + "." + Property(property);
+    }
+
     public static string Variable(Property property) {
       string name = property.Name;
       // QnD solution to reserved words
       if( name.Equals("string") ) { return "text";     }
       if( name.Equals("int")    ) { return "number";   }
       if( name.Equals("float")  ) { return "floating"; }
+      if( name.Equals("null")   ) { return "nul";      }
       return CamelCase( name + PluralSuffix(property) );
+    }
+
+    public static string Variable(Entity entity) {
+      string name = entity.Name;
+      // QnD solution to reserved words
+      if( name.Equals("string") ) { return "text";     }
+      if( name.Equals("int")    ) { return "number";   }
+      if( name.Equals("float")  ) { return "floating"; }
+      if( name.Equals("null")   ) { return "nul";      }
+      return CamelCase( name );
     }
 
     public static string VerbatimStringLiteral(string text) {

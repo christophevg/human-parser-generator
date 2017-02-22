@@ -92,92 +92,78 @@ public class Parser : ParserBase {
 
   // program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
   public Program ParseProgram() {
-    Identifier identifier = null;
-    List<Assignment> assignments = new List<Assignment>();
+    Program program = new Program();
     this.Log( "ParseProgram" );
     Parse( () => {
       Consume("PROGRAM");
-      identifier = ParseIdentifier();
+      program.Identifier = ParseIdentifier();
       Consume("BEGIN");
-      assignments = Many<Assignment>(ParseAssignment);
+      program.Assignments = Many<Assignment>(ParseAssignment);
       Consume("END.");
     }).OrThrow("Failed to parse Program");
-    return new Program() {
-      Identifier = identifier,
-      Assignments = assignments
-    };
+    return program;
   }
 
   // assignment ::= identifier ":=" expression ";" ;
   public Assignment ParseAssignment() {
-    Identifier identifier = null;
-    Expression expression = null;
+    Assignment assignment = new Assignment();
     this.Log( "ParseAssignment" );
     Parse( () => {
-      identifier = ParseIdentifier();
+      assignment.Identifier = ParseIdentifier();
       Consume(":=");
-      expression = ParseExpression();
+      assignment.Expression = ParseExpression();
       Consume(";");
     }).OrThrow("Failed to parse Assignment");
-    return new Assignment() {
-      Identifier = identifier,
-      Expression = expression
-    };
+    return assignment;
   }
 
   // expression ::= identifier | string | number ;
   public Expression ParseExpression() {
-    Expression alternative = null;
+    Expression expression = null;
     this.Log( "ParseExpression" );
     Parse( () => {
       Parse( () => {
-        alternative = ParseIdentifier();
+        expression = ParseIdentifier();
       })
       .Or( () => {
-        alternative = ParseString();
+        expression = ParseString();
       })
       .Or( () => {
-        alternative = ParseNumber();
+        expression = ParseNumber();
       })
       .OrThrow("Expected: identifier | string | number");
     }).OrThrow("Failed to parse Expression");
-    return alternative;
+    return expression;
   }
 
   // identifier ::= name @ /([A-Z][A-Z0-9]*)/ ;
   public Identifier ParseIdentifier() {
-    string name = null;
+    Identifier identifier = new Identifier();
     this.Log( "ParseIdentifier" );
     Parse( () => {
-      name = Consume(Extracting.Identifier);
+      identifier.Name = Consume(Extracting.Identifier);
     }).OrThrow("Failed to parse Identifier");
-    return new Identifier() {
-      Name = name
-    };
+    return identifier;
   }
 
   // string ::= text @ /"([^"]*)"|'([^']*)'/ ;
   public String ParseString() {
-    string text = null;
+    String text = new String();
     this.Log( "ParseString" );
     Parse( () => {
-      text = Consume(Extracting.String);
+      text.Text = Consume(Extracting.String);
     }).OrThrow("Failed to parse String");
-    return new String() {
-      Text = text
-    };
+    return text;
   }
 
   // number ::= value @ /(-?[1-9][0-9]*)/ ;
   public Number ParseNumber() {
-    string value = null;
+    Number number = new Number();
     this.Log( "ParseNumber" );
     Parse( () => {
-      value = Consume(Extracting.Number);
+      number.Value = Consume(Extracting.Number);
     }).OrThrow("Failed to parse Number");
-    return new Number() {
-      Value = value
-    };
+    return number;
   }
 
 }

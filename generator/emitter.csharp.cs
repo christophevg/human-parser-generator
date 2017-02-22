@@ -227,15 +227,9 @@ public Parser Parse(string source) {
       return this.GenerateRule(entity.Rule) +
         "public " + Format.CSharp.Type(entity) +
         " Parse" + Format.CSharp.Class(entity) + "() {\n" +
-        string.Join("\n",
-          entity.Properties.Select(x =>
-            Format.CSharp.Type(x) + " " + Format.CSharp.Variable(x) + 
-            ( x.IsPlural || x.Source.HasPluralParent ? " = new " + Format.CSharp.Type(x) + "()" : " = " +
-                (Format.CSharp.Type(x).Equals("bool") ? "false" : "null")
-            ) +
-            ";"
-          )
-        ) + "\n" +
+        Format.CSharp.Type(entity) + " " + Format.CSharp.Variable(entity) +
+        " = " +
+        (entity.IsVirtual ? "null" : "new " + Format.CSharp.Class(entity) + "()") + ";\n" +
         "this.Log( \"Parse" + Format.CSharp.Class(entity) + "\" );\n" +
         "Parse( () => {";
     }
@@ -275,7 +269,7 @@ public Parser Parse(string source) {
     private string GenerateConsumeEntity(ParseAction action) {
       ConsumeEntity consume = (ConsumeEntity)action;
       if(consume.Property.IsPlural) {
-        return Format.CSharp.Variable(consume.Property) + 
+        return Format.CSharp.EntityProperty(consume.Property) + 
           " = Many<" + Format.CSharp.Type(consume.Entity) + ">(" + 
           this.GenerateConsumeSingleEntity(consume, true, true) +
           ");";
@@ -341,7 +335,9 @@ public Parser Parse(string source) {
     private string WrapAssignment(ParseAction action, string code) {
       if(action.Type == null)     { return code; }
       if(action.Property == null) { return code; }
-      return Format.CSharp.Variable(action.Property) +
+      return (action.Property.Entity.IsVirtual ?
+        Format.CSharp.Variable(action.Property.Entity) :
+        Format.CSharp.EntityProperty(action.Property)) +
         ( action.HasPluralParent ?
           ".Add" + (action.Property.IsPlural ? "Range" : "") + "("
           : " = "
@@ -359,32 +355,24 @@ public Parser Parse(string source) {
     }
 
     private string GenerateEntityParserReturn(Entity entity) {
-      return ( entity.IsVirtual ?
-        this.GenerateVirtualEntityParserReturn(entity) :
-        this.GenerateRealEntityParserReturn(entity)
-      ) + "\n}";
+      return "return " + Format.CSharp.Variable(entity) + ";\n}";
+      // return ( entity.IsVirtual ?
+      //   this.GenerateVirtualEntityParserReturn(entity) :
+      //   this.GenerateRealEntityParserReturn(entity)
+      // ) + "\n}";
     }
     
-    private string GenerateVirtualEntityParserReturn(Entity entity) {
-      return "return " +
-             (entity.Properties.Count > 0 ?
-               Format.CSharp.Variable(entity.Properties.First())
-               : "") +
-              ";"; 
-    }
+    // private string GenerateVirtualEntityParserReturn(Entity entity) {
+    //   return "return " +
+    //          (entity.Properties.Count > 0 ?
+    //            Format.CSharp.Variable(entity.Properties.First())
+    //            : "") +
+    //           ";";
+    // }
 
-    private string GenerateRealEntityParserReturn(Entity entity) {
-      return "return new " + Format.CSharp.Class(entity) + "()" +
-        ( entity.Properties.Count > 0 ?
-          "{\n" + 
-          string.Join( ",\n",
-            entity.Properties.Select(x =>
-              Format.CSharp.Property(x) + " = " + Format.CSharp.Variable(x)
-            )
-          ) + "\n}"
-          : ""
-        ) + ";";
-    }
+    // private string GenerateRealEntityParserReturn(Entity entity) {
+    //   return "return " + Format.CSharp.Variable(entity) + ";";
+    // }
 
     // Extracting functionality is generated for all Entities that are "just"
     // consuming a pattern.

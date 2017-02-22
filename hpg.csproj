@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         DefaultTargets="Build">
+  <PropertyGroup>
+    <ProjectGuid>{10A1F47C-6714-4047-8024-0DED4A331A361}</ProjectGuid>
+    <ProjectTypeGuids>{43F2F29C-E7A8-42CB-9375-27EA323809D8}</ProjectTypeGuids>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>HumanParserGenerator</RootNamespace>
+    <AssemblyName>hpg</AssemblyName>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <DebugSymbols>False</DebugSymbols>
+    <DebugType>None</DebugType>
+    <Optimize>True</Optimize>
+    <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Collections" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Common Sources -->
+    <Compile Include="generator\parsable.cs" />
+    <Compile Include="generator\generator.cs" />
+    <Compile Include="generator\emitter.csharp.cs" />
+    <Compile Include="generator\emitter.bnf.cs" />
+    <Compile Include="generator\format.csharp.cs" />
+    <Compile Include="generator\AssemblyInfo.cs" />
+    <!-- Additional Generation 0 (aka Bootstrap) Sources -->
+    <Gen0 Include="generator\grammar.cs" />
+    <Gen0 Include="generator\bootstrap.cs" />
+    <!-- Additional Generation 1 Sources -->
+    <Gen1 Include="generator\parser.gen1.cs" />
+    <Gen1 Include="generator\hpg.cs" />
+    <!-- Additional HPG Sources -->
+    <HPG Include="generator\parser.cs" />
+    <HPG Include="generator\hpg.cs" />
+    <!-- Files To Be Cleaned Up -->
+    <FileWrites Include="$(OutputPath)hpg.gen0.exe"/>
+    <FileWrites Include="generator\parser.gen1.cs"/>
+    <FileWrites Include="$(OutputPath)hpg.gen1.exe"/>
+    <FileWrites Include="generator\parser.cs"/>
+    <FileWrites Include="$(OutputPath)hpg.exe"/>
+    <FileWrites Include="$(OutputPath)*.mdb"/>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <Target Name="MakeBuildDirectory"
+          BeforeTargets="Gen0Parser">  
+      <MakeDir Directories="$(OutputPath)" />  
+  </Target>
+
+  <Target Name="Gen0Parser"  
+          Inputs="@(Compile);@(Gen0)"  
+          Outputs="$(OutputPath)hpg.gen0.exe">
+    <CSC Sources="@(Compile);@(Gen0)"  
+         OutputAssembly="$(OutputPath)hpg.gen0.exe"  
+         EmitDebugInformation="true" />   
+  </Target>
+
+  <Target Name="Gen1Source"
+          Inputs="$(OutputPath)hpg.gen0.exe;generator\hpg.bnf"
+          Outputs="generator\parser.gen1.cs"
+          DependsOnTargets="Gen0Parser"
+          BeforeTargets="Gen1Parser">  
+    <Exec Command="$(OutputPath)hpg.gen0.exe generator/hpg.bnf > generator\parser.gen1.cs" Condition=" '$(OS)' == 'Windows_NT' "/>
+    <Exec Command="mono $(OutputPath)hpg.gen0.exe generator\hpg.bnf > generator\parser.gen1.cs" Condition=" '$(OS)' != 'Windows_NT' "/>
+  </Target>
+
+  <Target Name="Gen1Parser"  
+          Inputs="@(Compile);@(Gen1)"  
+          Outputs="$(OutputPath)hpg.gen1.exe"
+          DependsOnTargets="Gen1Source">
+          <CSC Sources="@(Compile);@(Gen1)"  
+               OutputAssembly="$(OutputPath)hpg.gen1.exe"  
+               EmitDebugInformation="true" />   
+  </Target>
+
+  <Target Name="HPGSource"
+          Inputs="$(OutputPath)hpg.gen1.exe;generator\hpg.bnf"
+          Outputs="generator\parser.cs"
+          DependsOnTargets="Gen1Parser">
+    <Exec Command="$(OutputPath)hpg.gen1.exe generator\hpg.bnf > generator\parser.cs" Condition=" '$(OS)' == 'Windows_NT' "/>
+    <Exec Command="mono $(OutputPath)hpg.gen1.exe generator\hpg.bnf > generator\parser.cs" Condition=" '$(OS)' != 'Windows_NT' "/>
+  </Target>
+
+  <Target Name="Build"  
+          Inputs="@(Compile);@(HPG)"  
+          Outputs="$(OutputPath)\hpg.exe"
+          DependsOnTargets="HPGSource">
+          <CSC Sources="@(Compile);@(HPG)"  
+               OutputAssembly="$(OutputPath)hpg.exe"  
+               EmitDebugInformation="true" />   
+  </Target>
+</Project>

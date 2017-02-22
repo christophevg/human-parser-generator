@@ -11,6 +11,7 @@
     <AssemblyName>hpg</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <AppDesignerFolder>Properties</AppDesignerFolder>
+    <ExeLauncher Condition="('$(OS)' != 'Windows_NT')">mono</ExeLauncher>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -93,8 +94,7 @@
           Outputs="generator\parser.gen1.cs"
           DependsOnTargets="Gen0Parser"
           BeforeTargets="Gen1Parser">  
-    <Exec Command="$(OutputPath)hpg.gen0.exe generator/hpg.bnf > generator\parser.gen1.cs" Condition=" '$(OS)' == 'Windows_NT' "/>
-    <Exec Command="mono $(OutputPath)hpg.gen0.exe generator\hpg.bnf > generator\parser.gen1.cs" Condition=" '$(OS)' != 'Windows_NT' "/>
+    <Exec Command="$(ExeLauncher) $(OutputPath)hpg.gen0.exe generator\hpg.bnf > generator\parser.gen1.cs"/>
   </Target>
 
   <Target Name="Gen1Parser"  
@@ -110,8 +110,7 @@
           Inputs="$(OutputPath)hpg.gen1.exe;generator\hpg.bnf"
           Outputs="generator\parser.cs"
           DependsOnTargets="Gen1Parser">
-    <Exec Command="$(OutputPath)hpg.gen1.exe generator\hpg.bnf > generator\parser.cs" Condition=" '$(OS)' == 'Windows_NT' "/>
-    <Exec Command="mono $(OutputPath)hpg.gen1.exe generator\hpg.bnf > generator\parser.cs" Condition=" '$(OS)' != 'Windows_NT' "/>
+    <Exec Command="$(ExeLauncher) $(OutputPath)hpg.gen1.exe generator\hpg.bnf > generator\parser.cs" />
   </Target>
 
   <Target Name="Build"  

@@ -130,26 +130,44 @@ using System.Linq;";
       if(entity.IsVirtual) { return null; }
       return "\n  public override string ToString() {\n" +
         "return\n" +
-        "\"" + Format.CSharp.Class(entity) + "(\" +\n" + 
-        string.Join(" + \",\" +\n",
+        "\"new " + Format.CSharp.Class(entity) +
+        "() { " + (entity.Properties.Count > 1 ? "\\n" : "") + "\" +\n" + 
+        string.Join(" + \",\\n\" +\n",
           entity.Properties.Select(x => this.GenerateToString(x))
         ) + ( entity.Properties.Count > 0 ? " + \n" : "" ) +
-        "\")\";\n" +
-        "  }\n";
+        "\"}\";\n" +
+        "}\n";
     }
 
     private string GenerateToString(Property property) {
       if(property.IsPlural || property.Source.HasPluralParent) {
         return string.Format(
-          "\"{0}=\" + \"[\" + \nstring.Join(\",\", " +
+          "\"{0} = new " + Format.CSharp.Type(property) + "() {{\" + \nstring.Join(\",\", " +
           "this.{0}.Select(x => x.ToString())) +\n" +
-          "\"]\"",
+          "\"}}\"",
           Format.CSharp.Property(property)
         );
       } else {
-        return string.Format(
-          "\"{0}=\" + this.{0}", Format.CSharp.Property(property)
-        );
+        if(property.Type.Equals("<string>")) {
+          // "Property = \"" + this.Property + "\""
+          return string.Format(
+            @"""{0} = "" + Format.Literal(this.{0})",
+            Format.CSharp.Property(property)
+          );
+        } else if(property.Type.Equals("<bool>")){
+          // "Property = this.Property"
+          return string.Format(
+            @"""{0} = this.{0}""",
+            Format.CSharp.Property(property)
+          );   
+        } else {
+          // "Property =
+          // ( this.Property" == null ? \"null\" : this.Property.ToString() )
+          return string.Format(
+            @"""{0} = "" + ( this.{0} == null ? ""null"" : this.{0}.ToString() )",
+            Format.CSharp.Property(property)
+          );
+        }
       }
     }
 

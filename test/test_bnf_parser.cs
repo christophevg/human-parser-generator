@@ -20,18 +20,13 @@ public class BNFParserTests {
     return new Factory().Import(grammar).Model;
   }
 
-  private void compare(string result, string expected) {
-    Assert.AreEqual(
-      expected.Replace(" ", "").Replace("\n", ""),
-      result
-    );
-  }
-
-  private void processAndCompare(string input, string grammar, string model ) {
+  private void processAndCompare(string input, Grammar grammar, string model ) {
     Grammar g = this.parse(input);
-    if(grammar != null) { this.compare(g.ToString(), grammar); }
+    if(grammar != null) { Assert.AreEqual( grammar.ToString(), g.ToString() ); }
     Model m = this.transform(g);
-    if(model != null) { this.compare(m.ToString(), model); }
+    if(model != null) {
+      Assert.AreEqual( model.Replace(" ", "").Replace("\n", ""), m.ToString() );
+    }
   }
 
   private Model process(string input) {
@@ -60,65 +55,103 @@ string                ::= text  @ /""([^""]*)""|'([^']*)'/ ;
 number                ::= value @ /(-?[1-9][0-9]*)/ ;
 
       ",
-      @"
-Grammar(
-  Rules=[
-    Rule(
-      Identifier=program,
-      Expression=SequentialExpression(
-        NonSequentialExpression=StringExpression(Name=,String=PROGRAM),
-        Expression=SequentialExpression(
-          NonSequentialExpression=IdentifierExpression(Name=,Identifier=identifier),
-          Expression=SequentialExpression(
-            NonSequentialExpression=StringExpression(Name=,String=BEGIN),
-            Expression=SequentialExpression(
-              NonSequentialExpression=RepetitionExpression(
-                Expression=IdentifierExpression(Name=,Identifier=assignment)
-              ),
-              Expression=StringExpression(Name=,String=END.)
-            )
-          )
-        )
-      )
-    ),
-    Rule(
-      Identifier=assignment,
-      Expression=SequentialExpression(
-        NonSequentialExpression=IdentifierExpression(Name=,Identifier=identifier),
-        Expression=SequentialExpression(
-          NonSequentialExpression=StringExpression(Name=,String=:=),
-          Expression=SequentialExpression(
-            NonSequentialExpression=IdentifierExpression(Name=,Identifier=expression),
-            Expression=StringExpression(Name=,String=;)
-          )
-        )
-      )
-    ),
-    Rule(
-      Identifier=expression,
-      Expression=AlternativesExpression(
-        AtomicExpression=IdentifierExpression(Name=,Identifier=identifier),
-        NonSequentialExpression=AlternativesExpression(
-          AtomicExpression=IdentifierExpression(Name=,Identifier=string),
-          NonSequentialExpression=IdentifierExpression(Name=,Identifier=number)
-        )
-      )
-    ),
-    Rule(
-      Identifier=identifier,
-      Expression=ExtractorExpression(Name=name,Pattern=([A-Z][A-Z0-9]*))
-    ),
-    Rule(
-      Identifier=string,
-      Expression=ExtractorExpression(Name=text,Pattern=""([^""]*)""|'([^']*)')
-    ),
-    Rule(
-      Identifier=number,
-      Expression=ExtractorExpression(Name=value,Pattern=(-?[1-9][0-9]*))
-    )
-  ]
-)
-      ",
+      new Grammar() {
+        Rules = new List<Rule>() {
+          new Rule() {
+            Identifier = "program",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new StringExpression() {
+                Name = null,
+                String = "PROGRAM"
+              },
+              Expression = new SequentialExpression() {
+                NonSequentialExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "identifier"
+                },
+                Expression = new SequentialExpression() {
+                  NonSequentialExpression = new StringExpression() {
+                    Name = null,
+                    String = "BEGIN"
+                  },
+                  Expression = new SequentialExpression() {
+                    NonSequentialExpression = new RepetitionExpression() {
+                      Expression = new IdentifierExpression() {
+                        Name = null,
+                        Identifier = "assignment"
+                      }
+                    },
+                    Expression = new StringExpression() {
+                      Name = null,
+                      String = "END."
+                    }
+                  }
+                }
+              }
+            }
+          },new Rule() {
+            Identifier = "assignment",
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new IdentifierExpression() {
+                Name = null,
+                Identifier = "identifier"
+              },
+              Expression = new SequentialExpression() {
+                NonSequentialExpression = new StringExpression() {
+                  Name = null,
+                  String = ":="
+                },
+                Expression = new SequentialExpression() {
+                  NonSequentialExpression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "expression"
+                  },
+                  Expression = new StringExpression() {
+                    Name = null,
+                    String = ";"
+                  }
+                }
+              }
+            }
+          },new Rule() {
+            Identifier = "expression",
+            Expression = new AlternativesExpression() {
+              AtomicExpression = new IdentifierExpression() {
+                Name = null,
+                Identifier = "identifier"
+              },
+              NonSequentialExpression = new AlternativesExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "string"
+                },
+                NonSequentialExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "number"
+                }
+              }
+            }
+          },new Rule() {
+            Identifier = "identifier",
+            Expression = new ExtractorExpression() {
+              Name = "name",
+              Pattern = "([A-Z][A-Z0-9]*)"
+            }
+          },new Rule() {
+            Identifier = "string",
+            Expression = new ExtractorExpression() {
+              Name = "text",
+              Pattern = "\"([^\"]*)\"|'([^']*)'"
+            }
+          },new Rule() {
+            Identifier = "number",
+            Expression = new ExtractorExpression() {
+              Name = "value",
+              Pattern = "(-?[1-9][0-9]*)"
+            }
+          }
+        }
+      },
       @"
 Model(
   Entities=[
@@ -221,29 +254,55 @@ sign-option ::=
    ( ""LEADING"" | ""TRAILING"" )
    [ ""SEPARATE"" [ ""CHARACTER"" ] ]
 ;",
-      @"
-Grammar(
-  Rules=[
-    Rule(
-      Identifier=sign-option,
-      Expression=SequentialExpression(
-        NonSequentialExpression=StringExpression(Name=,String=SIGN),
-        Expression=SequentialExpression(
-          NonSequentialExpression=OptionalExpression(
-            Expression=StringExpression(Name=_,String=IS)
-          ),
-          Expression=SequentialExpression(
-            NonSequentialExpression=GroupExpression(
-              Expression=AlternativesExpression(
-                AtomicExpression=StringExpression(Name=,String=LEADING),
-                NonSequentialExpression=StringExpression(Name=,String=TRAILING)
-              )
-            ),
-            Expression=OptionalExpression(
-              Expression=SequentialExpression(
-                NonSequentialExpression=StringExpression(Name=,String=SEPARATE),
-                Expression=OptionalExpression(
-                  Expression=StringExpression(Name=,String=CHARACTER))))))))])",
+    new Grammar() {
+      Rules = new List<Rule>() {
+        new Rule() {
+          Identifier = "sign-option",
+          Expression = new SequentialExpression() {
+            NonSequentialExpression = new StringExpression() {
+              Name = null,
+              String = "SIGN"
+            },
+            Expression = new SequentialExpression() {
+              NonSequentialExpression = new OptionalExpression() {
+                Expression = new StringExpression() {
+                  Name = "_",
+                  String = "IS"
+                }
+              },
+              Expression = new SequentialExpression() {
+                NonSequentialExpression = new GroupExpression() {
+                  Expression = new AlternativesExpression() {
+                    AtomicExpression = new StringExpression() {
+                      Name = null,
+                      String = "LEADING"
+                    },
+                    NonSequentialExpression = new StringExpression() {
+                      Name = null,
+                      String = "TRAILING"
+                    }
+                  }
+                },
+                Expression = new OptionalExpression() {
+                  Expression = new SequentialExpression() {
+                    NonSequentialExpression = new StringExpression() {
+                      Name = null,
+                      String = "SEPARATE"
+                    },
+                    Expression = new OptionalExpression() {
+                      Expression = new StringExpression() {
+                        Name = null,
+                        String = "CHARACTER"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
       @"
 Model(
   Entities=[

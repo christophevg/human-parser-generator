@@ -13,12 +13,13 @@ public class Program {
   }
   public override string ToString() {
     return
-    "Program(" +
-    "Identifier=" + this.Identifier + "," +
-    "Assignments=" + "[" +
+    "new Program() { \n" +
+    "Identifier = " + (this.Identifier == null ? "null" :
+                       this.Identifier.ToString()) + ",\n" +
+    "Assignments = new List<Assignment>() {" +
     string.Join(",", this.Assignments.Select(x => x.ToString())) +
-    "]" +
-    ")";
+    "}" +
+    "}";
   }
 }
 
@@ -28,10 +29,12 @@ public class Assignment {
   public Expression Expression { get; set; }
   public override string ToString() {
     return
-    "Assignment(" +
-    "Identifier=" + this.Identifier + "," +
-    "Expression=" + this.Expression +
-    ")";
+    "new Assignment() { \n" +
+    "Identifier = " + (this.Identifier == null ? "null" :
+                       this.Identifier.ToString()) + ",\n" +
+    "Expression = " + (this.Expression == null ? "null" :
+                       this.Expression.ToString()) +
+    "}";
   }
 }
 
@@ -43,9 +46,9 @@ public class Identifier : Expression {
   public string Name { get; set; }
   public override string ToString() {
     return
-    "Identifier(" +
-    "Name=" + this.Name +
-    ")";
+    "new Identifier() { " +
+    "Name = " + Format.Literal(this.Name)  +
+    "}";
   }
 }
 
@@ -54,9 +57,9 @@ public class String : Expression {
   public string Text { get; set; }
   public override string ToString() {
     return
-    "String(" +
-    "Text=" + this.Text +
-    ")";
+    "new String() { " +
+    "Text = " + Format.Literal(this.Text) +
+    "}";
   }
 }
 
@@ -65,9 +68,9 @@ public class Number : Expression {
   public string Value { get; set; }
   public override string ToString() {
     return
-    "Number(" +
-    "Value=" + this.Value +
-    ")";
+    "new Number() { " +
+    "Value = " + Format.Literal(this.Value) +
+    "}";
   }
 }
 
@@ -76,7 +79,7 @@ public class Parser : ParserBase {
   public Parser Parse(string source) {
     this.Source = new Parsable(source);
     try {
-      this.AST = this.ParseProgram();
+      this.AST    = this.ParseProgram();
     } catch(ParseException e) {
       this.Errors.Add(e);
       throw this.Source.GenerateParseException("Failed to parse.");
@@ -181,6 +184,6 @@ public class Parser : ParserBase {
 
 public class Extracting {
   public static Regex Identifier = new Regex(@"^([A-Z][A-Z0-9]*)");
-  public static Regex String     = new Regex(@"^""([^""]*)""|'([^']*)'");
-  public static Regex Number     = new Regex(@"^(-?[1-9][0-9]*)");
+  public static Regex String = new Regex(@"^""([^""]*)""|'([^']*)'");
+  public static Regex Number = new Regex(@"^(-?[1-9][0-9]*)");
 }

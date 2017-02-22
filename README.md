@@ -106,6 +106,8 @@ The extensions that are applied are:
 
 A few demos show the capabilities and results of the generated parsers.
 
+> I'm running on macOS with [Mono](http://mono-project.com). Mono provides an implementation of `msbuild` in the form of `xbuild`. I've recently moved from `Makefiles` to project build files. This is still to be tested on Windows with the original `msbuild`, so for now YMMV in any environment other than macOS ;-)
+
 ### Pascal
 
 In the [`example/pascal`](example/pascal) folder I've started by writing a manual implementation for the embryonal Pascal example, [`pascal.cs`](example/pascal/pascal.cs), taking into account how I think this could be generated. The output of the example program, parses the example Pascal file and outputs an AST-like structure.
@@ -113,62 +115,243 @@ In the [`example/pascal`](example/pascal) folder I've started by writing a manua
 ```bash
 $ cd example/pascal
 
-$ make run-manual
-*** compiling manual.exe from ../../generator/dump-ast.cs ../../generator/parsable.cs pascal.cs
-*** running manual Pascal parser
-Program(Identifier=Identifier(Name=DEMO1),Assignments=[Assignment(Identifier=Identifier(Name=A),Expression=Number(Value=3)),Assignment(Identifier=Identifier(Name=B),Expression=Number(Value=45)),Assignment(Identifier=Identifier(Name=H),Expression=Number(Value=-100023)),Assignment(Identifier=Identifier(Name=C),Expression=Identifier(Name=A)),Assignment(Identifier=Identifier(Name=D123),Expression=Identifier(Name=B34A)),Assignment(Identifier=Identifier(Name=BABOON),Expression=Identifier(Name=GIRAFFE)),Assignment(Identifier=Identifier(Name=TEXT),Expression=String(Text=Hello world!))])
+$ xbuild /target:Manual
+XBuild Engine Version 14.0
+Mono, Version 4.6.2.0
+Copyright (C) 2005-2013 Various Mono authors
+
+Build started 2/22/2017 9:05:48 PM.
+__________________________________________________
+Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj" (Manual target(s)):
+	Target Manual:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/pascal-manual.exe ../../generator/parsable.cs ../../generator/dump-ast.cs pascal.cs /target:exe
+		Executing: mono bin/Debug/pascal-manual.exe example.pas | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
+		new Program() {
+		  Identifier = new Identifier() { Name = "DEMO1"},
+		  Assignments = new List<Assignment>() {
+		    new Assignment() {
+		      Identifier = new Identifier() { Name = "A"},
+		      Expression = new Number() {
+		        Value = "3"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "B"},
+		      Expression = new Number() {
+		        Value = "45"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "H"},
+		      Expression = new Number() {
+		        Value = "-100023"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "C"},
+		      Expression = new Identifier() {
+		        Name = "A"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "D123"},
+		      Expression = new Identifier() {
+		        Name = "B34A"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "BABOON"},
+		      Expression = new Identifier() {
+		        Name = "GIRAFFE"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "TEXT"},
+		      Expression = new String() {
+		        Text = "Hello world!"
+		      }
+		    }
+		  }
+		}
+Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj".
+
+Build succeeded.
+	 0 Warning(s)
+	 0 Error(s)
+
+Time Elapsed 00:00:00.6882760
 ```
 
-> The manual implementation uses two supporting files, that are now part of the generator framework. They were "promoted" from the manual example to the actual framework.
+> The manual implementation uses two supporting files, [parsable.cs](generator/parsable.cs) and [dump-ast.cs](generator/dump-ast.cs), that are now part of the generator framework. They were "promoted" from the manual example to the actual framework.
 
-The Makefile also implements an example on how to generate a Pascal generator from the EBNF-like language definition. In fact, just issuing `make` runs the manual implementation, generates a fresh Pascal parser, compares the manual and generated parser and finally also runs the generated version:
+> I've chosen to implement the `ToString()` functionality of the AST as C# code that builds the same data structure. This is easy to reuse it, e.g. in unit tests and it formats nicely (using e.g. AStyle).
+
+The build file also implements an example on how to generate a Pascal generator from the EBNF-like language definition. In fact, just issuing `xbuild` runs the manual implementation, generates a fresh Pascal parser, compares the manual and generated parser and finally also runs the generated version:
 
 ```bash
-$ make
-*** compiling manual.exe from ../../generator/dump-ast.cs ../../generator/parsable.cs pascal.cs
-*** running manual Pascal parser
-Program(Identifier=Identifier(Name=DEMO1),Assignments=[Assignment(Identifier=Identifier(Name=A),Expression=Number(Value=3)),Assignment(Identifier=Identifier(Name=B),Expression=Number(Value=45)),Assignment(Identifier=Identifier(Name=H),Expression=Number(Value=-100023)),Assignment(Identifier=Identifier(Name=C),Expression=Identifier(Name=A)),Assignment(Identifier=Identifier(Name=D123),Expression=Identifier(Name=B34A)),Assignment(Identifier=Identifier(Name=BABOON),Expression=Identifier(Name=GIRAFFE)),Assignment(Identifier=Identifier(Name=TEXT),Expression=String(Text=Hello world!))])
-make[1]: Nothing to be done for `all'.
-*** generating a Pascal parser from pascal-assignments.bnf
-*** comparing to manual version
-    manual and generated parsers are identical
-*** setting up generated environment for generated/pascal.cs
-total 24
--rw-r--r--@ 1 xtof  staff   400 Feb 19 00:09 Makefile
--rw-r--r--  1 xtof  staff  5926 Feb 19 00:09 pascal.cs
-*** compiling and running generated/pascal.cs
-*** compiling dump-ast.exe from ../../../generator/dump-ast.cs ../../../generator/parsable.cs pascal.cs
-*** running dump-ast.exe
-Program(Identifier=Identifier(Name=DEMO1),Assignments=[Assignment(Identifier=Identifier(Name=A),Expression=Number(Value=3)),Assignment(Identifier=Identifier(Name=B),Expression=Number(Value=45)),Assignment(Identifier=Identifier(Name=H),Expression=Number(Value=-100023)),Assignment(Identifier=Identifier(Name=C),Expression=Identifier(Name=A)),Assignment(Identifier=Identifier(Name=D123),Expression=Identifier(Name=B34A)),Assignment(Identifier=Identifier(Name=BABOON),Expression=Identifier(Name=GIRAFFE)),Assignment(Identifier=Identifier(Name=TEXT),Expression=String(Text=Hello world!))])
+$ xbuild
+XBuild Engine Version 14.0
+Mono, Version 4.6.2.0
+Copyright (C) 2005-2013 Various Mono authors
+
+Build started 2/22/2017 9:07:54 PM.
+__________________________________________________
+Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj" (default target(s)):
+	Target Manual:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/pascal-manual.exe ../../generator/parsable.cs ../../generator/dump-ast.cs pascal.cs /target:exe
+		Executing: mono bin/Debug/pascal-manual.exe example.pas | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
+		new Program() {
+		  Identifier = new Identifier() { Name = "DEMO1"},
+		  Assignments = new List<Assignment>() {
+		    new Assignment() {
+		      Identifier = new Identifier() { Name = "A"},
+		      Expression = new Number() {
+		        Value = "3"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "B"},
+		      Expression = new Number() {
+		        Value = "45"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "H"},
+		      Expression = new Number() {
+		        Value = "-100023"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "C"},
+		      Expression = new Identifier() {
+		        Name = "A"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "D123"},
+		      Expression = new Identifier() {
+		        Name = "B34A"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "BABOON"},
+		      Expression = new Identifier() {
+		        Name = "GIRAFFE"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "TEXT"},
+		      Expression = new String() {
+		        Text = "Hello world!"
+		      }
+		    }
+		  }
+		}
+	Target Generated:
+		Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (default target(s)):
+			Target Gen0Parser:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
+			Target Gen1Source:
+				Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
+			Target Gen1Parser:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
+			Target HPGSource:
+				Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
+			Target Build:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs /target:exe
+		Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
+		Executing: mono ../../bin/Debug//hpg.exe -i pascal-assignments.bnf | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80> pascal-generated.cs
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/pascal-generated.exe ../../generator/parsable.cs ../../generator/dump-ast.cs pascal-generated.cs /target:exe
+	Target Compare:
+		Executing: diff -u -w  pascal.cs pascal-generated.cs
+	Target RunGenerated:
+		Executing: mono bin/Debug/pascal-generated.exe example.pas | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
+		new Program() {
+		  Identifier = new Identifier() { Name = "DEMO1"},
+		  Assignments = new List<Assignment>() {
+		    new Assignment() {
+		      Identifier = new Identifier() { Name = "A"},
+		      Expression = new Number() {
+		        Value = "3"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "B"},
+		      Expression = new Number() {
+		        Value = "45"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "H"},
+		      Expression = new Number() {
+		        Value = "-100023"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "C"},
+		      Expression = new Identifier() {
+		        Name = "A"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "D123"},
+		      Expression = new Identifier() {
+		        Name = "B34A"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "BABOON"},
+		      Expression = new Identifier() {
+		        Name = "GIRAFFE"
+		      }
+		    },new Assignment() {
+		      Identifier = new Identifier() { Name = "TEXT"},
+		      Expression = new String() {
+		        Text = "Hello world!"
+		      }
+		    }
+		  }
+		}
+Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj".
+
+Build succeeded.
+	 0 Warning(s)
+	 0 Error(s)
+
+Time Elapsed 00:00:02.8713970
 ```
 
 ### Cobol Example
 
-In [`example/cobol`](example/cobol) a parser is generated for Cobol record definitions, also known as Copybooks - Warning: this is work in progress. The generated parser is currently capable of parsing several example Copybooks, but needs some EBNF-like definition rewriting to get the full potential. A few unit tests are the beginning to get this in motion:
+In [`example/cobol`](example/cobol) a parser is generated for Cobol record definitions, also known as Copybooks - Warning: this is work in progress. The generated parser is currently capable of parsing several example Copybooks.
 
 ```bash
-$ make
-*** building parser.gen1.cs
-*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
-*** generating parser from hpg.bnf to parser.gen1.cs
-*** building parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
-*** generating parser from hpg.bnf to parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
-*** generating a Cobol parser from cobol-record-definition.bnf
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: string
-~~~ C# Emitter Warning: rewriting property name: string
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: string
-*** building unit tests
-*** executing unit tests
-....
-Tests run: 4, Failures: 0, Not run: 0, Time: 0.341 seconds
+$ xbuild
+XBuild Engine Version 14.0
+Mono, Version 4.6.2.0
+Copyright (C) 2005-2013 Various Mono authors
+
+Build started 2/22/2017 9:09:22 PM.
+__________________________________________________
+Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/cobol/cobol.csproj" (default target(s)):
+	Target Generated:
+		Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (default target(s)):
+			Target Gen0Parser:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
+			Target Gen1Source:
+				Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
+			Target Gen1Parser:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
+			Target HPGSource:
+				Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
+			Target Build:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs /target:exe
+		Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
+		Executing: mono ../../bin/Debug//hpg.exe cobol-record-definition.bnf > cobol.cs
+		hpg-emitter: warning: rewriting property name: float
+		hpg-emitter: warning: rewriting property name: float
+		hpg-emitter: warning: rewriting property name: string
+		hpg-emitter: warning: rewriting property name: string
+		hpg-emitter: warning: rewriting property name: float
+		hpg-emitter: warning: rewriting property name: string
+	Target RunTests:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/test.dll ../../generator/parsable.cs ../../generator/dump-ast.cs cobol.cs test_records.cs /target:library /reference:nunit.framework.dll
+		Executing: nunit-console -nologo bin/Debug/test.dll
+		....
+		Tests run: 4, Failures: 0, Not run: 0, Time: 0.144 seconds
+Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/cobol/cobol.csproj".
+
+Build succeeded.
+	 0 Warning(s)
+	 0 Error(s)
+
+Time Elapsed 00:00:04.6024340
 ```
 
-The Makefile also provides a more visible demo that parses a small fragment of a Cobol copybook:
+The build file also provides a more visible demo that parses a small fragment of a Cobol copybook:
 
 ```cobol
 01 TOP.
@@ -177,75 +360,86 @@ The Makefile also provides a more visible demo that parses a small fragment of a
 ```
 
 ```bash
-$ make parse
-*** building parser.gen1.cs
-*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
-*** generating parser from hpg.bnf to parser.gen1.cs
-*** building parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
-*** generating parser from hpg.bnf to parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
-*** generating a Cobol parser from cobol-record-definition.bnf
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: string
-~~~ C# Emitter Warning: rewriting property name: string
-~~~ C# Emitter Warning: rewriting property name: float
-~~~ C# Emitter Warning: rewriting property name: string
-*** building parse-cobol.exe from ../../generator/parsable.cs ../../generator/dump-ast.cs cobol.cs
-*** running parse-cobol.exe
-Copybook(
-Records=[
-         BasicRecord(
-         Level=Int(
-              Value=01
-              ),
-         LevelName=LevelName(
-                  HasFiller=False,
-                  Identifier=Identifier(
-                             Name=TOP
-                             )
-                  ),
-         Options=[
-                ]
-         ),
-         BasicRecord(
-         Level=Int(
-              Value=05
-              ),
-         LevelName=LevelName(
-                  HasFiller=False,
-                  Identifier=Identifier(
-                             Name=SUB
-                             )
-                  ),
-         Options=[
-                ]
-         ),
-         BasicRecord(
-         Level=Int(
-              Value=10
-              ),
-         LevelName=LevelName(
-                  HasFiller=False,
-                  Identifier=Identifier(
-                             Name=FIELD
-                             )
-                  ),
-         Options=[
-                PictureFormatOption(
-                Type=S9,
-                Digits=Int(
-                       Value=05
-                       ),
-                DecimalType=,
-                DecimalDigits=
-                ),
-                CompUsage(
-                Level=5
-                )]
-         )]
-)
+$ xbuild /target:RunGenerated
+XBuild Engine Version 14.0
+Mono, Version 4.6.2.0
+Copyright (C) 2005-2013 Various Mono authors
+
+Build started 2/22/2017 9:10:22 PM.
+__________________________________________________
+Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/cobol/cobol.csproj" (RunGenerated target(s)):
+	Target Generated:
+		Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (default target(s)):
+			Target Gen0Parser:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
+			Target Gen1Source:
+				Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
+			Target Gen1Parser:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
+			Target HPGSource:
+				Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
+			Target Build:
+				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs /target:exe
+		Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
+		Executing: mono ../../bin/Debug//hpg.exe cobol-record-definition.bnf > cobol.cs
+		hpg-emitter: warning: rewriting property name: float
+		hpg-emitter: warning: rewriting property name: float
+		hpg-emitter: warning: rewriting property name: string
+		hpg-emitter: warning: rewriting property name: string
+		hpg-emitter: warning: rewriting property name: float
+		hpg-emitter: warning: rewriting property name: string
+	Target BuildGenerated:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/parse-cobol.exe ../../generator/parsable.cs ../../generator/dump-ast.cs cobol.cs /target:exe
+	Target RunGenerated:
+		Executing: mono bin/Debug/parse-cobol.exe simple.cobol | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
+		new Copybook() {
+		  Records = new List<Record>() {
+		    new BasicRecord() {
+		      Level = new Int() { Value = "01"},
+		      LevelName = new LevelName() {
+		        HasFiller = this.HasFiller,
+		        Identifier = new Identifier() {
+		          Name = "TOP"
+		        }
+		      },
+		      Options = new List<Option>() {}
+		    },new BasicRecord() {
+		      Level = new Int() { Value = "05"},
+		      LevelName = new LevelName() {
+		        HasFiller = this.HasFiller,
+		        Identifier = new Identifier() {
+		          Name = "SUB"
+		        }
+		      },
+		      Options = new List<Option>() {}
+		    },new BasicRecord() {
+		      Level = new Int() { Value = "10"},
+		      LevelName = new LevelName() {
+		        HasFiller = this.HasFiller,
+		        Identifier = new Identifier() {
+		          Name = "FIELD"
+		        }
+		      },
+		      Options = new List<Option>() {
+		        new PictureFormatOption() {
+		          Type = "S9",
+		          Digits = new Int() { Value = "05"},
+		          DecimalType = null,
+		          DecimalDigits = null
+		        },new CompUsage() {
+		          Level = "5"
+		        }
+		      }
+		    }
+		  }
+		}
+Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/cobol/cobol.csproj".
+
+Build succeeded.
+	 0 Warning(s)
+	 0 Error(s)
+
+Time Elapsed 00:00:03.6833500
 ```
 
 > As shown by the output from the examples, the generator first generates two copies of itself, before the examples use it to generate a Pascal or Cobol parser. This is the implementation of the *self-hosting objective*.
@@ -324,7 +518,7 @@ The model is a direct implementation of this EBNF-like definition in object-orie
 
 ![Grammar Model](model/grammar.png)
 
-Not shown in the model are `identifier`, `string` and `regex`. These lowest-level, extracting entities, are not generated as classes, but as (static) prepared regular expressions, and used when needed.
+Not shown in the model are `identifier`, `string` and `pattern`. These lowest-level, extracting entities (aka extractors), are not generated as classes, but as (static) prepared regular expressions, and used when needed.
 
 ## Generator
 
@@ -336,23 +530,40 @@ The structure of the Generator (currently) looks like this:
 
 ### Building `hpg.exe`
 
-Building the generator simply requires a `make` command in the [`generator`](generator) folder - which is what is also done by the Pascal and Cobol examples above:
+Building the generator simply requires an `xbuild` command in the root of the repository - which is what is also done by the Pascal and Cobol examples above:
 
 ```bash
-$ make
-*** building parser.gen1.cs
-*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
-*** generating parser from hpg.bnf to parser.gen1.cs
-*** building parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
-*** generating parser from hpg.bnf to parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
+$ xbuild
+XBuild Engine Version 14.0
+Mono, Version 4.6.2.0
+Copyright (C) 2005-2013 Various Mono authors
+
+Build started 2/22/2017 9:11:12 PM.
+__________________________________________________
+Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (default target(s)):
+	Target Gen0Parser:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
+	Target Gen1Source:
+		Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
+	Target Gen1Parser:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
+	Target HPGSource:
+		Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
+	Target Build:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs /target:exe
+Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
+
+Build succeeded.
+	 0 Warning(s)
+	 0 Error(s)
+
+Time Elapsed 00:00:01.7712950
 ```
 
 This compiles a second generation parser generator, called `hpg.exe`:
 
 ```bash
-$ mono hpg.exe --help
+$ mono bin/Debug/hpg.exe --help
 Usage: hpg.exe [options] [file ...]
 
     --help, -h              Show usage information
@@ -375,19 +586,18 @@ Emission options.
 Providing it with an EBNF-like language definition, will simple generate a corresponding parser to standard output:
 
 ```bash
-$ mono hpg.exe ../example/pascal/pascal-assignments.bnf 
+$  mono bin/Debug/hpg.exe example/pascal/pascal-assignments.bnf
 // DO NOT EDIT THIS FILE
 // This file was generated using the Human Parser Generator
 // (https://github.com/christophevg/human-parser-generator)
-// on Tuesday, February 21, 2017 at 11:53:32 AM
-// Source : ../example/pascal/pascal-assignments.bnf
+// on Wednesday, February 22, 2017 at 9:12:14 PM
+// Source : example/pascal/pascal-assignments.bnf
 
 using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
-using System.Diagnostics;
 
 // program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
 public class Program {
@@ -419,18 +629,34 @@ The output is generated, so it isn't as attractive as manually laid out diagrams
 To be able to focus on sub-problems and isolate combinations of constructs, I've set up a unit testing infrastructure that generates a EBNF-like parser and then uses that to run the tests:
 
 ```bash
-$ make
-*** building parser.gen1.cs
-*** compiling hpg.exe from generator.cs emitter.cs grammar.cs bootstrap.cs
-*** generating parser from hpg.bnf to parser.gen1.cs
-*** building parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.gen1.cs hpg.cs
-*** generating parser from hpg.bnf to parser.cs
-*** compiling hpg.exe from generator.cs emitter.cs parsable.cs parser.cs hpg.cs
-*** building unit tests
-*** executing unit tests
-........................
-Tests run: 24, Failures: 0, Not run: 0, Time: 0.262 seconds
+$ xbuild /target:RunTests
+XBuild Engine Version 14.0
+Mono, Version 4.6.2.0
+Copyright (C) 2005-2013 Various Mono authors
+
+Build started 2/22/2017 9:12:48 PM.
+__________________________________________________
+Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (RunTests target(s)):
+	Target Gen0Parser:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
+	Target Gen1Source:
+		Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
+	Target Gen1Parser:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
+	Target HPGSource:
+		Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
+	Target RunTests:
+		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/test.dll generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs test/test_bnf_parser.cs test/test_factory.cs test/test_model.cs test/test_parsable.cs /target:library /reference:nunit.framework.dll
+		Executing: nunit-console -nologo bin/Debug/test.dll
+		..............................
+		Tests run: 30, Failures: 0, Not run: 0, Time: 0.329 seconds
+Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
+
+Build succeeded.
+	 0 Warning(s)
+	 0 Error(s)
+
+Time Elapsed 00:00:02.8446630
 ```
 
 > The unit tests hardly cover the basics of the source tree, but the goal is to have a comprehensive set, covering all possibilities. The unit tests will be the driving force for the continued development :-)

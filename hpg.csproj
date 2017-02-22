@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <ExeLauncher Condition="('$(OS)' != 'Windows_NT')">mono</ExeLauncher>
+    <NUnitConsole Condition="('$(OS)' != 'Windows_NT')">nunit-console -nologo</NUnitConsole>
+    <NUnitConsole Condition="('$(OS)' == 'Windows_NT')">mono nunit-console.exe -nologo</NUnitConsole>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -63,13 +65,13 @@
     <!-- Additional HPG Sources -->
     <HPG Include="generator\parser.cs" />
     <HPG Include="generator\hpg.cs" />
+    <!-- Additional Test Sources -->
+    <Test Include="generator\parser.cs" />
+    <Test Include="test\test_*.cs" />
     <!-- Files To Be Cleaned Up -->
-    <FileWrites Include="$(OutputPath)hpg.gen0.exe"/>
+    <FileWrites Include="$(OutputPath)*"/>
     <FileWrites Include="generator\parser.gen1.cs"/>
-    <FileWrites Include="$(OutputPath)hpg.gen1.exe"/>
     <FileWrites Include="generator\parser.cs"/>
-    <FileWrites Include="$(OutputPath)hpg.exe"/>
-    <FileWrites Include="$(OutputPath)*.mdb"/>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -84,7 +86,8 @@
   <Target Name="Gen0Parser"  
           Inputs="@(Compile);@(Gen0)"  
           Outputs="$(OutputPath)hpg.gen0.exe">
-    <CSC Sources="@(Compile);@(Gen0)"  
+    <CSC Sources="@(Compile);@(Gen0)"
+         TargetType="exe"
          OutputAssembly="$(OutputPath)hpg.gen0.exe"  
          EmitDebugInformation="true" />   
   </Target>
@@ -102,6 +105,7 @@
           Outputs="$(OutputPath)hpg.gen1.exe"
           DependsOnTargets="Gen1Source">
           <CSC Sources="@(Compile);@(Gen1)"  
+               TargetType="exe"
                OutputAssembly="$(OutputPath)hpg.gen1.exe"  
                EmitDebugInformation="true" />   
   </Target>
@@ -118,7 +122,18 @@
           Outputs="$(OutputPath)\hpg.exe"
           DependsOnTargets="HPGSource">
           <CSC Sources="@(Compile);@(HPG)"  
+               TargetType="exe"
                OutputAssembly="$(OutputPath)hpg.exe"  
                EmitDebugInformation="true" />   
+  </Target>
+
+  <Target Name="RunTests"
+          DependsOnTargets="HPGSource">
+    <CSC Sources="@(Compile);@(Test)"
+         TargetType="library"
+         References="nunit.framework.dll"
+         OutputAssembly="$(OutputPath)test.dll"
+         EmitDebugInformation="true" />
+    <Exec Command="$(NUnitConsole) $(OutputPath)test.dll"/>
   </Target>
 </Project>

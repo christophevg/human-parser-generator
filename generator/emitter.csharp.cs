@@ -196,7 +196,7 @@ public Parser Parse(string source) {
     }
 
     private string GenerateEntityParser(Entity entity) {
-      return string.Join("\n\n",
+      return string.Join("\n",
         new List<string>() {
           this.GenerateEntityParserHeader(entity),
           this.GenerateParseAction(entity.ParseAction),
@@ -217,9 +217,9 @@ public Parser Parse(string source) {
             ) +
             ";"
           )
-        ) + "\n\n" +
+        ) + "\n" +
         "this.Log( \"Parse" + Format.CSharp.Class(entity) + "\" );\n" +
-        "Parse( () => {\n";
+        "Parse( () => {";
     }
 
     private string GenerateParseAction(ParseAction action) {
@@ -289,7 +289,7 @@ public Parser Parse(string source) {
       ConsumeAll consume = (ConsumeAll)action;
       return 
         ( consume.IsPlural ? "Repeat( () => {\n" : "" ) +
-        string.Join("\n\n",
+        string.Join("\n",
           consume.Actions.Select(next => this.GenerateParseAction(next))
         ) +
         ( consume.IsPlural ? "\n});" : "" );
@@ -306,7 +306,7 @@ public Parser Parse(string source) {
           "})\n";
         first = false;
       }
-      code += ".OrThrow(\"Expected: " + consume.Label + "\");\n ";
+      code += ".OrThrow(\"Expected: " + consume.Label + "\"); ";
 
       return 
         ( consume.IsPlural ? "Repeat( () => {\n" : "" ) +

@@ -564,6 +564,7 @@ This compiles a second generation parser generator, called `hpg.exe`:
 
 ```bash
 $ mono bin/Debug/hpg.exe --help
+Human Parser Generator version 1.1.6262.38847
 Usage: hpg.exe [options] [file ...]
 
     --help, -h              Show usage information

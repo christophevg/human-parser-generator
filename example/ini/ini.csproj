@@ -49,7 +49,7 @@
   
   <Target Name="RunGenerated"
           DependsOnTargets="BuildGenerated">
-    <Exec Command="$(ExeLauncher) $(OutputPath)parse-ini.exe example.ini" />
+    <Exec Command="$(ExeLauncher) $(OutputPath)parse-ini.exe example.ini $(AStyle)" />
   </Target>
 
   <Target Name="RunTests"

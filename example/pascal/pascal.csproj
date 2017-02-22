@@ -36,14 +36,14 @@
          TargetType="exe"
          OutputAssembly="$(OutputPath)pascal-manual.exe"  
          EmitDebugInformation="true" />
-    <Exec Command="$(ExeLauncher) $(OutputPath)pascal-manual.exe example.pas" />
+    <Exec Command="$(ExeLauncher) $(OutputPath)pascal-manual.exe example.pas $(AStyle)" />
   </Target>
 
   <Target Name="Generated"
           Inputs="@(Compile);@(Generated);example.pas;pascal-assignments.bnf"
           Outputs="$(OutputPath)pascal-generated.exe">
     <MSBuild Projects="..\..\hpg.csproj" />
-    <Exec Command="$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe -i pascal-assignments.bnf > pascal-generated.cs" />
+    <Exec Command="$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe -i pascal-assignments.bnf $(AStyle)> pascal-generated.cs" />
     <CSC Sources="@(Compile);@(Generated)"
          TargetType="exe"
          OutputAssembly="$(OutputPath)pascal-generated.exe"  
@@ -57,7 +57,7 @@
 
   <Target Name="RunGenerated"
           DependsOnTargets="Compare">
-    <Exec Command="$(ExeLauncher) $(OutputPath)pascal-generated.exe example.pas" />
+    <Exec Command="$(ExeLauncher) $(OutputPath)pascal-generated.exe example.pas $(AStyle)" />
   </Target>
           
 </Project>

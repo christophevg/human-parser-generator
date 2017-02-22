@@ -49,7 +49,7 @@
   
   <Target Name="RunGenerated"
           DependsOnTargets="BuildGenerated">
-    <Exec Command="$(ExeLauncher) $(OutputPath)parse-mini-java.exe example.mini-java" />
+    <Exec Command="$(ExeLauncher) $(OutputPath)parse-mini-java.exe example.mini-java $(AStyle)" />
   </Target>
 
   <Target Name="RunTests"

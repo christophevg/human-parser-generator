@@ -27,11 +27,19 @@
       <MakeDir Directories="$(OutputPath)" />  
   </Target>
 
+  <Target Name="HPG">
+    <MSBuild Projects="..\..\hpg.csproj" />
+  </Target>
+
+  <PropertyGroup>
+    <RunHPG>$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe $(HPGFlags)</RunHPG>
+  </PropertyGroup>
+
   <Target Name="Generated"
           Inputs="@(Compile);$(AssemblyName).bnf"
-          Outputs="$(AssemblyName).cs">
-    <MSBuild Projects="..\..\hpg.csproj" />
-    <Exec Command="$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe $(HPGFlags) $(AssemblyName).bnf $(AStyle) > $(AssemblyName).cs" />
+          Outputs="$(AssemblyName).cs"
+          DependsOnTargets="HPG">
+    <Exec Command="$(RunHPG) $(AssemblyName).bnf $(AStyle) > $(AssemblyName).cs" />
   </Target>
 
   <Target Name="BuildGenerated"

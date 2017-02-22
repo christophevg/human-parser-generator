@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Diagnostics;
+using System.Reflection;
 
 using HumanParserGenerator.Generator;
 
@@ -76,6 +77,7 @@ namespace HumanParserGenerator {
       try {
         return new Dictionary<string, Func<bool>>() {
           { "-h",       this.ShowHelp      }, { "--help",    this.ShowHelp      },
+          { "-v",       this.ShowVersion   }, { "--version", this.ShowVersion   },
           { "-p",       this.OutputParser  }, { "--parser",  this.OutputParser  },
           { "-a",       this.OutputAST     }, { "--ast",     this.OutputAST     },
           { "-m",       this.OutputModel   }, { "--model",   this.OutputModel   },
@@ -115,6 +117,7 @@ namespace HumanParserGenerator {
     }
 
     private bool ShowHelp() {
+      this.ShowVersion();
       Console.WriteLine("Usage: hpg.exe [options] [file ...]");
       Console.WriteLine();
       Console.WriteLine("    --help, -h              Show usage information");
@@ -132,6 +135,14 @@ namespace HumanParserGenerator {
       Console.WriteLine("    --info, -i              Suppress generation of info header");
       Console.WriteLine("    --rule, -r              Suppress generation of rule comment");
       Console.WriteLine("    --namespace, -n NAME    Embed parser in namespace");
+      return false;
+    }
+
+    // via http://stackoverflow.com/questions/3400950
+    private bool ShowVersion() {
+      Assembly assembly = Assembly.GetExecutingAssembly();
+      AssemblyName name = assembly.GetName();
+      Console.WriteLine("Human Parser Generator version {0}", name.Version.ToString());
       return false;
     }
 

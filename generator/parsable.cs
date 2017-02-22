@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Linq;
+using System.CodeDom;
+using System.CodeDom.Compiler;
 
 public class ParseException : System.Exception {
   public int Position     { get; set; }
@@ -347,5 +349,19 @@ public abstract class ParserBase {
       ) + "\u256f";
     
     return report;
+  }
+}
+
+public class Format {
+  // via http://stackoverflow.com/questions/323640
+  internal static string Literal(string input) {
+    using( var writer = new StringWriter() ) {
+      using( var provider = CodeDomProvider.CreateProvider("CSharp") ) {
+        provider.GenerateCodeFromExpression(
+          new CodePrimitiveExpression(input), writer, null
+        );
+        return writer.ToString();
+      }
+    }
   }
 }

@@ -1,65 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         DefaultTargets="Clean;RunTests">
+<Project ToolsVersion="4.0"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Project="..\..\hpg.targets" />
+  <Import Project="..\example.targets" />
 
   <PropertyGroup>
     <ProjectGuid>{4A1FCD27-4477-4D75-A24F-C776989ECB05}</ProjectGuid>
     <ProjectTypeGuids>{A3C238DB-5B21-436E-A633-F3063EB893AC}</ProjectTypeGuids>
-    <OutputType>Exe</OutputType>
     <AssemblyName>cobol</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Common Sources -->
-    <Compile Include="..\..\generator\parsable.cs" />
-    <Compile Include="..\..\generator\dump-ast.cs" />
-    <!-- Additional Generated Sources -->
-    <Generated Include="cobol.cs" />
-    <!-- Additional Test Sources -->
-    <Test Include="test_*.cs" />
-    <!-- Files To Be Cleaned Up -->
-    <FileWrites Include="$(OutputPath)*" />
-    <FileWrites Include="cobol.cs" />
-    <FileWrites Include="TestResult.xml" />
-  </ItemGroup>
-
-  <Target Name="MakeBuildDirectory"
-          BeforeTargets="Generated">  
-      <MakeDir Directories="$(OutputPath)" />  
-  </Target>
-
-  <Target Name="Generated"
-          Inputs="@(Compile);cobol-record-definition.bnf"
-          Outputs="cobol.cs">
-    <MSBuild Projects="..\..\hpg.csproj" />
-    <Exec Command="$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe cobol-record-definition.bnf > cobol.cs" />
-  </Target>
-
-  <Target Name="BuildGenerated"
-          Inputs="@(Compile);@(Generated)"
-          Outputs="parse-cobol.exe"
-          DependsOnTargets="Generated">
-    <CSC Sources="@(Compile);@(Generated)"
-         TargetType="exe"
-         OutputAssembly="$(OutputPath)parse-cobol.exe"  
-         EmitDebugInformation="true" />   
-  </Target>
-  
-  <Target Name="RunGenerated"
-          DependsOnTargets="BuildGenerated">
-    <Exec Command="$(ExeLauncher) $(OutputPath)parse-cobol.exe simple.cobol $(AStyle)" />
-  </Target>
-
-  <Target Name="RunTests"
-          DependsOnTargets="Generated">
-    <CSC Sources="@(Compile);@(Generated);@(Test)"
-         TargetType="library"
-         References="nunit.framework.dll"
-         OutputAssembly="$(OutputPath)test.dll"
-         EmitDebugInformation="true" />
-    <Exec Command="$(NUnitConsole) $(OutputPath)test.dll"/>
-  </Target>
           
 </Project>

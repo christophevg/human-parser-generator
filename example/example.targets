@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         DefaultTargets="Clean;RunTests;RunGenerated">
+
+  <Import Project="..\hpg.targets" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Common Sources -->
+    <Compile Include="..\..\generator\parsable.cs" />
+    <Compile Include="..\..\generator\dump-ast.cs" />
+    <!-- Additional Generated Sources -->
+    <Generated Include="$(AssemblyName).cs" />
+    <!-- Additional Test Sources -->
+    <Test Include="test_*.cs" />
+    <!-- Files To Be Cleaned Up -->
+    <FileWrites Include="$(OutputPath)*" />
+    <FileWrites Include="$(AssemblyName).cs" />
+    <FileWrites Include="TestResult.xml" />
+  </ItemGroup>
+
+  <Target Name="MakeBuildDirectory"
+          BeforeTargets="Generated">  
+      <MakeDir Directories="$(OutputPath)" />  
+  </Target>
+
+  <Target Name="Generated"
+          Inputs="@(Compile);$(AssemblyName).bnf"
+          Outputs="$(AssemblyName).cs">
+    <MSBuild Projects="..\..\hpg.csproj" />
+    <Exec Command="$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe $(HPGFlags) $(AssemblyName).bnf $(AStyle) > $(AssemblyName).cs" />
+  </Target>
+
+  <Target Name="BuildGenerated"
+          Inputs="@(Compile);@(Generated)"
+          Outputs="parse-$(AssemblyName).exe"
+          DependsOnTargets="Generated">
+    <CSC Sources="@(Compile);@(Generated)"
+         TargetType="exe"
+         OutputAssembly="$(OutputPath)parse-$(AssemblyName).exe"  
+         EmitDebugInformation="true" />   
+  </Target>
+  
+  <Target Name="RunGenerated"
+          DependsOnTargets="BuildGenerated">
+    <Exec Command="$(ExeLauncher) $(OutputPath)parse-$(AssemblyName).exe example.$(AssemblyName) $(AStyle)" />
+  </Target>
+
+  <Target Name="RunTests"
+          DependsOnTargets="Generated">
+    <CSC Sources="@(Compile);@(Generated);@(Test)"
+         TargetType="library"
+         References="nunit.framework.dll"
+         OutputAssembly="$(OutputPath)test.dll"
+         EmitDebugInformation="true" />
+    <Exec Command="$(NUnitConsole) $(OutputPath)test.dll"/>
+  </Target>          
+</Project>

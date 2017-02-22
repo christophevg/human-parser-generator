@@ -1,63 +1,37 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         DefaultTargets="Clean;RunGenerated">
+         DefaultTargets="Clean;Compare;RunGenerated">
 
-  <Import Project="..\..\hpg.targets" />
+  <Import Project="..\example.targets" />
 
   <PropertyGroup>
     <ProjectGuid>{039EDDD8-0709-46F3-B368-9B68A567E6A7}</ProjectGuid>
     <ProjectTypeGuids>{895D3B2E-FF56-403E-BA28-B91D67C73D0F}</ProjectTypeGuids>
-    <OutputType>Exe</OutputType>
     <AssemblyName>pascal</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Common Sources -->
-    <Compile Include="..\..\generator\parsable.cs" />
-    <Compile Include="..\..\generator\dump-ast.cs" />
     <!-- Additional Manual Sources -->
-    <Manual Include="pascal.cs" />
-    <!-- Additional Generated Sources -->
-    <Generated Include="pascal-generated.cs" />
-    <!-- Files To Be Cleaned Up -->
-    <FileWrites Include="$(OutputPath)*"/>
-    <FileWrites Include="parser.cs"/>
+    <Manual Include="$(AssemblyName)-manual.cs" />
   </ItemGroup>
 
-  <Target Name="MakeBuildDirectory"
-          BeforeTargets="Manual;Generated">  
-      <MakeDir Directories="$(OutputPath)" />  
-  </Target>
+  <PropertyGroup>
+    <HPGFlags>-i</HPGFlags>
+  </PropertyGroup>
 
   <Target Name="Manual"
-          Inputs="@(Compile);@(Manual);example.pas"
-          Outputs="$(OutputPath)pascal-manual.exe">
+          Inputs="@(Compile);@(Manual);example.$(AssemblyName)"
+          Outputs="$(OutputPath)$(AssemblyName)-manual.exe">
     <CSC Sources="@(Compile);@(Manual)"  
          TargetType="exe"
-         OutputAssembly="$(OutputPath)pascal-manual.exe"  
+         OutputAssembly="$(OutputPath)$(AssemblyName)-manual.exe"  
          EmitDebugInformation="true" />
-    <Exec Command="$(ExeLauncher) $(OutputPath)pascal-manual.exe example.pas $(AStyle)" />
-  </Target>
-
-  <Target Name="Generated"
-          Inputs="@(Compile);@(Generated);example.pas;pascal-assignments.bnf"
-          Outputs="$(OutputPath)pascal-generated.exe">
-    <MSBuild Projects="..\..\hpg.csproj" />
-    <Exec Command="$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe -i pascal-assignments.bnf $(AStyle)> pascal-generated.cs" />
-    <CSC Sources="@(Compile);@(Generated)"
-         TargetType="exe"
-         OutputAssembly="$(OutputPath)pascal-generated.exe"  
-         EmitDebugInformation="true" />   
+    <Exec Command="$(ExeLauncher) $(OutputPath)$(AssemblyName)-manual.exe example.$(AssemblyName) $(AStyle)" />
   </Target>
 
   <Target Name="Compare"
           DependsOnTargets="Manual;Generated">
-    <Exec Command="$(Diff) pascal.cs pascal-generated.cs"/>
+    <Exec Command="$(Diff) $(AssemblyName)-manual.cs $(AssemblyName).cs"/>
   </Target>
 
-  <Target Name="RunGenerated"
-          DependsOnTargets="Compare">
-    <Exec Command="$(ExeLauncher) $(OutputPath)pascal-generated.exe example.pas $(AStyle)" />
-  </Target>
-          
 </Project>

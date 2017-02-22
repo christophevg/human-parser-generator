@@ -1,65 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         DefaultTargets="Clean;RunGenerated">
+<Project ToolsVersion="4.0"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Project="..\..\hpg.targets" />
+  <Import Project="..\example.targets" />
 
   <PropertyGroup>
     <ProjectGuid>{1B0335BF-D547-422A-81DE-228ED2495C86}</ProjectGuid>
     <ProjectTypeGuids>{E4E7A64C-58E0-4BAB-B8E2-02BD9E9C2C66}</ProjectTypeGuids>
-    <OutputType>Exe</OutputType>
     <AssemblyName>ini</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Common Sources -->
-    <Compile Include="..\..\generator\parsable.cs" />
-    <Compile Include="..\..\generator\dump-ast.cs" />
-    <!-- Additional Generated Sources -->
-    <Generated Include="ini.cs" />
-    <!-- Additional Test Sources -->
-    <Test Include="test_*.cs" />
-    <!-- Files To Be Cleaned Up -->
-    <FileWrites Include="$(OutputPath)*" />
-    <FileWrites Include="ini.cs" />
-    <FileWrites Include="TestResult.xml" />
-  </ItemGroup>
-
-  <Target Name="MakeBuildDirectory"
-          BeforeTargets="Generated">  
-      <MakeDir Directories="$(OutputPath)" />  
-  </Target>
-
-  <Target Name="Generated"
-          Inputs="@(Compile);ini.bnf"
-          Outputs="ini.cs">
-    <MSBuild Projects="..\..\hpg.csproj" />
-    <Exec Command="$(ExeLauncher) ..\..\$(OutputPath)\hpg.exe ini.bnf > ini.cs" />
-  </Target>
-
-  <Target Name="BuildGenerated"
-          Inputs="@(Compile);@(Generated)"
-          Outputs="parse-ini.exe"
-          DependsOnTargets="Generated">
-    <CSC Sources="@(Compile);@(Generated)"
-         TargetType="exe"
-         OutputAssembly="$(OutputPath)parse-ini.exe"  
-         EmitDebugInformation="true" />   
-  </Target>
-  
-  <Target Name="RunGenerated"
-          DependsOnTargets="BuildGenerated">
-    <Exec Command="$(ExeLauncher) $(OutputPath)parse-ini.exe example.ini $(AStyle)" />
-  </Target>
-
-  <Target Name="RunTests"
-          DependsOnTargets="Generated">
-    <CSC Sources="@(Compile);@(Generated);@(Test)"
-         TargetType="library"
-         References="nunit.framework.dll"
-         OutputAssembly="$(OutputPath)test.dll"
-         EmitDebugInformation="true" />
-    <Exec Command="$(NUnitConsole) $(OutputPath)test.dll"/>
-  </Target>
           
 </Project>

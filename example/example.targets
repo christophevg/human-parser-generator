@@ -19,6 +19,8 @@
     <!-- Files To Be Cleaned Up -->
     <FileWrites Include="$(OutputPath)*" />
     <FileWrites Include="$(AssemblyName).cs" />
+    <FileWrites Include="$(AssemblyName).dot" />
+    <FileWrites Include="$(AssemblyName).png" />
     <FileWrites Include="TestResult.xml" />
   </ItemGroup>
 
@@ -66,4 +68,15 @@
          EmitDebugInformation="true" />
     <Exec Command="$(NUnitConsole) $(OutputPath)test.dll"/>
   </Target>          
+
+  <Target Name="ModelDot"
+          DependsOnTargets="HPG">
+    <Exec Command="$(RunHPG) -m -d $(AssemblyName).bnf > $(AssemblyName).dot" />
+  </Target>
+    
+  <Target Name="ModelPng"
+          DependsOnTargets="HPG">
+    <Exec Command="$(RunHPG) -m -d $(AssemblyName).bnf $(Dot) $(AssemblyName).png" />
+  </Target>
+
 </Project>

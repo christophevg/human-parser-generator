@@ -13,6 +13,7 @@
     <Diff Condition="('$(OS)' != 'Windows_NT')">diff -u -w </Diff>
     <Diff Condition="('$(OS)' == 'Windows_NT')">fc.exe</Diff>
     <AStyle Condition="('$(OS)' != 'Windows_NT')">| LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80</AStyle>
+    <Dot Condition="('$(OS)' != 'Windows_NT')">| unflatten -f -l 1 -c 4 | dot -T png -o</Dot>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
     <PlatformTarget>x86</PlatformTarget>

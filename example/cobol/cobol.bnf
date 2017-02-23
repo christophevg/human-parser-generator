@@ -1,5 +1,5 @@
 copybook                ::= { record };
-record                  ::= renames-record | values-record | basic-record ".";
+record                  ::= ( renames-record | values-record | basic-record ) ".";
 
 renames-record          ::= "66" level-name "RENAMES"  identifier-range ;
 level-name              ::= "FILLER" | identifier ;
@@ -31,7 +31,7 @@ redefines-option        ::= "REDEFINES" redefined @ identifier ;
 external-option         ::= [ _ @ "IS" ] "EXTERNAL" ;
 internal-option         ::= [ _ @ "IS" ] "INTERNAL" ;
 usage-option            ::= [ _ @ "USAGE" [ _ @ "IS" ] ] usage;
-sign-option             ::= "SIGN" [ _ @ "IS" ] "LEADING" | "TRAILING" [ "SEPARATE" [ "CHARACTER" ] ] ;
+sign-option             ::= "SIGN" [ _ @ "IS" ] ( "LEADING" | "TRAILING" ) [ "SEPARATE" [ "CHARACTER" ] ] ;
 occurs-option           ::= "OCCURS" amount @ numeric [ _ @ "TO" upper-bound @ numeric ] [ _ @ "TIMES" ] [ _ @ "DEPENDING" [ _ @ "ON" ] depends-on @ identifier ] { key } { index } ;
 
 sync-option             ::= "SYNC" [ _ @ "HRONIZED" ] [ "LEFT" | "RIGHT" ] ;

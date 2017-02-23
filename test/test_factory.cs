@@ -261,10 +261,10 @@ public class GeneratorModelFactoryTests {
           new Rule() {
             Identifier = "rule1",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "rule2" },
-              Expression              = new SequentialExpression() {
-                NonSequentialExpression = new StringExpression() { String = "." },
-                Expression              = new IdentifierExpression() { Identifier = "rule2" }
+              AtomicExpression          = new IdentifierExpression() { Identifier = "rule2" },
+              NonAlternativesExpression = new SequentialExpression() {
+                AtomicExpression          = new StringExpression() { String = "." },
+                NonAlternativesExpression = new IdentifierExpression() { Identifier = "rule2" }
               }
             }
           },
@@ -310,17 +310,17 @@ public class GeneratorModelFactoryTests {
           new Rule() {
             Identifier = "rule",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new OptionalExpression() {
+              AtomicExpression = new OptionalExpression() {
                 Expression = new IdentifierExpression() { Identifier = "name" }
               },
-              Expression = new IdentifierExpression() { Identifier = "id" }
+              NonAlternativesExpression = new IdentifierExpression() { Identifier = "id" }
             }
           },
           new Rule() {
             Identifier = "name",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "id" },
-              Expression = new StringExpression() { String = "@" }
+              AtomicExpression          = new IdentifierExpression() { Identifier = "id" },
+              NonAlternativesExpression = new StringExpression() { String = "@" }
             }
           },
           new Rule() {
@@ -372,10 +372,10 @@ public class GeneratorModelFactoryTests {
           new Rule() {
             Identifier = "rule",
             Expression = new AlternativesExpression() {
-              AtomicExpression = new StringExpression() { String = "a" },
-              NonSequentialExpression = new AlternativesExpression() {
-                AtomicExpression = new StringExpression() { String = "b" },
-                NonSequentialExpression = new StringExpression() { String = "c" }
+              NonAlternativesExpression = new StringExpression() { String = "a" },
+              Expression                = new AlternativesExpression() {
+                NonAlternativesExpression = new StringExpression() { String = "b" },
+                Expression                = new StringExpression() { String = "c" }
               }
             }
           }
@@ -412,16 +412,16 @@ Model(
           new Rule() {
             Identifier = "rule",
             Expression = new AlternativesExpression() {
-              AtomicExpression = new GroupExpression() {
+              NonAlternativesExpression = new GroupExpression() {
                 Expression = new SequentialExpression() {
-                  NonSequentialExpression = new StringExpression() { String = "a" },
-                  Expression = new StringExpression() { String = "b" }
+                  AtomicExpression          = new StringExpression() { String = "a" },
+                  NonAlternativesExpression = new StringExpression() { String = "b" }
                 }
               },
-              NonSequentialExpression = new GroupExpression() {
+              Expression = new GroupExpression() {
                 Expression = new SequentialExpression() {
-                  NonSequentialExpression = new StringExpression() { String = "c" },
-                  Expression = new StringExpression() { String = "d" }
+                  AtomicExpression          = new StringExpression() { String = "c" },
+                  NonAlternativesExpression = new StringExpression() { String = "d" }
                 }
               }
             }
@@ -486,14 +486,14 @@ Model(
           new Rule() {
             Identifier = "rule",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "id" },
-              Expression = new SequentialExpression() {
-                NonSequentialExpression = new StringExpression() { String = "x" },
-                Expression = new SequentialExpression() {
-                  NonSequentialExpression = new IdentifierExpression() { Identifier = "id" },
-                  Expression = new SequentialExpression() {
-                    NonSequentialExpression = new StringExpression() { String = "=" },
-                    Expression = new IdentifierExpression() { Identifier = "id" }
+              AtomicExpression          = new IdentifierExpression() { Identifier = "id" },
+              NonAlternativesExpression = new SequentialExpression() {
+                AtomicExpression          = new StringExpression() { String = "x" },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression          = new IdentifierExpression() { Identifier = "id" },
+                  NonAlternativesExpression = new SequentialExpression() {
+                    AtomicExpression          = new StringExpression() { String = "=" },
+                    NonAlternativesExpression = new IdentifierExpression() { Identifier = "id" }
                   }
                 }
               }
@@ -557,10 +557,10 @@ Model(
           new Rule() {
             Identifier = "rule2",
             Expression = new AlternativesExpression() {
-              AtomicExpression = new StringExpression() { String = "a" },
-              NonSequentialExpression = new AlternativesExpression() {
-                AtomicExpression = new StringExpression() { String = "b" },
-                NonSequentialExpression = new StringExpression() { String = "c" }
+              NonAlternativesExpression = new StringExpression() { String = "a" },
+              Expression                = new AlternativesExpression() {
+                NonAlternativesExpression = new StringExpression() { String = "b" },
+                Expression =                new StringExpression() { String = "c" }
               }
             }
           }
@@ -610,8 +610,8 @@ Model(
           new Rule() {
             Identifier = "exp",
             Expression = new AlternativesExpression() {
-              AtomicExpression        = new IdentifierExpression() { Identifier = "a" },
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "b"}
+              NonAlternativesExpression = new IdentifierExpression() { Identifier = "a" },
+              Expression                = new IdentifierExpression() { Identifier = "b"}
             }
           },
           new Rule() {
@@ -675,22 +675,22 @@ Model(
           new Rule() {
             Identifier = "exp",
             Expression = new AlternativesExpression() {
-              AtomicExpression        = new IdentifierExpression() { Identifier = "a" },
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "b"}
+              NonAlternativesExpression = new IdentifierExpression() { Identifier = "a" },
+              Expression                = new IdentifierExpression() { Identifier = "b"}
             }
           },
           new Rule() {
             Identifier = "a",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "b"   },
-              Expression              = new IdentifierExpression() { Identifier = "exp" }
+              AtomicExpression          = new IdentifierExpression() { Identifier = "b"   },
+              NonAlternativesExpression = new IdentifierExpression() { Identifier = "exp" }
             }
           },
           new Rule() {
             Identifier = "b",
             Expression = new AlternativesExpression() {
-              AtomicExpression        = new IdentifierExpression() { Identifier = "x" },
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "y"}
+              NonAlternativesExpression = new IdentifierExpression() { Identifier = "x" },
+              Expression                = new IdentifierExpression() { Identifier = "y"}
             }
           },
           new Rule() {
@@ -781,24 +781,24 @@ Model(
           new Rule() {
             Identifier = "value",
             Expression = new AlternativesExpression() {
-              AtomicExpression        = new IdentifierExpression() { Identifier = "literal" },
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "variable"}
+              NonAlternativesExpression = new IdentifierExpression() { Identifier = "literal" },
+              Expression                = new IdentifierExpression() { Identifier = "variable"}
             }
           },
           new Rule() {
             Identifier = "literal",
             Expression = new AlternativesExpression() {
-              AtomicExpression        = new IdentifierExpression() { Identifier = "number" },
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "string"}
+              NonAlternativesExpression = new IdentifierExpression() { Identifier = "number" },
+              Expression                = new IdentifierExpression() { Identifier = "string"}
             }
           },
           new Rule() {
             Identifier = "variable",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() { Identifier = "identifier"},
-              Expression = new SequentialExpression() {
-                NonSequentialExpression = new StringExpression() { String = "x" },
-                Expression = new IdentifierExpression() { Identifier = "number" }
+              AtomicExpression          = new IdentifierExpression() { Identifier = "identifier"},
+              NonAlternativesExpression = new SequentialExpression() {
+                AtomicExpression          = new StringExpression() { String = "x" },
+                NonAlternativesExpression = new IdentifierExpression() { Identifier = "number" }
               }
             }
           },

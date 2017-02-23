@@ -60,28 +60,28 @@ number                ::= value @ /(-?[1-9][0-9]*)/ ;
           new Rule() {
             Identifier = "program",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new StringExpression() {
+              AtomicExpression = new StringExpression() {
                 Name = null,
                 String = "PROGRAM"
               },
-              Expression = new SequentialExpression() {
-                NonSequentialExpression = new IdentifierExpression() {
+              NonAlternativesExpression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
                   Name = null,
                   Identifier = "identifier"
                 },
-                Expression = new SequentialExpression() {
-                  NonSequentialExpression = new StringExpression() {
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new StringExpression() {
                     Name = null,
                     String = "BEGIN"
                   },
-                  Expression = new SequentialExpression() {
-                    NonSequentialExpression = new RepetitionExpression() {
+                  NonAlternativesExpression = new SequentialExpression() {
+                    AtomicExpression = new RepetitionExpression() {
                       Expression = new IdentifierExpression() {
                         Name = null,
                         Identifier = "assignment"
                       }
                     },
-                    Expression = new StringExpression() {
+                    NonAlternativesExpression = new StringExpression() {
                       Name = null,
                       String = "END."
                     }
@@ -92,21 +92,21 @@ number                ::= value @ /(-?[1-9][0-9]*)/ ;
           },new Rule() {
             Identifier = "assignment",
             Expression = new SequentialExpression() {
-              NonSequentialExpression = new IdentifierExpression() {
+              AtomicExpression = new IdentifierExpression() {
                 Name = null,
                 Identifier = "identifier"
               },
-              Expression = new SequentialExpression() {
-                NonSequentialExpression = new StringExpression() {
+              NonAlternativesExpression = new SequentialExpression() {
+                AtomicExpression = new StringExpression() {
                   Name = null,
                   String = ":="
                 },
-                Expression = new SequentialExpression() {
-                  NonSequentialExpression = new IdentifierExpression() {
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new IdentifierExpression() {
                     Name = null,
                     Identifier = "expression"
                   },
-                  Expression = new StringExpression() {
+                  NonAlternativesExpression = new StringExpression() {
                     Name = null,
                     String = ";"
                   }
@@ -116,16 +116,16 @@ number                ::= value @ /(-?[1-9][0-9]*)/ ;
           },new Rule() {
             Identifier = "expression",
             Expression = new AlternativesExpression() {
-              AtomicExpression = new IdentifierExpression() {
+              NonAlternativesExpression = new IdentifierExpression() {
                 Name = null,
                 Identifier = "identifier"
               },
-              NonSequentialExpression = new AlternativesExpression() {
-                AtomicExpression = new IdentifierExpression() {
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new IdentifierExpression() {
                   Name = null,
                   Identifier = "string"
                 },
-                NonSequentialExpression = new IdentifierExpression() {
+                Expression = new IdentifierExpression() {
                   Name = null,
                   Identifier = "number"
                 }
@@ -259,37 +259,37 @@ sign-option ::=
         new Rule() {
           Identifier = "sign-option",
           Expression = new SequentialExpression() {
-            NonSequentialExpression = new StringExpression() {
+            AtomicExpression = new StringExpression() {
               Name = null,
               String = "SIGN"
             },
-            Expression = new SequentialExpression() {
-              NonSequentialExpression = new OptionalExpression() {
+            NonAlternativesExpression = new SequentialExpression() {
+              AtomicExpression = new OptionalExpression() {
                 Expression = new StringExpression() {
                   Name = "_",
                   String = "IS"
                 }
               },
-              Expression = new SequentialExpression() {
-                NonSequentialExpression = new GroupExpression() {
+              NonAlternativesExpression = new SequentialExpression() {
+                AtomicExpression = new GroupExpression() {
                   Expression = new AlternativesExpression() {
-                    AtomicExpression = new StringExpression() {
+                    NonAlternativesExpression = new StringExpression() {
                       Name = null,
                       String = "LEADING"
                     },
-                    NonSequentialExpression = new StringExpression() {
+                    Expression = new StringExpression() {
                       Name = null,
                       String = "TRAILING"
                     }
                   }
                 },
-                Expression = new OptionalExpression() {
+                NonAlternativesExpression = new OptionalExpression() {
                   Expression = new SequentialExpression() {
-                    NonSequentialExpression = new StringExpression() {
+                    AtomicExpression = new StringExpression() {
                       Name = null,
                       String = "SEPARATE"
                     },
-                    Expression = new OptionalExpression() {
+                    NonAlternativesExpression = new OptionalExpression() {
                       Expression = new StringExpression() {
                         Name = null,
                         String = "CHARACTER"

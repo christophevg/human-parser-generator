@@ -41,8 +41,8 @@ namespace HumanParserGenerator.Emitter {
     private string GenerateExpression(Expression expression) {
       try {
         return new Dictionary<string, Func<Expression,string>>() {
-          { "SequentialExpression",   this.GenerateSequentialExpression   },
           { "AlternativesExpression", this.GenerateAlternativesExpression },
+          { "SequentialExpression",   this.GenerateSequentialExpression   },
           { "OptionalExpression",     this.GenerateOptionalExpression     },
           { "RepetitionExpression",   this.GenerateRepetitionExpression   },
           { "GroupExpression",        this.GenerateGroupExpression        },
@@ -57,16 +57,16 @@ namespace HumanParserGenerator.Emitter {
       }
     }
 
-    private string GenerateSequentialExpression(Expression expression) {
-      SequentialExpression sequence = expression as SequentialExpression;
-      return this.GenerateExpression(sequence.NonSequentialExpression) + " " +
-        this.GenerateExpression(sequence.Expression);
-    }
-
     private string GenerateAlternativesExpression(Expression expression) {
       AlternativesExpression alternatives = expression as AlternativesExpression;
-      return this.GenerateExpression(alternatives.AtomicExpression) + " | " +
-        this.GenerateExpression(alternatives.NonSequentialExpression);
+      return this.GenerateExpression(alternatives.NonAlternativesExpression) + " | " +
+        this.GenerateExpression(alternatives.Expression);
+    }
+
+    private string GenerateSequentialExpression(Expression expression) {
+      SequentialExpression sequence = expression as SequentialExpression;
+      return this.GenerateExpression(sequence.AtomicExpression) + " " +
+        this.GenerateExpression(sequence.NonAlternativesExpression);
     }
 
     private string GenerateOptionalExpression(Expression expression) {

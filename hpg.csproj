@@ -15,6 +15,7 @@
     <!-- Common Sources -->
     <Compile Include="generator\parsable.cs" />
     <Compile Include="generator\generator.cs" />
+    <Compile Include="generator\factory.cs" />
     <Compile Include="generator\emitter.csharp.cs" />
     <Compile Include="generator\emitter.bnf.cs" />
     <Compile Include="generator\format.csharp.cs" />

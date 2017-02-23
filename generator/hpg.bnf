@@ -1,45 +1,46 @@
-grammar                   ::= { rule } ;
+grammar                     ::= { rule } ;
 
-rule                      ::= identifier ( _ @ "::=" | _ @ "=" ) expression ";" ;
+rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ";" ;
 
-expression                ::= sequential-expression
-                            | non-sequential-expression
-                            ;
+expression                  ::= alternatives-expression
+                              | non-alternatives-expression
+                              ;
 
-sequential-expression     ::= non-sequential-expression [ _ @ "," ] expression ;
+alternatives-expression     ::= non-alternatives-expression "|" expression ;
 
-non-sequential-expression ::= alternatives-expression
-                            | atomic-expression
-                            ;
+non-alternatives-expression ::= sequential-expression
+                              | atomic-expression
+                              ; 
 
-alternatives-expression   ::= atomic-expression "|" non-sequential-expression ;
+sequential-expression       ::= atomic-expression [ _ @ "," ] non-alternatives-expression ;
 
 
-atomic-expression         ::= nested-expression
-                            | terminal-expression
-                            ;
+atomic-expression           ::= nested-expression
+                              | terminal-expression
+                              ;
 
-nested-expression         ::= optional-expression
-                            | repetition-expression
-                            | group-expression
-                            ;
+nested-expression           ::= optional-expression
+                              | repetition-expression
+                              | group-expression
+                              ;
 
-optional-expression       ::= "[" expression "]" ;
-repetition-expression     ::= "{" expression "}" ;
-group-expression          ::= "(" expression ")" ;
+optional-expression         ::= "[" expression "]" ;
+repetition-expression       ::= "{" expression "}" ;
+group-expression            ::= "(" expression ")" ;
 
-terminal-expression       ::= identifier-expression
-                            | string-expression
-                            | extractor-expression
-                            ;
+terminal-expression         ::= identifier-expression
+                              | string-expression
+                              | extractor-expression
+                              ;
 
-identifier-expression     ::= [ name ] identifier ;
-string-expression         ::= [ name ] string;
+identifier-expression       ::= [ name ] identifier ;
 
-extractor-expression      ::= [ name ] "/" pattern "/" ;
+string-expression           ::= [ name ] string ;
 
-name                      ::= identifier "@" ;
+extractor-expression        ::= [ name ] "/" pattern "/" ;
 
-identifier                ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
-string                    ::= /"([^"]*)"|^'([^']*)'/ ;
-pattern                   ::= /(.*?)(?<keep>/\s*;)/ ;
+name                        ::= identifier "@" ;
+
+identifier                  ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
+string                      ::= /"([^"]*)"|^'([^']*)'/ ;
+pattern                     ::= /(.*?)(?<keep>/\s*;)/ ;

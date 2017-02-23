@@ -2,8 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
          DefaultTargets="Clean;Compare;RunGenerated">
 
-  <Import Project="..\example.targets" />
-
   <PropertyGroup>
     <ProjectGuid>{039EDDD8-0709-46F3-B368-9B68A567E6A7}</ProjectGuid>
     <ProjectTypeGuids>{895D3B2E-FF56-403E-BA28-B91D67C73D0F}</ProjectTypeGuids>
@@ -18,6 +16,8 @@
   <PropertyGroup>
     <HPGFlags>-i</HPGFlags>
   </PropertyGroup>
+
+  <Import Project="..\example.targets" />
 
   <Target Name="Manual"
           Inputs="@(Compile);@(Manual);example.$(AssemblyName)"

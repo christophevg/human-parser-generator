@@ -32,7 +32,9 @@
 
   <Target Name="Compare"
           DependsOnTargets="Manual;Generated">
-    <Exec Command="$(Diff) $(AssemblyName)-manual.cs $(AssemblyName).cs"/>
+    <Exec Command="cat $(AssemblyName)-manual.cs $(AStyle) > manual.cs" />
+    <Exec Command="$(Diff) manual.cs $(AssemblyName).cs"/>
+    <Exec Command="rm manual.cs" />
   </Target>
 
 </Project>

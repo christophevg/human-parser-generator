@@ -14,8 +14,7 @@ public class Program {
   public override string ToString() {
     return
     "new Program() { \n" +
-    "Identifier = " + (this.Identifier == null ? "null" :
-                       this.Identifier.ToString()) + ",\n" +
+    "Identifier = " + (this.Identifier == null ? "null" : this.Identifier.ToString()) + ",\n" +
     "Assignments = new List<Assignment>() {" +
     string.Join(",", this.Assignments.Select(x => x.ToString())) +
     "}" +
@@ -30,10 +29,8 @@ public class Assignment {
   public override string ToString() {
     return
     "new Assignment() { \n" +
-    "Identifier = " + (this.Identifier == null ? "null" :
-                       this.Identifier.ToString()) + ",\n" +
-    "Expression = " + (this.Expression == null ? "null" :
-                       this.Expression.ToString()) +
+    "Identifier = " + (this.Identifier == null ? "null" : this.Identifier.ToString()) + ",\n" +
+    "Expression = " + (this.Expression == null ? "null" : this.Expression.ToString()) +
     "}";
   }
 }

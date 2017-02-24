@@ -62,7 +62,7 @@
           DependsOnTargets="Generated">
     <CSC Sources="@(Compile);@(Generated);@(Test)"
          TargetType="library"
-         References="nunit.framework.dll"
+         References="$(NUnitReference)"
          OutputAssembly="$(OutputPath)test.dll"
          EmitDebugInformation="true" />
     <Exec Command="$(NUnitConsole) $(OutputPath)test.dll"/>

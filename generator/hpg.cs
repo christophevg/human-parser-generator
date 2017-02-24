@@ -33,6 +33,7 @@ namespace HumanParserGenerator {
     private bool         emitRule      = true;
     private List<string> sources       = new List<string>();
     private string       emitNamespace = null;
+    private string       outputTo      = null;
 
     // argument processing
     
@@ -42,7 +43,7 @@ namespace HumanParserGenerator {
         if(args[i].StartsWith("-")) {
           if( this.HasArgument(args[i]) ) {
             if( i+1 < args.Length ) {
-              this.ProcessOption(args[i], args[i+1]);
+              if( ! this.ProcessOption(args[i], args[i+1]) ) { return; }
               i++;
             } else { return; }
           } else {
@@ -69,7 +70,8 @@ namespace HumanParserGenerator {
     
     private bool HasArgument(string option) {
       return new List<string>() {
-        "-n", "--namespace"
+        "-n", "--namespace",
+        "-o", "--output"
       }.Contains(option);
     }
 
@@ -95,7 +97,8 @@ namespace HumanParserGenerator {
     private bool ProcessOption(string option, string arg) {
       try {
         return new Dictionary<string, Func<string,bool>>() {
-          { "-n",  this.UseNamespace }, { "--namespace", this.UseNamespace }
+          { "-n",  this.UseNamespace }, { "--namespace", this.UseNamespace },
+          { "-o",  this.OutputTo     }, { "--output",    this.OutputTo }
         }[option](arg);
       } catch(KeyNotFoundException) {}
 
@@ -112,7 +115,8 @@ namespace HumanParserGenerator {
     }
 
     private bool Fail(string msg) {
-      Console.Error.WriteLine(msg);
+      Console.Error.WriteLine("Error: " + msg);
+      Console.Error.WriteLine();
       return this.ShowHelp();
     }
 
@@ -121,6 +125,9 @@ namespace HumanParserGenerator {
       Console.WriteLine("Usage: hpg.exe [options] [file ...]");
       Console.WriteLine();
       Console.WriteLine("    --help, -h              Show usage information");
+      Console.WriteLine("    --version, -v           Show version information");
+      Console.WriteLine();
+      Console.WriteLine("    --output, -o FILENAME   Output to file, not stdout");
       Console.WriteLine();
       Console.WriteLine("Output options.");
       Console.WriteLine("Select one of the following:");
@@ -158,6 +165,13 @@ namespace HumanParserGenerator {
       this.emitNamespace = name;
       return true;
     }
+    private bool OutputTo(string file) {
+      if(File.Exists(file)) {
+        return this.Fail("File exists: " + file);
+      }
+      this.outputTo = file;
+      return true;
+    }
 
     // Generation of Model and Parser
 
@@ -174,19 +188,17 @@ namespace HumanParserGenerator {
       }
 
       if( this.output == Output.AST ) {
-        Console.WriteLine(grammar.ToString());
-        return 0;
+        return this.Export(grammar.ToString());
       }
 
       if( this.output == Output.Grammar ) {
-        Console.WriteLine(
+        return this.Export(
           new Emitter.BNF() {
             EmitInfo  = this.emitInfo,
             Sources   = this.sources
           }
           .Generate(grammar)
           .ToString());
-        return 0;
       }
 
       // Grammar Model -> Generator/Parser Model
@@ -194,11 +206,9 @@ namespace HumanParserGenerator {
 
       if( this.output == Output.Model ) {
         if(this.format == Format.Dot) {
-          Console.WriteLine(this.Dotify(model));
-          return 0;
+          return this.Export(this.Dotify(model));
         }
-        Console.WriteLine(model.ToString());
-        return 0;
+        return this.Export(model.ToString());
       }
 
       // Generator/Parser Model -> CSharp code
@@ -210,7 +220,22 @@ namespace HumanParserGenerator {
       }
       .Generate(model);
 
-      Console.WriteLine(code.ToString());
+      return this.Export(code.ToString());
+    }
+    
+    private int Export(string output){
+      if( this.outputTo == null ) {
+        Console.WriteLine(output);
+      } else {
+        try {
+          File.WriteAllText(this.outputTo, output);
+        } catch(Exception e) {
+          Console.Error.WriteLine(
+            "Could not export to file '" + this.outputTo + "' : " + e.Message
+          );
+          return 1;
+        }
+      }
       return 0;
     }
     

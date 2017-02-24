@@ -21,7 +21,7 @@ dependencies:
 test:
   override:
     - xbuild /target:RunTests /property:NUnitReference=/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll
-    - xbuild example/pascal/pascal.csproj
-    - xbuild example/cobol/cobol.csproj
-    - xbuild example/ini/ini.csproj
-    - xbuild example/mini-java/mini-java.csproj
+    - xbuild example/pascal/pascal.csproj /property:AStyle=
+    - xbuild example/cobol/cobol.csproj /property:AStyle=
+    - xbuild example/ini/ini.csproj /property:AStyle=
+    - xbuild example/mini-java/mini-java.csproj /property:AStyle=

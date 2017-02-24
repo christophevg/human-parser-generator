@@ -24,8 +24,7 @@
     <FileWrites Include="TestResult.xml" />
   </ItemGroup>
 
-  <Target Name="MakeBuildDirectory"
-          BeforeTargets="Generated">  
+  <Target Name="MakeBuildDirectory">  
       <MakeDir Directories="$(OutputPath)" />  
   </Target>
 
@@ -40,7 +39,7 @@
   <Target Name="Generated"
           Inputs="@(Compile);$(AssemblyName).bnf"
           Outputs="$(AssemblyName).cs"
-          DependsOnTargets="HPG">
+          DependsOnTargets="MakeBuildDirectory;HPG">
     <Exec Command="$(RunHPG) $(AssemblyName).bnf $(AStyle) > $(AssemblyName).cs" />
   </Target>
 

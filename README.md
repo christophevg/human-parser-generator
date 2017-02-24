@@ -432,51 +432,52 @@ An important aspect of this project is being self hosting and parsing the EBNF-l
 The grammar for the Human Parser Generator BNF-like notation (currently) looks like this:
 
 ```ebnf
-grammar                   ::= { rule } ;
+grammar                     ::= { rule } ;
 
-rule                      ::= identifier "::=" expression ";" ;
+rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ";" ;
 
-expression                ::= sequential-expression
-                            | non-sequential-expression
-                            ;
+expression                  ::= alternatives-expression
+                              | non-alternatives-expression
+                              ;
 
-sequential-expression     ::= non-sequential-expression expression ;
+alternatives-expression     ::= non-alternatives-expression "|" expression ;
 
-non-sequential-expression ::= alternatives-expression
-                            | atomic-expression
-                            ;
+non-alternatives-expression ::= sequential-expression
+                              | atomic-expression
+                              ; 
 
-alternatives-expression   ::= atomic-expression "|" non-sequential-expression ;
+sequential-expression       ::= atomic-expression [ _ @ "," ] non-alternatives-expression ;
 
 
-atomic-expression         ::= nested-expression
-                            | terminal-expression
-                            ;
+atomic-expression           ::= nested-expression
+                              | terminal-expression
+                              ;
 
-nested-expression         ::= optional-expression
-                            | repetition-expression
-                            | group-expression
-                            ;
+nested-expression           ::= optional-expression
+                              | repetition-expression
+                              | group-expression
+                              ;
 
-optional-expression       ::= "[" expression "]" ;
-repetition-expression     ::= "{" expression "}" ;
-group-expression          ::= "(" expression ")" ;
+optional-expression         ::= "[" expression "]" ;
+repetition-expression       ::= "{" expression "}" ;
+group-expression            ::= "(" expression ")" ;
 
-terminal-expression       ::= identifier-expression
-                            | string-expression
-                            | extractor-expression
-                            ;
+terminal-expression         ::= identifier-expression
+                              | string-expression
+                              | extractor-expression
+                              ;
 
-identifier-expression     ::= [ name ] identifier ;
-string-expression         ::= [ name ] string;
+identifier-expression       ::= [ name ] identifier ;
 
-extractor-expression      ::= [ name ] "/" pattern "/" ;
+string-expression           ::= [ name ] string ;
 
-name                      ::= identifier "@" ;
+extractor-expression        ::= [ name ] "/" pattern "/" ;
 
-identifier                ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
-string                    ::= /"([^"]*)"|^'([^']*)'/ ;
-pattern                   ::= /(.*?)(?<keep>/\s*;)/ ;
+name                        ::= identifier "@" ;
+
+identifier                  ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
+string                      ::= /"([^"]*)"|^'([^']*)'/ ;
+pattern                     ::= /(.*?)(?<keep>/\s*;)/ ;
 ```
 
 To bootstrap the generator, to allow it to generate a parser for the EBNF-like definition language, a grammar modelled by hand is used. It is located in `generator/grammar.cs` in the `AsModel` class, retrievable via the `BNF` property.
@@ -531,10 +532,13 @@ This compiles a second generation parser generator, called `hpg.exe`:
 
 ```bash
 $ mono bin/Debug/hpg.exe --help
-Human Parser Generator version 1.1.6262.38847
+Human Parser Generator version 1.1.6264.18747
 Usage: hpg.exe [options] [file ...]
 
     --help, -h              Show usage information
+    --version, -v           Show version information
+
+    --output, -o FILENAME   Output to file, not stdout
 
 Output options.
 Select one of the following:
@@ -627,7 +631,9 @@ Build succeeded.
 Time Elapsed 00:00:02.8446630
 ```
 
-> The unit tests hardly cover the basics of the source tree, but the goal is to have a comprehensive set, covering all possibilities. The unit tests will be the driving force for the continued development :-)
+> The unit tests hardly cover the basics of the source tree, but the goal is to have a comprehensive set, covering all aspects.
+
+The repository is currently also tracked by [Circle CI](http://circleci.com). All unit tests and every example is built and the results can be seen on the [project's CI page](http://circleci.com/gh/christophevg/human-parser-generator) and via the _badge_ next to the top-most header in this README file.
 
 ### An inner-(parsing)-DSL
 
@@ -671,21 +677,18 @@ public Program ParseProgram() {
 ... was turned into ...
 
 ```csharp
+// program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
 public Program ParseProgram() {
-  Identifier identifier = null;
-  List<Assignment> assignments = new List<Assignment>();
+  Program program = new Program();
   this.Log( "ParseProgram" );
   Parse( () => {
     Consume("PROGRAM");
-    identifier = ParseIdentifier();
+    program.Identifier = ParseIdentifier();
     Consume("BEGIN");
-    assignments = Many<Assignment>(ParseAssignment);
+    program.Assignments = Many<Assignment>(ParseAssignment);
     Consume("END.");
-  }).OrThrow("Failed to parse Program.");
-  return new Program() {
-    Identifier = identifier,
-    Assignments = assignments
-  };
+  }).OrThrow("Failed to parse Program");
+  return program;
 }
 ```
 

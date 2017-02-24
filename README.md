@@ -1,4 +1,4 @@
-# Human Parser Generator
+# Human Parser Generator [![Build Status](https://circleci.com/gh/christophevg/human-parser-generator.png)](https://circleci.com/gh/christophevg/human-parser-generator)
 
 A simple Parser Generator with a focus on "human" code generation    
 Christophe VG (<contact@christophe.vg>)  

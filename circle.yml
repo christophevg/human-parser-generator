@@ -20,4 +20,4 @@ dependencies:
 
 test:
   override:
-    - xbuild /target:RunTests
+    - xbuild /target:RunTests /NUnitReference:/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll

@@ -21,7 +21,8 @@
 
   <Target Name="Manual"
           Inputs="@(Compile);@(Manual);example.$(AssemblyName)"
-          Outputs="$(OutputPath)$(AssemblyName)-manual.exe">
+          Outputs="$(OutputPath)$(AssemblyName)-manual.exe"
+          DependsOnTarget="MakeBuildDirectory">
     <CSC Sources="@(Compile);@(Manual)"  
          TargetType="exe"
          OutputAssembly="$(OutputPath)$(AssemblyName)-manual.exe"  

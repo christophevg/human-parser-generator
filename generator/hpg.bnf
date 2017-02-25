@@ -1,3 +1,5 @@
+(* Human Parser Generator grammar *)
+
 grammar                     ::= { rule } ;
 
 rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ( _ @ ";" | _ @ "." ) ;

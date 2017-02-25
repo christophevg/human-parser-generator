@@ -32,6 +32,7 @@ Since then I've started working on improving things that didn't turn out the way
 
 * The emitted generator became less _human_ with more complex grammars, such as the one for Cobol Copybooks. Especially the nested `try { ... } catch { ... }` blocks were no longer nice on the eye and hard to read. So I started implementing an inner-DSL. See below for more info.
 * Error reporting was not so "useful". Towards `v1.1` I'm aiming for much improved error reporting. See below for more info.
+* A third focus for the next "release" is to make the EBNF-like grammar compliant with EBNF. This requires adding some alternative syntax formats, addition of comments, etc.
 
 ## Example
 
@@ -432,9 +433,11 @@ An important aspect of this project is being self hosting and parsing the EBNF-l
 The grammar for the Human Parser Generator BNF-like notation (currently) looks like this:
 
 ```ebnf
+(* Human Parser Generator grammar *)
+
 grammar                     ::= { rule } ;
 
-rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ";" ;
+rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ( _ @ ";" | _ @ "." ) ;
 
 expression                  ::= alternatives-expression
                               | non-alternatives-expression
@@ -478,6 +481,8 @@ name                        ::= identifier "@" ;
 identifier                  ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
 string                      ::= /"([^"]*)"|^'([^']*)'/ ;
 pattern                     ::= /(.*?)(?<keep>/\s*;)/ ;
+
+_                           ::= /\(\*.*?\*\)/ ;
 ```
 
 To bootstrap the generator, to allow it to generate a parser for the EBNF-like definition language, a grammar modelled by hand is used. It is located in `generator/grammar.cs` in the `AsModel` class, retrievable via the `BNF` property.

@@ -78,11 +78,11 @@ low-value               ::= "LOW-VALUE" [ _ @ "S" ];
 all-string              ::= "ALL" string;
 null                    ::= "NULL" [ _ @ "S" ] ;
 
-picture-type            ::= /([9AXVSP]+)/;
-decimal-picture-type    ::= /([9]+)/;
+picture-type            ::= ? /([9AXVSP]+)/ ? ;
+decimal-picture-type    ::= ? /([9]+)/ ? ;
 
-identifier              ::= name @ /([A-Z][A-Z0-9-]*)/;
-digit                   ::= /([0-9])/;
-int                     ::= value @ /([-+]?[0-9]*)/ ;
-float                   ::= /([-+]?[0-9]*\.?[0-9]*)/; 
-string                  ::= /"([^"]*)"|'([^']*)'/;
+identifier              ::= name @ ? /([A-Z][A-Z0-9-]*)/ ? ;
+digit                   ::= ? /([0-9])/ ? ;
+int                     ::= value @ ? /([-+]?[0-9]*)/ ? ;
+float                   ::= ? /([-+]?[0-9]*\.?[0-9]*)/ ? ; 
+string                  ::= ? /"([^"]*)"|'([^']*)'/ ? ;

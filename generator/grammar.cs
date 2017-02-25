@@ -338,7 +338,7 @@ public class AsModel {
   	        }
   	      }
   	    },
-        // extractor-expression ::= [ name ] "/" pattern "/" ;
+        // extractor-expression ::= [ name ] "?" "/" pattern "/" "?" ;
         new Rule() {
   	      Identifier = "extractor-expression",
   	      Expression = new SequentialExpression() {
@@ -351,16 +351,28 @@ public class AsModel {
   	        NonAlternativesExpression = new SequentialExpression() {
   	          AtomicExpression = new StringExpression() {
   	            Name = null,
-  	            String = "/"
+  	            String = "?"
   	          },
   	          NonAlternativesExpression = new SequentialExpression() {
-  	            AtomicExpression = new IdentifierExpression() {
+                AtomicExpression = new StringExpression() {
   	              Name = null,
-  	              Identifier = "pattern"
+  	               String = "/"
   	            },
-  	            NonAlternativesExpression = new StringExpression() {
-  	              Name = null,
-  	              String = "/"
+  	            NonAlternativesExpression =new SequentialExpression() {
+  	              AtomicExpression = new IdentifierExpression() {
+  	                Name = null,
+  	                Identifier = "pattern"
+  	              },
+  	              NonAlternativesExpression = new SequentialExpression() {
+  	                AtomicExpression = new StringExpression() {
+  	                  Name = null,
+  	                  String = "/"
+  	                },
+  	                NonAlternativesExpression =new StringExpression() {
+  	                  Name = null,
+  	                  String = "?"
+                    }
+                  }
   	            }
   	          }
   	        }
@@ -380,7 +392,7 @@ public class AsModel {
   	        }
   	      }
   	    },
-        // identifier ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
+        // identifier ::= ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
         new Rule() {
   	      Identifier = "identifier",
   	      Expression = new ExtractorExpression() {
@@ -388,7 +400,7 @@ public class AsModel {
   	        Pattern = "([A-Za-z_][A-Za-z0-9-_]*)"
   	      }
   	    },
-        // string ::= /"([^"]*)"|^'([^']*)'/ ;
+        // string ::= ? /"([^"]*)"|^'([^']*)'/ ? ;
         new Rule() {
   	      Identifier = "string",
   	      Expression = new ExtractorExpression() {
@@ -396,15 +408,15 @@ public class AsModel {
   	        Pattern = "\"([^\"]*)\"|^'([^']*)'"
   	      }
   	    },
-        // pattern ::= /(.*?)(?<keep>/\s*;)/ ;
+        // pattern ::= ? /(.*?)(?<keep>/\s*\?\s*[;\.])/ ? ;
         new Rule() {
   	      Identifier = "pattern",
   	      Expression = new ExtractorExpression() {
   	        Name = null,
-  	        Pattern = "(.*?)(?<keep>/\\s*;)"
+  	        Pattern = "(.*?)(?<keep>/\\s*\\?\\s*[;\\.])"
           }
         },
-        // _ ::= /(\(\*.*?\*\))/ ;
+        // _ ::= ? /(\(\*.*?\*\))/ ? ;
         new Rule() {
   	      Identifier = "_",
   	      Expression = new ExtractorExpression() {

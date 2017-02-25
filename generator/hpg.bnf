@@ -43,12 +43,12 @@ identifier-expression       ::= [ name ] [ _ @ "<" ] identifier [ _ @ ">" ] ;
 
 string-expression           ::= [ name ] string ;
 
-extractor-expression        ::= [ name ] "/" pattern "/" ;
+extractor-expression        ::= [ name ] "?" "/" pattern "/" "?" ;
 
 name                        ::= identifier "@" ;
 
-identifier                  ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
-string                      ::= /"([^"]*)"|^'([^']*)'/ ;
-pattern                     ::= /(.*?)(?<keep>/\s*;)/ ;
+identifier                  ::= ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
+string                      ::= ? /"([^"]*)"|^'([^']*)'/ ? ;
+pattern                     ::= ? /(.*?)(?<keep>/\s*\?\s*[;\.])/ ? ;
 
-_                           ::= /\(\*.*?\*\)/ ;
+_                           ::= ? /\(\*.*?\*\)/ ? ;

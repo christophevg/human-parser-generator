@@ -1,6 +1,6 @@
 # Human Parser Generator [![Build Status](https://circleci.com/gh/christophevg/human-parser-generator.png)](https://circleci.com/gh/christophevg/human-parser-generator)
 
-A simple Parser Generator with a focus on "human" code generation    
+A straightforward recursive descent Parser Generator with a focus on "human" code generation and ease of use.  
 Christophe VG (<contact@christophe.vg>)  
 [https://github.com/christophevg/cs-parser-generator](https://github.com/christophevg/cs-parser-generator)
 
@@ -10,15 +10,13 @@ Although many parser generators exist, I feel like there is room for one more, w
 
 The objectives are:
 
-* start from an EBNF-like notation, e.g. allow copy pasting existing grammars and (maybe almost) be done with it.
-* generate code, as if it were written by a human developer:
+* start from a **standard EBNF grammar**, e.g. allow copy pasting existing grammars and (maybe almost) be done with it.
+* generate code, as if it were **written by a human developer**:
 	* generate functional classes to construct the AST
 	* generate parser logic that is readable and understandable
-* be self hosting: the project should be able to generate itself.
+* be **self hosting**: the generator should be able to generate a parser for itself.
 
-The project will initially target C#. No other target language is planned at this point.
-
-**Disclaimer** I'm not aiming for feature completeness and only add support for what I need at a given time ;-)
+> The project will initially target C#, which is also the language of the generator itself. Once the generator is stable, support for generating other languages can be added.
 
 ## Current Status
 
@@ -32,9 +30,15 @@ Since then I've started working on improving things that didn't turn out the way
 
 * The emitted generator became less _human_ with more complex grammars, such as the one for Cobol Copybooks. Especially the nested `try { ... } catch { ... }` blocks were no longer nice on the eye and hard to read. So I started implementing an inner-DSL. See below for more info.
 * Error reporting was not so "useful". Towards `v1.1` I'm aiming for much improved error reporting. See below for more info.
-* A third focus for the next "release" is to make the EBNF-like grammar compliant with EBNF. This requires adding some alternative syntax formats, addition of comments, etc.
+* A third focus for the next "release" is to make the EBNF-like grammar (more) compliant with EBNF. This requires adding some alternative syntax formats, addition of comments, etc.
 
-## Example
+## EBNF
+
+[EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form) is a (meta-)syntax that can be used to express (context-free) grammars. EBNF is an "extension" to [BNF](https://en.wikipedia.org/wiki/Backus–Naur_form).
+
+The Human Parser Generator takes EBNF grammars as input to generate parsers for the language expressed by the grammar.
+
+### Example
 
 The following example is taken from [the Wikipedia page on EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form):
 
@@ -72,42 +76,85 @@ This grammar would allow to parse
  END.
 ```
 
-### Changes, Simplifications, Extensions,...
+### EBNF Compliancy and Extensions
 
-To get a head-start I've added few changes/extensions/limitations to the standard EBNF notation. The following grammar is a rewritten version of the earlier Pascal example, using these extensions:
+The following grammar is a rewritten version of the earlier Pascal example. It introduces some of the changes and extensions that were made to the standard EBNF syntax:
 
 ```ebnf
+(* a simple program syntax in HPG-flavoured EBNF - based on example from Wikipedia *)
+
 program               ::= "PROGRAM" identifier
                           "BEGIN"
-                          { assignment }
+                          { assignment ";" }
                           "END."
                         ;
 
-assignment            ::= identifier ":=" expression ";" ;
+assignment            ::= identifier ":=" expression ;
 
 expression            ::= identifier
                         | string
                         | number
                         ;
 
-identifier            ::= name  @ /([A-Z][A-Z0-9]*)/ ;
-string                ::= text  @ /"([^"]*)"|'([^']*)'/ ;
-number                ::= value @ /(-?[1-9][0-9]*)/ ;
+identifier            ::= name  @ ? /([A-Z][A-Z0-9]*)/ ? ;
+string                ::= text  @ ? /"([^"]*)"|'([^']*)'/ ? ;
+number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;
 ```
 
-The extensions that are applied are:
+#### Optional Sequence Separator
 
-* abandoned `,` (colon) in sequences of consecutive expressions
-* spaces in rule names (left hand side) are not allowed (e.g. use dashes)
-* ignoring whitespace, removing the need for explicit whitespace description
-* definition of "extracting terminals" using regular expressions
-* introduction of _implicit_ "virtual" entities, which don't show up in the AST (`expression` is an example)
+Still supported, but not required is the `,` (colon) in between parts of a sequence. This improves readability greatly.
+
+#### Automatic Whitespace Consumption
+
+All whitespace is automatically consumed, removing its explicit presence in rule definitions. Again, this improves readability of the grammar.
+
+#### Use of the EBNF Extensions Mechanisme for Extractors
+
+Using the EBNF extension support, `? ... ?`, _extractors_ are added to allow consumption of (regular expression) patterns.
+
+#### Named Terminal Expressions
+
+Identifiers, strings, and extractors can be given an alternate name using the `<name> @` prefix. See upcoming information on the generator's conventions and implicit generation rules.
+
+#### No Support for Spaces in Rule Names
+
+Spaces in rule names (left hand side of rules) are not allowed. For now, e.g. use dashes. The generator will generate Pascal-cased names.
+
+#### Alternative Syntax Support
+
+A few alternative syntax options are available. These were added because it was easy to do and allows for easier importing of existing grammars.
+
+To bring BNF closer, it is possible to use `=` in stead of `::=` and to have diamond brackets `< ... >` surrounding rule names.
+
+Because we support spanning rules over multiple lines, it is not possible to remove the rule terminator `;`, but an alternative terminator `.` is also provided.
+
+This way the following Pascal grammar is identical to the previous example:
+
+```ebnf
+<program>             = "PROGRAM" <identifier>
+                        "BEGIN"
+                        { <assignment> ";" }
+                        "END."
+                      .
+
+<assignment>          = <identifier> ":=" <expression> .
+
+<expression>          = identifier
+                        | string
+                        | number
+                        .
+
+<identifier>          = name  @ ? /([A-Z][A-Z0-9]*)/ ? .
+<string>              = text  @ ? /"([^"]*)"|'([^']*)'/ ? .
+<number>              = value @ ? /(-?[1-9][0-9]*)/ ? .
+```
 
 ## Demos
 
 A few demos show the capabilities and results of the generated parsers.
 
-> I'm running on macOS with [Mono](http://mono-project.com). Mono provides an implementation of `msbuild` in the form of `xbuild`. I've recently moved from `Makefiles` to project build files. This is still to be tested on Windows with the original `msbuild`, so for now YMMV in any environment other than macOS ;-)
+> I'm running on macOS with [Mono](http://mono-project.com). Mono provides an implementation of `msbuild` in the form of `xbuild`. I've recently moved from `Makefiles` to project build files. This is still to be tested on Windows with the original `msbuild` ;-)
 
 ### Pascal
 
@@ -437,7 +484,11 @@ The grammar for the Human Parser Generator BNF-like notation (currently) looks l
 
 grammar                     ::= { rule } ;
 
-rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ( _ @ ";" | _ @ "." ) ;
+rule                        ::= [ _ @ "<" ] identifier [ _ @ ">" ]
+                                ( _ @ "::=" | _ @ "=" )
+                                expression
+                                ( _ @ ";" | _ @ "." )
+                              ;
 
 expression                  ::= alternatives-expression
                               | non-alternatives-expression
@@ -470,19 +521,19 @@ terminal-expression         ::= identifier-expression
                               | extractor-expression
                               ;
 
-identifier-expression       ::= [ name ] identifier ;
+identifier-expression       ::= [ name ] [ _ @ "<" ] identifier [ _ @ ">" ] ;
 
 string-expression           ::= [ name ] string ;
 
-extractor-expression        ::= [ name ] "/" pattern "/" ;
+extractor-expression        ::= [ name ] "?" "/" pattern "/" "?" ;
 
 name                        ::= identifier "@" ;
 
-identifier                  ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
-string                      ::= /"([^"]*)"|^'([^']*)'/ ;
-pattern                     ::= /(.*?)(?<keep>/\s*;)/ ;
+identifier                  ::= ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
+string                      ::= ? /"([^"]*)"|^'([^']*)'/ ? ;
+pattern                     ::= ? /(.*?)(?<keep>/\s*\?\s*[;\.])/ ? ;
 
-_                           ::= /\(\*.*?\*\)/ ;
+_                           ::= ? /\(\*.*?\*\)/ ? ;
 ```
 
 To bootstrap the generator, to allow it to generate a parser for the EBNF-like definition language, a grammar modelled by hand is used. It is located in `generator/grammar.cs` in the `AsModel` class, retrievable via the `BNF` property.

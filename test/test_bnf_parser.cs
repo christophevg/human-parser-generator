@@ -50,9 +50,9 @@ expression            ::= identifier
                         | number
                         ;
 
-identifier            ::= name  @ /([A-Z][A-Z0-9]*)/ ;
-string                ::= text  @ /""([^""]*)""|'([^']*)'/ ;
-number                ::= value @ /(-?[1-9][0-9]*)/ ;
+identifier            ::= name  @ ? /([A-Z][A-Z0-9]*)/ ? ;
+string                ::= text  @ ? /""([^""]*)""|'([^']*)'/ ? ;
+number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;
 
       ",
       new Grammar() {
@@ -231,9 +231,9 @@ literal          ::= int | string ;
 variable         ::= identifier [ ""("" subset "")"" ];
 subset           ::= numeric [ "":"" subset ];
 numeric          ::= int | identifier;
-identifier       ::= /([A-Z][A-Z0-9]*)/ ;
-string           ::= /""([^""]*)""|'([^']*)'/ ;
-int              ::= /(-?[1-9][0-9]*)/ ;"
+identifier       ::= ? /([A-Z][A-Z0-9]*)/ ? ;
+string           ::= ? /""([^""]*)""|'([^']*)'/ ? ;
+int              ::= ? /(-?[1-9][0-9]*)/ ? ;"
     );
 
     Assert.IsTrue  (             model["literal"].IsVirtual );
@@ -334,7 +334,7 @@ Model(
   [Test]
   public void testComplexRepetitions() {
     Model model = this.process(
-      "grammar = { \"prefix\" rule }; rule = /a/;"
+      "grammar = { \"prefix\" rule }; rule = ? /a/ ? ;"
     );
     Assert.IsFalse( model["grammar"]["rule"].IsPlural);
 
@@ -344,7 +344,7 @@ Model(
   [Test]
   public void testNestedRepetitions() {
     Model model = this.process(
-      "grammar = { rule { postfix } }; rule = /a/; postfix = /b/;"
+      "grammar = { rule { postfix } }; rule = ? /a/ ?; postfix = ? /b/ ?;"
     );
     Assert.IsFalse( model["grammar"]["rule"].IsPlural);
 
@@ -359,7 +359,7 @@ Model(
       @"
 grammar    ::= { rule } .
 rule         = lhs @ identifier ""="" rhs @ identifier .
-identifier ::= /([A-Z][A-Z0-9]*)/ ;
+identifier ::= ? /([A-Z][A-Z0-9]*)/ ? ;
 "
     );
     Assert.AreEqual(3, model.Entities.Count);
@@ -372,9 +372,22 @@ identifier ::= /([A-Z][A-Z0-9]*)/ ;
 (* leading comment *)
 grammar    ::= { rule } .
 rule         = lhs @ identifier ""="" (* inline comment *) rhs @ identifier .
-identifier ::= /([A-Z][A-Z0-9]*)/ ;
+identifier ::= ? /([A-Z][A-Z0-9]*)/ ? ;
 (* trailing comment *)
 "
     );
   }
+
+  [Test]
+  public void testAlternativeSyntaxForRuleNames() {
+    Model model = this.process(
+      @"
+<grammar>    ::= { <rule> } .
+<rule>         = lhs @ <identifier> ""="" rhs @ identifier .
+identifier ::= ? /([A-Z][A-Z0-9]*)/ ? ;
+"
+    );
+    Assert.AreEqual(3, model.Entities.Count);
+  }
+
 }

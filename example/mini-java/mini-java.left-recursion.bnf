@@ -48,5 +48,5 @@ Expression ::= ( Expression ( "&&" | "<" | "+" | "-" | "*" ) Expression )
              | ( "(" Expression ")" )
              ;
 
-Identifier  ::= /([A-Za-z_][A-Za-z0-9-_]*)/ ;
-Integer     ::= /(-?[1-9][0-9]*)/ ;
+Identifier  ::= ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
+Integer     ::= ? /(-?[1-9][0-9]*)/ ? ;

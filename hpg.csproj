@@ -58,7 +58,7 @@
           Outputs="generator\parser.gen1.cs"
           DependsOnTargets="Gen0Parser"
           BeforeTargets="Gen1Parser">  
-    <Exec Command="$(ExeLauncher) $(OutputPath)hpg.gen0.exe generator\hpg.bnf > generator\parser.gen1.cs"/>
+    <Exec Command="$(ExeLauncher) $(OutputPath)hpg.gen0.exe generator\hpg.bnf $(AStyle) > generator\parser.gen1.cs"/>
   </Target>
 
   <Target Name="Gen1Parser"  
@@ -75,7 +75,7 @@
           Inputs="$(OutputPath)hpg.gen1.exe;generator\hpg.bnf"
           Outputs="generator\parser.cs"
           DependsOnTargets="Gen1Parser">
-    <Exec Command="$(ExeLauncher) $(OutputPath)hpg.gen1.exe generator\hpg.bnf > generator\parser.cs" />
+    <Exec Command="$(ExeLauncher) $(OutputPath)hpg.gen1.exe generator\hpg.bnf $(AStyle) > generator\parser.cs" />
   </Target>
 
   <Target Name="Build"  

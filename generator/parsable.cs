@@ -202,7 +202,25 @@ public class Parsable {
   }
 }
 
-public abstract class ParserBase {
+public abstract class ParserBase<RootType> {
+  public RootType AST { get; set; }
+
+  public ParserBase<RootType> Parse(string source) {
+    this.Source = new Parsable(source);
+    try {
+      this.AST = this.Parse();
+    } catch(ParseException e) {
+      this.Errors.Add(e);
+      throw this.Source.GenerateParseException("Failed to parse.");
+    }
+    if( ! this.Source.IsDone ) {
+      throw this.Source.GenerateParseException("Could not parse remaining data.");
+    }
+    return this;
+  }
+
+  public abstract RootType Parse();
+
   public Parsable Source { get; protected set; }
   public List<ParseException> Errors = new List<ParseException>();
 
@@ -235,7 +253,7 @@ public abstract class ParserBase {
   }
 
   public class Outcome {
-    public ParserBase Parser { get; set; }
+    public ParserBase<RootType> Parser { get; set; }
     public bool Success { get; set; }
     public ParseException Exception { get; set; }
 

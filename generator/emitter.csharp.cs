@@ -186,21 +186,8 @@ using System.Linq;";
     }
 
     private string GenerateParserHeader() {
-      return @"public class Parser : ParserBase {
-public " + Format.CSharp.Class(this.Model.Root) + @" AST { get; set; }
-public Parser Parse(string source) {
-  this.Source = new Parsable(source);
-  try {
-    this.AST    = this.Parse" + Format.CSharp.Class(this.Model.Root) + @"();
-  } catch(ParseException e) {
-    this.Errors.Add(e);
-    throw this.Source.GenerateParseException(""Failed to parse."");
-  }
-  if( ! this.Source.IsDone ) {
-    throw this.Source.GenerateParseException(""Could not parse remaining data."");
-  }
-  return this;
-}";
+      return "public class Parser : ParserBase<" +
+        Format.CSharp.Class(this.Model.Root) + "> {";
     }
   
     private string GenerateEntityParsers() {
@@ -225,8 +212,10 @@ public Parser Parse(string source) {
 
     private string GenerateEntityParserHeader(Entity entity) {
       return this.GenerateRule(entity.Rule) +
-        "public " + Format.CSharp.Type(entity) +
-        " Parse" + Format.CSharp.Class(entity) + "() {\n" +
+        "public " + (this.Model.Root == entity ? " override " : "" ) +
+        Format.CSharp.Type(entity) +
+        " Parse" + (this.Model.Root == entity ? "" : Format.CSharp.Class(entity) ) +
+        "() {\n" +
         Format.CSharp.Type(entity) + " " + Format.CSharp.Variable(entity) +
         " = " +
         (entity.IsVirtual ? "null" : "new " + Format.CSharp.Class(entity) + "()") + ";\n" +

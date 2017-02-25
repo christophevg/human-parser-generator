@@ -180,10 +180,12 @@ namespace HumanParserGenerator {
 
       // EBNF-like file -> AST/Grammar Model
       Grammar grammar = null;
+      Parser  parser = new Parser();
       try {
-        grammar = new Parser().Parse(this.input).AST;
-      } catch(ParseException e) {
-        Console.Error.WriteLine(e.Message);
+        grammar = parser.Parse(this.input).AST;
+      } catch(ParseException) {
+        Console.Error.WriteLine("Parsing failed, best effort parser error:");
+        Console.Error.WriteLine(parser.BestErrorToString());
         return 1;
       }
 

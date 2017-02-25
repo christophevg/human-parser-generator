@@ -97,7 +97,8 @@
     <Exec Command="$(NUnitConsole) $(OutputPath)test.dll"/>
   </Target>
 
-  <Target Name="CheckCI" DependsOnTargets="RunTests">
+  <Target Name="CheckCI">
+    <MSBuild Projects="hpg.csproj" Targets="RunTests"      Properties="AStyle=" />
     <MSBuild Projects="example\pascal\pascal.csproj"       Properties="AStyle=" />
     <MSBuild Projects="example\cobol\cobol.csproj"         Properties="AStyle=" />
     <MSBuild Projects="example\ini\ini.csproj"             Properties="AStyle=" />

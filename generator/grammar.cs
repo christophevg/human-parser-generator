@@ -28,7 +28,8 @@ public class AsModel {
   	        }
   	      }
   	    },
-        // rule ::= identifier ( _ @ "::=" | _ @ "=" ) expression ";" ;
+        // rule ::= identifier ( _ @ "::=" | _ @ "=" ) expression
+        //                                              ( _ @ ";" | _ @ "." ) ;
         new Rule() {
   	      Identifier = "rule",
   	      Expression = new SequentialExpression() {
@@ -54,9 +55,17 @@ public class AsModel {
   	              Name = null,
   	              Identifier = "expression"
   	            },
-  	            NonAlternativesExpression = new StringExpression() {
-  	              Name = null,
-  	              String = ";"
+  	            NonAlternativesExpression = new GroupExpression() {
+                  Expression = new AlternativesExpression() {
+                    NonAlternativesExpression = new StringExpression() {
+                      Name = "_",
+                      String = ";"
+                    },
+                    Expression = new StringExpression() {
+                      Name = "_",
+                      String = "."
+                    }
+                  }
   	            }
   	          }
   	        }

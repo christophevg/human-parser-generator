@@ -1,6 +1,6 @@
 grammar                     ::= { rule } ;
 
-rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ";" ;
+rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ( _ @ ";" | _ @ "." ) ;
 
 expression                  ::= alternatives-expression
                               | non-alternatives-expression

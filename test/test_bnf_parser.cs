@@ -353,4 +353,17 @@ Model(
     Assert.IsTrue ( model["grammar"]["postfix"].Source.HasPluralParent);
   }
 
+  [Test]
+  public void testAlternativeRuleTermination() {
+    Model model = this.process(
+      @"
+grammar    ::= { rule } .
+rule         = lhs @ identifier ""="" rhs @ identifier .
+identifier ::= /([A-Z][A-Z0-9]*)/ ;
+"
+    );
+    Assert.AreEqual(3, model.Entities.Count);
+  }
+
+
 }

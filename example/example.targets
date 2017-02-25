@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <Target Name="MakeBuildDirectory">  
-      <MakeDir Directories="$(OutputPath)" />  
+    <MakeDir Directories="$(OutputPath)" />  
   </Target>
 
   <Target Name="HPG">

@@ -2,12 +2,12 @@
 <Project ToolsVersion="4.0"
          xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Project="..\example.targets" />
-
   <PropertyGroup>
     <ProjectGuid>{2D262CB3-5A8E-4509-8052-824EC27B8DD0}</ProjectGuid>
     <ProjectTypeGuids>{D2AF53A2-5DF9-4BF8-9DC6-EFE69320651E}</ProjectTypeGuids>
     <AssemblyName>mini-java</AssemblyName>
   </PropertyGroup>
+
+  <Import Project="..\example.targets" />
           
 </Project>

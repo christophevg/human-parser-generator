@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
@@ -7,17 +8,12 @@
     <RootNamespace>HumanParserGenerator</RootNamespace>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <ExeLauncher Condition="('$(OS)' != 'Windows_NT')">mono</ExeLauncher>
-    <NUnitConsole Condition="('$(OS)' != 'Windows_NT')">nunit-console -nologo</NUnitConsole>
-    <NUnitConsole Condition="('$(OS)' == 'Windows_NT')">mono nunit-console.exe -nologo</NUnitConsole>
-    <Diff Condition="('$(OS)' != 'Windows_NT')">diff -u -w </Diff>
-    <Diff Condition="('$(OS)' == 'Windows_NT')">fc.exe</Diff>
-    <AStyle Condition="('$(OS)' != 'Windows_NT')">| LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80</AStyle>
-    <Dot Condition="('$(OS)' != 'Windows_NT')">| unflatten -f -l 1 -c 4 | dot -T png -o</Dot>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <OutputPath>bin\Debug\</OutputPath>
     <DebugSymbols>True</DebugSymbols>
@@ -26,6 +22,7 @@
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <OutputPath>bin\Release\</OutputPath>
     <DebugSymbols>False</DebugSymbols>
@@ -34,6 +31,7 @@
     <CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="Microsoft.CSharp">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
@@ -48,6 +46,7 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
   </ItemGroup>
+
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
@@ -56,4 +55,19 @@
   <PropertyGroup>
     <NUnitReference>nunit.framework.dll</NUnitReference>
   </PropertyGroup>
+
+  <PropertyGroup Condition="('$(OS)' != 'Windows_NT')">
+    <ExeLauncher>mono</ExeLauncher>
+    <NUnitConsole>nunit-console -nologo</NUnitConsole>
+    <Diff>diff -u -w </Diff>
+    <AStyle>| LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80</AStyle>
+    <Dot>| unflatten -f -l 1 -c 4 | dot -T png -o</Dot>
+    <NUnitReference>nunit.framework.dll</NUnitReference>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="('$(OS)' == 'Windows_NT')">
+    <NUnitConsole>nunit-console.exe -nologo</NUnitConsole>
+    <Diff>fc.exe</Diff>
+  </PropertyGroup>
+
 </Project>

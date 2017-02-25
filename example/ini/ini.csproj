@@ -2,12 +2,12 @@
 <Project ToolsVersion="4.0"
          xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Project="..\example.targets" />
-
   <PropertyGroup>
     <ProjectGuid>{1B0335BF-D547-422A-81DE-228ED2495C86}</ProjectGuid>
     <ProjectTypeGuids>{E4E7A64C-58E0-4BAB-B8E2-02BD9E9C2C66}</ProjectTypeGuids>
     <AssemblyName>ini</AssemblyName>
   </PropertyGroup>
+
+  <Import Project="..\example.targets" />
           
 </Project>

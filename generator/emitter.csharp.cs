@@ -220,7 +220,7 @@ using System.Linq;";
 
     private string GenerateEntityParserHeader(Entity entity) {
       return this.GenerateRule(entity.Rule) +
-        "public " + (this.Model.Root == entity ? " override " : "" ) +
+        "public " + (this.Model.Root == entity ? "override " : "" ) +
         Format.CSharp.Type(entity) +
         " Parse" + (this.Model.Root == entity ? "" : Format.CSharp.Class(entity) ) +
         "() {\n" +

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-// program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
+// program ::= "PROGRAM" identifier "BEGIN" { assignment ";" } "END." ;
 public class Program {
   public Identifier Identifier { get; set; }
   public List<Assignment> Assignments { get; set; }
@@ -22,7 +22,7 @@ public class Program {
   }
 }
 
-// assignment ::= identifier ":=" expression ";" ;
+// assignment ::= identifier ":=" expression ;
 public class Assignment {
   public Identifier Identifier { get; set; }
   public Expression Expression { get; set; }
@@ -74,7 +74,7 @@ public class Number : Expression {
 public class Parser : ParserBase<Program> {
 
 
-  // program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
+  // program ::= "PROGRAM" identifier "BEGIN" { assignment ";" } "END." ;
   public override Program Parse() {
     Program program = new Program();
     this.Log( "ParseProgram" );
@@ -82,13 +82,16 @@ public class Parser : ParserBase<Program> {
       Consume("PROGRAM");
       program.Identifier = ParseIdentifier();
       Consume("BEGIN");
-      program.Assignments = Many<Assignment>(ParseAssignment);
+      Repeat( () => {
+        program.Assignments.Add( ParseAssignment() );
+        Consume(";");
+      });
       Consume("END.");
     }).OrThrow("Failed to parse Program");
     return program;
   }
 
-  // assignment ::= identifier ":=" expression ";" ;
+  // assignment ::= identifier ":=" expression ;
   public Assignment ParseAssignment() {
     Assignment assignment = new Assignment();
     this.Log( "ParseAssignment" );
@@ -96,7 +99,6 @@ public class Parser : ParserBase<Program> {
       assignment.Identifier = ParseIdentifier();
       Consume(":=");
       assignment.Expression = ParseExpression();
-      Consume(";");
     }).OrThrow("Failed to parse Assignment");
     return assignment;
   }

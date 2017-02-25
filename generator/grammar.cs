@@ -28,48 +28,67 @@ public class AsModel {
   	        }
   	      }
   	    },
-        // rule ::= identifier ( _ @ "::=" | _ @ "=" ) expression
-        //                                              ( _ @ ";" | _ @ "." ) ;
+        // rule ::= [ _ @ "<" ] identifier [ _ @ ">" ]
+        //          ( _ @ "::=" | _ @ "=" )
+        //          expression
+        //          ( _ @ ";" | _ @ "." )
+        //        ;
         new Rule() {
   	      Identifier = "rule",
   	      Expression = new SequentialExpression() {
-  	        AtomicExpression = new IdentifierExpression() {
-  	          Name = null,
-  	          Identifier = "identifier"
-  	        },
-  	        NonAlternativesExpression = new SequentialExpression() {
-  	          AtomicExpression = new GroupExpression() {
-  	            Expression = new AlternativesExpression() {
-  	              NonAlternativesExpression = new StringExpression() {
-  	                Name = "_",
-  	                String = "::="
-  	              },
-  	              Expression = new StringExpression() {
-  	                Name = "_",
-  	                String = "="
-  	              }
-  	            }
-  	          },
-  	          NonAlternativesExpression = new SequentialExpression() {
-  	            AtomicExpression = new IdentifierExpression() {
-  	              Name = null,
-  	              Identifier = "expression"
-  	            },
-  	            NonAlternativesExpression = new GroupExpression() {
-                  Expression = new AlternativesExpression() {
-                    NonAlternativesExpression = new StringExpression() {
-                      Name = "_",
-                      String = ";"
+  	        AtomicExpression = new OptionalExpression() {
+              Expression = new StringExpression() {
+                Name = "_",
+                String = "<"
+              }
+            },
+            NonAlternativesExpression = new SequentialExpression() {
+              AtomicExpression = new IdentifierExpression() {
+                Name = null,
+                Identifier = "identifier"
+	            },
+	            NonAlternativesExpression = new SequentialExpression() {
+	              AtomicExpression = new OptionalExpression() {
+                  Expression = new StringExpression() {
+                    Name = "_",
+                    String = ">"
+                  }
+                },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new GroupExpression() {
+                    Expression = new AlternativesExpression() {
+                      NonAlternativesExpression = new StringExpression() {
+                        Name = "_",
+                        String = "::="
+                      },
+                      Expression = new StringExpression() {
+                        Name = "_",
+                        String = "="
+                      }
+                    }
+                  },
+                  NonAlternativesExpression = new SequentialExpression() {
+                    AtomicExpression = new IdentifierExpression() {
+                      Name = null,
+                      Identifier = "expression"
                     },
-                    Expression = new StringExpression() {
-                      Name = "_",
-                      String = "."
+                    NonAlternativesExpression = new GroupExpression() {
+                      Expression = new AlternativesExpression() {
+                        NonAlternativesExpression = new StringExpression() {
+                          Name = "_",
+                          String = ";"
+                        },
+                        Expression = new StringExpression() {
+                          Name = "_",
+                          String = "."
+                        }
+  	                  }
                     }
                   }
-  	            }
-  	          }
-  	        }
-  	      }
+                }
+              }
+            }
+          }
   	    },
         // expression ::= alternatives-expression
         //              | non-alternatives-expression
@@ -270,7 +289,8 @@ public class AsModel {
   	        }
   	      }
   	    },
-        // identifier-expression ::= [ name ] identifier ;
+        // identifier-expression ::= [ name ]
+        //                           [ _ @ "<" ] identifier [ _ @ ">" ] ;
         new Rule() {
   	      Identifier = "identifier-expression",
   	      Expression = new SequentialExpression() {
@@ -280,9 +300,25 @@ public class AsModel {
   	            Identifier = "name"
   	          }
   	        },
-  	        NonAlternativesExpression = new IdentifierExpression() {
-  	          Name = null,
-  	          Identifier = "identifier"
+  	        NonAlternativesExpression = new SequentialExpression() {
+              AtomicExpression = new OptionalExpression() {
+                Expression = new StringExpression() {
+                  Name = "_",
+                  String = "<"
+                },
+              },
+              NonAlternativesExpression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "identifier"
+                },
+                NonAlternativesExpression = new OptionalExpression() {
+                  Expression = new StringExpression() {
+                    Name = "_",
+                    String = ">"
+                  }
+                }
+              }
   	        }
   	      }
   	    },

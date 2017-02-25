@@ -2,7 +2,11 @@
 
 grammar                     ::= { rule } ;
 
-rule                        ::= identifier ( _ @ "::=" | _ @ "=" ) expression ( _ @ ";" | _ @ "." ) ;
+rule                        ::= [ _ @ "<" ] identifier [ _ @ ">" ]
+                                ( _ @ "::=" | _ @ "=" )
+                                expression
+                                ( _ @ ";" | _ @ "." )
+                              ;
 
 expression                  ::= alternatives-expression
                               | non-alternatives-expression
@@ -35,7 +39,7 @@ terminal-expression         ::= identifier-expression
                               | extractor-expression
                               ;
 
-identifier-expression       ::= [ name ] identifier ;
+identifier-expression       ::= [ name ] [ _ @ "<" ] identifier [ _ @ ">" ] ;
 
 string-expression           ::= [ name ] string ;
 

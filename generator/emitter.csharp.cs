@@ -72,7 +72,11 @@ using System.Linq;";
 
     private string GenerateEntities() {
       return string.Join( "\n\n",
-        this.Model.Entities.Select(x => this.GenerateEntity(x))
+        this.Model.Entities
+                  .Where(entity =>
+                    ! (entity.IsVirtual && entity.ParseAction is ConsumePattern)
+                  )
+                  .Select(entity => this.GenerateEntity(entity))
       );
     }
 

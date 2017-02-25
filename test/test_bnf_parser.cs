@@ -365,5 +365,16 @@ identifier ::= /([A-Z][A-Z0-9]*)/ ;
     Assert.AreEqual(3, model.Entities.Count);
   }
 
-
+  [Test]
+  public void testComments() {
+   this.process(
+      @"
+(* leading comment *)
+grammar    ::= { rule } .
+rule         = lhs @ identifier ""="" (* inline comment *) rhs @ identifier .
+identifier ::= /([A-Z][A-Z0-9]*)/ ;
+(* trailing comment *)
+"
+    );
+  }
 }

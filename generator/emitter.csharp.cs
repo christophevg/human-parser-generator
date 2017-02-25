@@ -187,7 +187,15 @@ using System.Linq;";
 
     private string GenerateParserHeader() {
       return "public class Parser : ParserBase<" +
-        Format.CSharp.Class(this.Model.Root) + "> {";
+        Format.CSharp.Class(this.Model.Root) + "> {\n" +
+        ( this.Model.Contains("_") && this.Model["_"].ParseAction is ConsumePattern ?
+          "\npublic Parser() : base(" +
+            Format.CSharp.VerbatimStringLiteral(
+              "^" + ((ConsumePattern)this.Model["_"].ParseAction).Pattern
+            ) +
+          "){}\n"
+          : ""
+        );
     }
   
     private string GenerateEntityParsers() {

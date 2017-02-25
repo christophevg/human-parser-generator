@@ -366,6 +366,14 @@ public class AsModel {
   	      Expression = new ExtractorExpression() {
   	        Name = null,
   	        Pattern = "(.*?)(?<keep>/\\s*;)"
+          }
+        },
+        // _ ::= /(\(\*.*?\*\))/ ;
+        new Rule() {
+  	      Identifier = "_",
+  	      Expression = new ExtractorExpression() {
+  	        Name = null,
+  	        Pattern = "(\\(\\*.*?\\*\\))"
   	      }
   	    }
       } // Rules

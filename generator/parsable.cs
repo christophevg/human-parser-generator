@@ -99,6 +99,17 @@ public class Parsable {
     this.text = text;
   }
 
+  public Parsable Ignore(string pattern) {
+    return this.Ignore(new Regex(pattern));
+  }
+
+  private Regex ignored = null;
+
+  public Parsable Ignore(Regex pattern) {
+    this.ignored = pattern;
+    return this;
+  }
+
   // skips any whitespace at the start of the current text buffer
   public void SkipLeadingWhitespace() {
     while(Parsable.leadingWhitespace.Match(this.head).Success) {
@@ -106,9 +117,23 @@ public class Parsable {
     }
   }
 
+  public bool SkipIgnored() {
+    if(this.ignored == null) { return false; }
+    Match match = this.ignored.Match(this.head);
+    if(match.Success) {
+      this.Consume(match.Length);
+      return true;
+    }
+    return false;
+  }
+
+  public void Skip() {
+    do { this.SkipLeadingWhitespace(); } while( this.SkipIgnored() );
+  }
+
   // tries to consume a give string
   public bool Consume(string text) {
-    this.SkipLeadingWhitespace();
+    this.Skip();
     if(! this.head.StartsWith(text) ) {
       this.Log("Consume(" + text + ") FAILED");
       throw this.GenerateParseException( "Expected '" + text + "'" );
@@ -130,7 +155,7 @@ public class Parsable {
   }
   
   public string Consume(Regex pattern) {
-    this.SkipLeadingWhitespace();
+    this.Skip();
     Match m = pattern.Match(this.head);
     if(m.Success) {
       this.Log("Consume(" + pattern.ToString() + ") SUCCESS ");
@@ -176,7 +201,7 @@ public class Parsable {
 
   public bool IsDone {
     get {
-      this.SkipLeadingWhitespace();
+      this.Skip();
       return this.Position == this.text.Length;
     }
   }
@@ -205,8 +230,16 @@ public class Parsable {
 public abstract class ParserBase<RootType> {
   public RootType AST { get; set; }
 
+  public string Ignoring = null;
+
+  public ParserBase() {}
+  public ParserBase(string ignoring) {
+    this.Ignoring = ignoring;
+  }
+
   public ParserBase<RootType> Parse(string source) {
     this.Source = new Parsable(source);
+    if(this.Ignoring != null) { this.Source.Ignore(this.Ignoring); }
     try {
       this.AST = this.Parse();
     } catch(ParseException e) {

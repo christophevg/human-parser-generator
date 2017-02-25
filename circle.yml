@@ -20,8 +20,4 @@ dependencies:
 
 test:
   override:
-    - xbuild /target:RunTests /property:NUnitReference=/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll
-    - xbuild example/pascal/pascal.csproj /property:AStyle= /property:NUnitReference=/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll
-    - xbuild example/cobol/cobol.csproj /property:AStyle= /property:NUnitReference=/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll
-    - xbuild example/ini/ini.csproj /property:AStyle= /property:NUnitReference=/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll
-    - xbuild example/mini-java/mini-java.csproj /property:AStyle= /property:NUnitReference=/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll
+    - xbuild /target:CheckCI /property:NUnitReference=/usr/lib/cli/nunit.framework-2.6.3/nunit.framework.dll

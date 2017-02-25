@@ -71,24 +71,11 @@ public class Number : Expression {
   }
 }
 
-public class Parser : ParserBase {
-  public Program AST { get; set; }
-  public Parser Parse(string source) {
-    this.Source = new Parsable(source);
-    try {
-      this.AST    = this.ParseProgram();
-    } catch(ParseException e) {
-      this.Errors.Add(e);
-      throw this.Source.GenerateParseException("Failed to parse.");
-    }
-    if( ! this.Source.IsDone ) {
-      throw this.Source.GenerateParseException("Could not parse remaining data.");
-    }
-    return this;
-  }
+public class Parser : ParserBase<Program> {
+
 
   // program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
-  public Program ParseProgram() {
+  public override Program Parse() {
     Program program = new Program();
     this.Log( "ParseProgram" );
     Parse( () => {

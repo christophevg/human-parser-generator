@@ -353,23 +353,7 @@ using System.Linq;";
 
     private string GenerateEntityParserReturn(Entity entity) {
       return "return " + Format.CSharp.Variable(entity) + ";\n}";
-      // return ( entity.IsVirtual ?
-      //   this.GenerateVirtualEntityParserReturn(entity) :
-      //   this.GenerateRealEntityParserReturn(entity)
-      // ) + "\n}";
     }
-    
-    // private string GenerateVirtualEntityParserReturn(Entity entity) {
-    //   return "return " +
-    //          (entity.Properties.Count > 0 ?
-    //            Format.CSharp.Variable(entity.Properties.First())
-    //            : "") +
-    //           ";";
-    // }
-
-    // private string GenerateRealEntityParserReturn(Entity entity) {
-    //   return "return " + Format.CSharp.Variable(entity) + ";";
-    // }
 
     // Extracting functionality is generated for all Entities that are "just"
     // consuming a pattern.

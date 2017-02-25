@@ -186,12 +186,10 @@ public class Parsable {
   public List<string> Context(int start, int end) {
     start = this.LineOf(start);
     end   = this.LineOf(end);
-    Console.Error.WriteLine(start + " " + end);
     return this.lines.Select(x=>x.Item1).ToList().GetRange(start, end-start+1);
   }
 
   public ParseException GenerateParseException(string message, Exception inner=null) {
-    // Console.Error.WriteLine("ParseException: " + message + " at " + this.Line + "/" + this.LinePosition + " " + this.Position);
     return new ParseException(message, inner ) {
       Position     = this.Position,
       Line         = this.Line,

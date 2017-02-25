@@ -9,7 +9,6 @@
     <ProjectTypeGuids>{43F2F29C-E7A8-42CB-9375-27EA323809D8}</ProjectTypeGuids>
     <OutputType>Exe</OutputType>
     <AssemblyName>hpg</AssemblyName>
-    <NUnitReference>nunit.framework.dll</NUnitReference>
   </PropertyGroup>
 
   <ItemGroup>

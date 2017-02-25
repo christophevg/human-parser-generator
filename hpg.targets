@@ -52,4 +52,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <PropertyGroup>
+    <NUnitReference>nunit.framework.dll</NUnitReference>
+  </PropertyGroup>
 </Project>

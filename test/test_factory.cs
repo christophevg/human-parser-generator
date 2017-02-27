@@ -12,15 +12,12 @@ using HumanParserGenerator.Generator; // for Model, Factory
 [TestFixture]
 public class GeneratorModelFactoryTests {
 
-  private void importAndCompare(Model model, string expected) {
-    Assert.AreEqual(
-      expected.Replace(" ", "").Replace("\n", ""),
-      model.ToString()
-    );
+  private Model import(Grammar grammar) {
+    return new Factory().Import(grammar).Model;
   }
-  
+
   private void importAndCompare(Grammar grammar, Model expected) {
-    Model model = new Factory().Import(grammar).Model;
+    Model model = this.import(grammar);
     Assert.AreEqual( expected.ToString(), model.ToString() );
   }
 
@@ -1781,4 +1778,24 @@ public class GeneratorModelFactoryTests {
     );
   }
 
+  [Test]
+  public void testUnknownEntityReference() {
+    // rule ::= unknown ;
+    try {
+      this.import(
+        new Grammar() {
+          Rules = new List<Rule>() {
+            new Rule() {
+              Identifier = "rule",
+              Expression = new IdentifierExpression() { Identifier = "unknown" }
+            }
+          }
+        }
+      );
+      Assert.Fail("Should have thrown ModelException");
+    } catch(ModelException e) {
+      Assert.AreEqual("Unknown Entity reference: unknown", e.Message);
+    }
+  }
+    
 }

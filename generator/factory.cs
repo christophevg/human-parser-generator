@@ -12,6 +12,12 @@ using System.Collections.ObjectModel;
 
 namespace HumanParserGenerator.Generator {
 
+  public class ModelException : System.Exception {
+    public ModelException() : base() { }
+    public ModelException(string message) : base(message) { }
+    public ModelException(string message, System.Exception inner) : base(message, inner) { }
+  }
+
   public class Factory {
     public Model Model { get; set; }
 
@@ -169,6 +175,10 @@ namespace HumanParserGenerator.Generator {
                                                    bool        optional=false)
     {
       IdentifierExpression id = ((IdentifierExpression)exp);
+
+      if( ! this.Model.Contains(id.Identifier) ) {
+        throw new ModelException("Unknown Entity reference: " + id.Identifier);
+      }
 
       return this.Add(
         entity,
@@ -467,6 +477,10 @@ namespace HumanParserGenerator.Generator {
     [ConditionalAttribute("DEBUG")]
     private void Log(string msg) {
       Console.Error.WriteLine("Factory: " + msg );
+    }
+
+    private void LogError(string msg) {
+      Console.Error.WriteLine("Factory: ERROR: " + msg );
     }
   }
 

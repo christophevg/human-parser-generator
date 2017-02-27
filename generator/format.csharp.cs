@@ -4,6 +4,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.CodeDom;
+using System.CodeDom.Compiler;
 
 using HumanParserGenerator.Generator;
 
@@ -66,8 +68,21 @@ namespace HumanParserGenerator.Emitter.Format {
       return CamelCase( name );
     }
 
+    // TODO deprecate in favor of Literal
     public static string VerbatimStringLiteral(string text) {
       return "@\"" + text.Replace( "\"", "\"\"" ) + "\"";
+    }
+
+    // via http://stackoverflow.com/questions/323640
+    public static string Literal(string input) {
+      using( var writer = new StringWriter() ) {
+        using( var provider = CodeDomProvider.CreateProvider("CSharp") ) {
+          provider.GenerateCodeFromExpression(
+            new CodePrimitiveExpression(input), writer, null
+          );
+          return writer.ToString();
+        }
+      }
     }
     
     // technical formatting functions

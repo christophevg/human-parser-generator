@@ -3,16 +3,13 @@
 
 using System;
 using System.IO;
-
 using System.Collections.Generic;
-
+using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
-
 using System.Linq;
-
 using System.Diagnostics;
 
-using System.Collections.ObjectModel;
+using Formatting=HumanParserGenerator.Emitter.Format;
 
 namespace HumanParserGenerator.Generator {
 
@@ -21,7 +18,7 @@ namespace HumanParserGenerator.Generator {
     public Rule Rule { get; set; }
 
     // a (back-)reference to the Model this Entity belongs to
-    public Model Model { get; set; }
+    public Model Model { get; internal set; }
 
     // the name of the rule/Entity
     public string Name { get; set; }
@@ -92,46 +89,54 @@ namespace HumanParserGenerator.Generator {
     public bool IsOptional { get { return this.ParseAction.IsOptional; } }
 
     // Inheritance Model  Super <|-- Sub
-    public HashSet<Entity> Supers { get; set; }
-    public HashSet<Entity> Subs   { get; set; }
+    // properties to get/set them by name
+    public HashSet<string> Supers { get; set; }
+    public HashSet<string> Subs   { get; set; }
+
+    // properties to get them as objects, with setters that update leading names
+    // properties
+    public ReadOnlyCollection<Entity> SuperEntities {
+      get {
+        return this.Supers.Select(super => this.Model[super]).ToList().AsReadOnly();
+      }
+      set {
+        this.Supers = new HashSet<string>(value.Select(super => super.Name));
+      }
+    }
+
+    public ReadOnlyCollection<Entity> SubEntities {
+      get {
+        return this.Subs.Select(sub => this.Model[sub]).ToList().AsReadOnly();
+      }
+      set {
+        this.Subs = new HashSet<string>(value.Select(sub => sub.Name));
+      }
+    }
 
     public bool HasSibblings {
       get {
         if(this.Supers.Count == 0) { return false; }
         // counts = list of # sibblings of supers
-        List<int> counts =
-          this.Supers.Select(super=>super.Subs.Count()).Distinct().ToList();
+        List<int> counts = this.SuperEntities
+          .Select(super => super.Subs.Count()).Distinct().ToList();
         // if supers have different # subs OR same but multiple
         return (counts.Count > 1 || counts.First() > 1);
       }
     }
 
     public bool IsA(Entity super) {
-      if(this.Supers.Contains(super)) { return true; }
-      foreach(Entity parent in this.Supers) {
+      if(this.SuperEntities.Contains(super)) { return true; }
+      foreach(Entity parent in this.SuperEntities) {
         if(parent.IsA(super)) { return true; }
       }
       return false;
     }
     
-    public void IsSubEntityOf(Entity parent) {
-      this.Supers.Add(parent);
-      parent.Subs.Add(this);
-    }
-
-    public void IsSuperEntityOf(Entity child) {
-      this.Subs.Add(child);
-      child.Supers.Add(this);
-    }
-
     // a Type is always the Entity itself unless the Entity behaves in a Virtual
     // way, then it returns the type of its first property
     public string Type {
       get {
-        if(this.IsVirtual){
-          return this.Properties.First().Type;
-        }
-        return this.DefaultType;
+        return this.IsVirtual ? this.Properties.First().Type : this.DefaultType;
       }
     }
     
@@ -139,32 +144,45 @@ namespace HumanParserGenerator.Generator {
 
     public Entity() {
       this.properties = new List<Property>();
-      this.Supers     = new HashSet<Entity>();
-      this.Subs       = new HashSet<Entity>();
+      this.Supers     = new HashSet<string>();
+      this.Subs       = new HashSet<string>();
     }
 
     public override string ToString() {
       return
-        (this.IsVirtual ? "Virtual": "") + "Entity(" +
-          "Name=" + this.Name +
-          ",Type=" + this.Type +
-          ( this.Supers.Count == 0 ? "" :
-            ",Supers=" + "[" +
-              string.Join(",", this.Supers.Select(x => x.Name)) +
-            "]"
-          ) +
-          ( this.Subs.Count == 0 ? "" :
-            ",Subs=" + "[" +
-              string.Join(",", this.Subs.Select(x => x.Name)) +
-            "]"
-          ) +
-          ( this.Properties.Count == 0 ? "" :
-            ",Properties=" + "[" +
-              string.Join(",", this.Properties.Select(x => x.ToString())) +
-            "]"
-          ) +
-          (this.ParseAction != null ? ",ParseAction=" + this.ParseAction.ToString() : "") +
-        ")";
+        (this.IsVirtual ? "// virtual\n" : "") +
+        "new Entity() {\n" +
+          "Rule = " + ( this.Rule == null ? "null" : this.Rule.ToString() ) + ",\n" +
+          "Name = " + Formatting.CSharp.Literal(this.Name) + ",\n" +
+          "Properties = new List<Property>()" + 
+            (this.Properties.Count > 0 ?
+            " {\n" +
+              string.Join(",\n",
+                this.Properties.Select(property => property.ToString())
+              ) +
+            "\n}"
+            : "") + 
+          ".AsReadOnly(),\n" +
+          "ParseAction = " + this.ParseAction.ToString() + ",\n" +
+          "Supers = new HashSet<string>()" + 
+          ( this.Supers.Count > 0 ?
+            " {\n" +
+              string.Join(", ",
+                this.Supers.Select(super => Formatting.CSharp.Literal(super))
+              ) +
+            " }"
+            : "" ) + 
+          ",\n" +
+          "Subs = new HashSet<string>()" +
+          ( this.Subs.Count > 0 ?
+            " { " +
+              string.Join(", ",
+                this.Subs.Select(sub => Formatting.CSharp.Literal(sub))
+              ) +
+            " }"
+            : "") +
+         "\n" +
+        "}";
     }
 
     public bool HasPluralProperty() {
@@ -241,13 +259,10 @@ namespace HumanParserGenerator.Generator {
     public bool IsOptional { get { return this.Source.IsOptional; } }
 
     public override string ToString() {
-      return "Property(" +
-        "Name="        + this.Name             +
-        ",Type="       + this.Type             +
-        (this.IsPlural   ? ",IsPlural"   : "") +
-        (this.IsOptional ? ",IsOptional" : "") +
-        ",Source="     + this.Source           +
-      ")";
+      return "new Property() {\n" +
+        "Name = " + Formatting.CSharp.Literal(this.rawname) + ",\n" +
+        "Source = " + this.Source.ToString() + "\n" +
+      "}";
     }
   }
 
@@ -286,9 +301,6 @@ namespace HumanParserGenerator.Generator {
     // Label can be used for external string representation, other than ToString
     public abstract string Label { get; }
 
-    // Representation can be used for a more elaborate/technical label
-    public virtual string Representation { get { return this.Label; } }
-
     // Name can be used for code-level representation, e.g. a variable name
     public abstract string Name { get; }
 
@@ -301,14 +313,13 @@ namespace HumanParserGenerator.Generator {
     // Back-reference to our Parent ParseAction, when null = top-level @ Entity
     public ParseAction Parent { get; set; }
 
+    // returns only the common part as implemented by this abstract base class
     public override string ToString() {
-      return
-        this.GetType().ToString().Replace("HumanParserGenerator.Generator.", "") +
-        "(" + this.Representation + ")" +
-        (this.IsPlural      ? "*" : "") +
-        (this.IsOptional    ? "?" : "") +
-        (this.ReportSuccess ? "!" : "") +
-        (this.Property != null ? "->" + this.Property.Name : "");
+      return string.Join(", ", new List<string>() {
+        (this.IsOptional ? "IsOptional = true" : null ),
+        (this.ReportSuccess ? "ReportSuccess = true" : null ),
+        (this.IsPlural ? "IsPlural = true" : null )
+      }.Where(p => p != null));
     }
   }
 
@@ -320,6 +331,15 @@ namespace HumanParserGenerator.Generator {
       get { return  this.ReportSuccess ? "<bool>" : "<string>"; }
     }
     public override string Name { get { return this.String.Replace(" ", "-"); }}
+    
+    public override string ToString() {
+      string inherited = base.ToString();
+      return ! this.GetType().ToString().Split('.').Last().Equals("ConsumeString") ? inherited :
+        "new ConsumeString() {\n" +
+        (inherited.Equals("") ? "" : inherited + ",\n" ) +
+        "String = " + Formatting.CSharp.Literal(this.String) + "\n" + 
+      "}";
+    }
   }
 
   // ... to consume a sequence of characters according to a regular expression
@@ -329,16 +349,35 @@ namespace HumanParserGenerator.Generator {
       get { return this.String; }
       set { this.String = value; }
     }
+    public override string ToString() {
+      string inherited = base.ToString();
+      return "new ConsumePattern() {" +
+        (inherited.Equals("") ? "" : inherited + ",\n" ) +
+        "Pattern = " + Formatting.CSharp.Literal(this.Pattern) + "\n" + 
+      "}";
+    }
   }
 
   // ... to consume another Entity
   public class ConsumeEntity : ParseAction {
-    public Entity Entity { get; set; }
+    // "set/get" the Reference(Name) and "get" the actual Entity
+    public string Reference { get; set; }
+    public Entity Entity {
+      get { return this.Property.Entity.Model[this.Reference]; }
+    }
+
     public override string Label  { get { return this.Entity.Name; } }
     public override string Type   {
       get { return this.ReportSuccess ? "<bool>" : this.Entity.Type; }
     }
     public override string Name   { get { return this.Entity.Name; } }
+    public override string ToString() {
+      string inherited = base.ToString();
+      return "new ConsumeEntity() {\n" +
+        (inherited.Equals("") ? "" : inherited + ",\n" ) +
+        "Reference = " + Formatting.CSharp.Literal(this.Reference) + "\n" +
+      "}";
+    }
   }
 
   public class ConsumeAll : ParseAction {
@@ -377,11 +416,16 @@ namespace HumanParserGenerator.Generator {
         return "[" + string.Join(",", this.Actions.Select(x => x.Label)) + "]";
       }
     }
-    public override string Representation {
-      get {
-        return
-          "[" + string.Join(",", this.Actions.Select(x => x.ToString())) + "]";
-      }
+
+    public override string ToString() {
+      string inherited = base.ToString();
+      return ! this.GetType().ToString().Equals("HumanParserGenerator.Generator.ConsumeAll") ? base.ToString() :
+        "new ConsumeAll() {\n" +
+          (inherited.Equals("") ? "" : inherited + ",\n" ) +
+          "Actions = new List<ParseAction>() {\n"
+            + string.Join(",\n", this.Actions.Select(action => action.ToString())) + "\n" +
+          "}\n" +
+        "}";
     }
   }
 
@@ -413,6 +457,21 @@ namespace HumanParserGenerator.Generator {
     public override string Label {
       get { return string.Join( " | ", this.Actions.Select(x => x.Label) ); }
     }
+
+    public override string ToString() {
+      string inherited = base.ToString();
+      return "new ConsumeAny() {\n" +
+        (inherited.Equals("") ? "" : inherited + ",\n" ) +
+        "Actions = new List<ParseAction>()" + 
+          (this.Actions.Count > 0 ?
+            " {\n" +
+              string.Join( ",\n",
+                this.Actions.Select(action => action.ToString())
+              ) +
+            "\n}" 
+          : "") +
+        "\n}";
+    }
   }
 
   // the Model can be considered a Parser-AST on steroids. it contains all info
@@ -437,7 +496,7 @@ namespace HumanParserGenerator.Generator {
     public Model Add(Entity entity) {
       entity.Model = this;
       this.entities.Add(entity.Name, entity);
-      if(this.Entities.Count == 1) { this.Root = entity; } // First
+      if(this.Entities.Count == 1) { this.RootName = entity.Name; } // First
       return this;
     }
 
@@ -452,7 +511,8 @@ namespace HumanParserGenerator.Generator {
     }
 
     // the first entity to start parsing
-    public Entity Root { get; private set; }
+    public string RootName { get; set; }
+    public Entity Root { get { return this[this.RootName]; } }
 
     public Model() {
       this.entities = new Dictionary<string,Entity>();
@@ -460,12 +520,17 @@ namespace HumanParserGenerator.Generator {
 
     public override string ToString() {
       return
-        "Model(" +
-          "Entities=[" +
-             string.Join(",", this.Entities.Select(x => x.ToString())) +
-          "]," +
-          "Root=" + (this.Root != null ? this.Root.Name : "") +
-        ")";
+        "new Model() {\n" +
+          "Entities = new List<Entity>()" + 
+            (this.Entities.Count > 0 ?
+              " {\n" +
+               string.Join(",\n", this.Entities.Select(entity => entity.ToString())) +
+              "\n}"
+             : "" ) +
+          "," +
+          "\nRootName = " +
+          (this.Root == null ? "null" : Formatting.CSharp.Literal(this.RootName) ) +
+        "\n}";
     }
   }
 

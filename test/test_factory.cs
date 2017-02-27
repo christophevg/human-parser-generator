@@ -19,22 +19,14 @@ public class GeneratorModelFactoryTests {
     );
   }
   
-  private void importAndCompare(Grammar grammar, string expected) {
+  private void importAndCompare(Grammar grammar, Model expected) {
     Model model = new Factory().Import(grammar).Model;
-    Assert.AreEqual(
-      expected.Replace(" ", "").Replace("\n", ""),
-      model.ToString()
-    );
-  }
-
-  [Test]
-  public void testEmptyModel() {
-    this.importAndCompare( new Factory().Model, "Model(Entities=[],Root=)" );
+    Assert.AreEqual( expected.ToString(), model.ToString() );
   }
 
   [Test]
   public void testMinimalModelWithoutProperty() {
-    // rule ::= "a"
+    // rule ::= "a" ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -44,18 +36,33 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(Name=rule,Type=rule,ParseAction=ConsumeString(a))
-         ],
-         Root=rule
-       )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() { 
+              Identifier = "rule",
+              Expression = new StringExpression() { 
+                Name = null,
+                String = "a"
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>().AsReadOnly(),
+            ParseAction = new ConsumeString() {
+              String = "a"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testMinimalModelWithProperty() {
-    // rule ::= StringProperty@"a"
+    // rule ::= StringProperty @ "a" ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -68,28 +75,37 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             Properties=[
-               Property(
-                 Name=StringProperty,Type=<string>,
-                 Source=ConsumeString(a)->StringProperty
-               )
-             ],
-             ParseAction=ConsumeString(a)->StringProperty
-           )
-        ],
-        Root=rule
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() { 
+              Identifier = "rule",
+              Expression = new StringExpression() { 
+                Name = "StringProperty",
+                String = "a"
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "StringProperty",
+                Source = new ConsumeString() { String = "a" }
+              }
+            }.AsReadOnly(),
+            ParseAction = new ConsumeString() { String = "a" },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testSimpleIdentifierExpressionIndirection() {
-    // rule1 ::= rule2
-    // rule2 ::= /a/
+    // rule1 ::= rule2 ;
+    // rule2 ::= ? /a/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -103,27 +119,56 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule1,Type=rule1,Subs=[rule2],
-             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumeEntity(rule2)->rule2)],
-             ParseAction=ConsumeEntity(rule2)->rule2
-           ),
-           VirtualEntity(
-             Name=rule2,Type=<string>,Supers=[rule1],
-             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumePattern(a)->rule2)],
-             ParseAction=ConsumePattern(a)->rule2
-           )
-        ],
-        Root=rule1
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule1",
+              Expression = new IdentifierExpression() {
+                Name = null,
+                Identifier = "rule2"
+              }
+            },
+            Name = "rule1",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule2",
+                Source = new ConsumeEntity() { Reference = "rule2" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeEntity() { Reference = "rule2" },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>() { "rule2" }
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule2",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "a"
+              }
+            },
+            Name = "rule2",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule2",
+                Source = new ConsumePattern() { Pattern = "a" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "a" },
+            Supers = new HashSet<string>() { "rule1" },
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule1"
+      }
     );
   }
 
   [Test]
   public void testMinimalExtractorWithoutProperty() {
-    // rule ::= /[A-Za-z0-9-]*/
+    // rule ::= ? /[A-Za-z0-9-]*/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -133,22 +178,36 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             Properties=[Property(Name=rule,Type=<string>,Source=ConsumePattern([A-Za-z0-9-]*)->rule)],
-             ParseAction=ConsumePattern([A-Za-z0-9-]*)->rule
-           )
-        ],
-        Root=rule
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "[A-Za-z0-9-]*"
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule",
+                Source = new ConsumePattern() { Pattern = "[A-Za-z0-9-]*" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "[A-Za-z0-9-]*" },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testMinimalExtractorWithProperty() {
-    // rule ::= PatternProperty/[A-Za-z0-9-]*/
+    // rule ::= PatternProperty @ ? /[A-Za-z0-9-]*/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -161,28 +220,41 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             Properties=[
-               Property(
-                 Name=PatternProperty,Type=<string>,
-                 Source=ConsumePattern([A-Za-z0-9-]*)->PatternProperty
-               )
-             ],
-             ParseAction=ConsumePattern([A-Za-z0-9-]*)->PatternProperty
-           )
-        ],
-        Root=rule
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new ExtractorExpression() {
+                Name = "PatternProperty",
+                Pattern = "[A-Za-z0-9-]*"
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "PatternProperty",
+                Source = new ConsumePattern() {
+                  Pattern = "[A-Za-z0-9-]*"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "[A-Za-z0-9-]*"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testNamedIdentifierExpression() {
-    // rule1 ::= IdentifierProperty@rule2
-    // rule2 ::= /a/
+    // rule1 ::= IdentifierProperty @ rule2 ;
+    // rule2 ::= ? /a/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -199,29 +271,56 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule1,Type=rule1,Subs=[rule2],
-             Properties=[
-               Property(Name=IdentifierProperty,Type=<string>,Source=ConsumeEntity(rule2)->IdentifierProperty)
-             ],
-             ParseAction=ConsumeEntity(rule2)->IdentifierProperty
-           ),
-           VirtualEntity(
-             Name=rule2,Type=<string>,Supers=[rule1],
-             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumePattern(a)->rule2)],
-             ParseAction=ConsumePattern(a)->rule2
-           )
-        ],
-        Root=rule1
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule1",
+              Expression = new IdentifierExpression() {
+                Name = "IdentifierProperty",
+                Identifier = "rule2"
+              }
+            },
+            Name = "rule1",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "IdentifierProperty",
+                Source = new ConsumeEntity() { Reference = "rule2" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeEntity() { Reference = "rule2" },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>() { "rule2" }
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule2",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "a"
+              }
+            },
+            Name = "rule2",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule2",
+                Source = new ConsumePattern() { Pattern = "a" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "a" },
+            Supers = new HashSet<string>() { "rule1" },
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule1"
+      }
     );
   }
 
   [Test]
   public void testOptionalString() {
-    // rule ::= [ "a" ]
+    // rule ::= [ "a" ] ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -233,28 +332,45 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             Properties=[
-               Property(
-                 Name=has-a,Type=<bool>,IsOptional,
-                 Source=ConsumeString(a)?!->has-a
-               )
-             ],
-             ParseAction=ConsumeString(a)?!->has-a
-           )
-        ],
-        Root=rule
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new OptionalExpression() {
+                Expression = new StringExpression() {
+                  Name = null,
+                  String = "a"
+                }
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "has-a",
+                Source = new ConsumeString() {
+                  IsOptional = true, ReportSuccess = true,
+                  String = "a"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeString() {
+              IsOptional = true, ReportSuccess = true,
+              String = "a"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testSimpleSequentialExpression() {
-    // rule1 ::= rule2 "." rule2
-    // rule2 ::= /[a-z]+/
+    // rule1 ::= rule2 "." rule2 ;
+    // rule2 ::= ? /[a-z]+/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -274,36 +390,80 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule1,Type=rule1,
-             Properties=[
-               Property(Name=rule20,Type=<string>,Source=ConsumeEntity(rule2)->rule20),
-               Property(Name=rule21,Type=<string>,Source=ConsumeEntity(rule2)->rule21)
-             ],
-             ParseAction=ConsumeAll([
-               ConsumeEntity(rule2)->rule20,
-               ConsumeString(.),
-               ConsumeEntity(rule2)->rule21
-             ])
-           ),
-           VirtualEntity(
-             Name=rule2,Type=<string>,
-             Properties=[Property(Name=rule2,Type=<string>,Source=ConsumePattern([a-z]+)->rule2)],
-             ParseAction=ConsumePattern([a-z]+)->rule2
-           )
-        ],
-        Root=rule1
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule1",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "rule2"
+                },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new StringExpression() {
+                    Name = null,
+                    String = "."
+                  },
+                  NonAlternativesExpression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "rule2"
+                  }
+                }
+              }
+            },
+            Name = "rule1",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule2",
+                Source = new ConsumeEntity() { Reference = "rule2" }
+              },
+              new Property() {
+                Name = "rule2",
+                Source = new ConsumeEntity() { Reference = "rule2" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() { Reference = "rule2" },
+                new ConsumeString() { String = "." },
+                new ConsumeEntity() { Reference = "rule2" }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule2",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "[a-z]+"
+              }
+            },
+            Name = "rule2",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule2",
+                Source = new ConsumePattern() { Pattern = "[a-z]+" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "[a-z]+" },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule1"
+      }
     );
   }
 
   [Test]
   public void testNamedIdentifierDefinition() {
-    // rule ::= [ name ] id
-    // name ::= id "@"
-    // id   ::= /[a-z]+/
+    // rule ::= [ name ] id ;
+    // name ::= id "@" ;
+    // id   ::= ? /[a-z]+/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -329,37 +489,104 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             Properties=[
-               Property(Name=name,Type=<string>,IsOptional,Source=ConsumeEntity(name)?->name),
-               Property(Name=id,Type=<string>,Source=ConsumeEntity(id)->id)
-             ],
-             ParseAction=ConsumeAll([
-               ConsumeEntity(name)?->name,
-               ConsumeEntity(id)->id
-             ])
-           ),
-           VirtualEntity(
-             Name=name,Type=<string>,Subs=[id],
-             Properties=[
-               Property(Name=id,Type=<string>,Source=ConsumeEntity(id)->id)
-             ],
-             ParseAction=ConsumeAll([
-               ConsumeEntity(id)->id,
-               ConsumeString(@)
-             ])
-           ),
-           VirtualEntity(
-             Name=id,Type=<string>,Supers=[name],
-             Properties=[Property(Name=id,Type=<string>,Source=ConsumePattern([a-z]+)->id)],
-             ParseAction=ConsumePattern([a-z]+)->id
-           )
-        ],
-        Root=rule
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new OptionalExpression() {
+                  Expression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "name"
+                  }
+                },
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "id"
+                }
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "name",
+                Source = new ConsumeEntity() {
+                  IsOptional = true,
+                  Reference = "name"
+                }
+              },
+              new Property() {
+                Name = "id",
+                Source = new ConsumeEntity() { Reference = "id" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() {
+                  IsOptional = true,
+                  Reference = "name"
+                },
+                new ConsumeEntity() { Reference = "id" }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "name",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "id"
+                },
+                NonAlternativesExpression = new StringExpression() {
+                  Name = null,
+                  String = "@"
+                }
+              }
+            },
+            Name = "name",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "id",
+                Source = new ConsumeEntity() { Reference = "id" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() { Reference = "id" },
+                new ConsumeString() { String = "@" }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>() { "id" }
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "id",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "[a-z]+"
+              }
+            },
+            Name = "id",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "id",
+                Source = new ConsumePattern() { Pattern = "[a-z]+" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "[a-z]+" },
+            Supers = new HashSet<string>() { "name" },
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
@@ -381,31 +608,80 @@ public class GeneratorModelFactoryTests {
           }
         }
       },
-      @"
-Model(
-  Entities=[
-    Entity(
-      Name=rule,Type=rule,Properties=[
-        Property(Name=has-a,Type=<bool>,Source=ConsumeString(a)!->has-a),
-        Property(Name=has-b,Type=<bool>,Source=ConsumeString(b)!->has-b),
-        Property(Name=has-c,Type=<bool>,Source=ConsumeString(c)!->has-c)
-      ],
-      ParseAction=ConsumeAny([
-        ConsumeString(a)!->has-a,
-        ConsumeString(b)!->has-b,
-        ConsumeString(c)!->has-c
-      ]
-    )
-  )
-  ],
-  Root=rule
-)"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new StringExpression() {
+                  Name = null,
+                  String = "a"
+                },
+                Expression = new AlternativesExpression() {
+                  NonAlternativesExpression = new StringExpression() {
+                    Name = null,
+                    String = "b"
+                  },
+                  Expression = new StringExpression() {
+                    Name = null,
+                    String = "c"
+                  }
+                }
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "has-a",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "a"
+                }
+              },
+              new Property() {
+                Name = "has-b",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "b"
+                }
+              },
+              new Property() {
+                Name = "has-c",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "c"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "a"
+                },
+                new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "b"
+                },
+                new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "c"
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testAlternativeGroupedCharacters() {
-    // rule ::= ( "a" "b" ) | ( "c" "d" )
+    // rule ::= ( "a" "b" ) | ( "c" "d" ) ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -428,24 +704,76 @@ Model(
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             ParseAction=ConsumeAny([
-               ConsumeAll([ConsumeString(a), ConsumeString(b)]),
-               ConsumeAll([ConsumeString(c), ConsumeString(d)])
-             ])
-           )
-        ],
-        Root=rule
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new GroupExpression() {
+                  Expression = new SequentialExpression() {
+                    AtomicExpression = new StringExpression() {
+                      Name = null,
+                      String = "a"
+                    },
+                    NonAlternativesExpression = new StringExpression() {
+                      Name = null,
+                      String = "b"
+                    }
+                  }
+                },
+                Expression = new GroupExpression() {
+                  Expression = new SequentialExpression() {
+                    AtomicExpression = new StringExpression() {
+                      Name = null,
+                      String = "c"
+                    },
+                    NonAlternativesExpression = new StringExpression() {
+                      Name = null,
+                      String = "d"
+                    }
+                  }
+                }
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>().AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeAll() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeString() {
+                      String = "a"
+                    },
+                    new ConsumeString() {
+                      String = "b"
+                    }
+                  }
+                },
+                new ConsumeAll() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeString() {
+                      String = "c"
+                    },
+                    new ConsumeString() {
+                      String = "d"
+                    }
+                  }
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testRepeatedString() {
-    // rule ::= { "a" }
+    // rule ::= { "a" } ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -457,23 +785,38 @@ Model(
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             ParseAction=ConsumeString(a)*
-           )
-        ],
-        Root=rule
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new RepetitionExpression() {
+                Expression = new StringExpression() {
+                  Name = null,
+                  String = "a"
+                }
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>().AsReadOnly(),
+            ParseAction = new ConsumeString() {
+              IsPlural = true,
+              String = "a"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule"
+      }
     );
   }
 
   [Test]
   public void testRepeatedIdentifier() {
-    // rules ::= { rule }
-    // rule  ::= id "x" id = id
-    // id    ::= /[a-z]+/
+    // rules ::= { rule } ;
+    // rule  ::= id "x" id "=" id ;
+    // id    ::= ? /[a-z]+/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -505,39 +848,121 @@ Model(
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rules,Type=rules,
-             Properties=[
-               Property(Name=rule,Type=rule,IsPlural,
-               Source=ConsumeEntity(rule)*->rule)
-             ],
-             ParseAction=ConsumeEntity(rule)*->rule
-           ),
-           Entity(
-             Name=rule,Type=rule,
-             Properties=[
-               Property(Name=id0,Type=<string>,Source=ConsumeEntity(id)->id0),
-               Property(Name=id1,Type=<string>,Source=ConsumeEntity(id)->id1),
-               Property(Name=id2,Type=<string>,Source=ConsumeEntity(id)->id2)
-             ],
-             ParseAction=ConsumeAll([
-               ConsumeEntity(id)->id0,
-               ConsumeString(x),
-               ConsumeEntity(id)->id1,
-               ConsumeString(=),
-               ConsumeEntity(id)->id2
-             ])
-           ),
-           VirtualEntity(
-             Name=id,Type=<string>,
-             Properties=[Property(Name=id,Type=<string>,Source=ConsumePattern([a-z]+)->id)],
-             ParseAction=ConsumePattern([a-z]+)->id
-           )
-        ],
-        Root=rules
-      )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rules",
+              Expression = new RepetitionExpression() {
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "rule"
+                }
+              }
+            },
+            Name = "rules",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule",
+                Source = new ConsumeEntity() {
+                  IsPlural = true,
+                  Reference = "rule"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeEntity() {
+              IsPlural = true,
+              Reference = "rule"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "id"
+                },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new StringExpression() {
+                    Name = null,
+                    String = "x"
+                  },
+                  NonAlternativesExpression = new SequentialExpression() {
+                    AtomicExpression = new IdentifierExpression() {
+                      Name = null,
+                      Identifier = "id"
+                    },
+                    NonAlternativesExpression = new SequentialExpression() {
+                      AtomicExpression = new StringExpression() {
+                        Name = null,
+                        String = "="
+                      },
+                      NonAlternativesExpression = new IdentifierExpression() {
+                        Name = null,
+                        Identifier = "id"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            Name = "rule",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "id",
+                Source = new ConsumeEntity() { Reference = "id" }
+              },
+              new Property() {
+                Name = "id",
+                Source = new ConsumeEntity() { Reference = "id" }
+              },
+              new Property() {
+                Name = "id",
+                Source = new ConsumeEntity() { Reference = "id" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() { Reference = "id" },
+                new ConsumeString() { String = "x" },
+                new ConsumeEntity() { Reference = "id" },
+                new ConsumeString() { String = "=" },
+                new ConsumeEntity() { Reference = "id" }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "id",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "[a-z]+"
+              }
+            },
+            Name = "id",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "id",
+                Source = new ConsumePattern() {
+                  Pattern = "[a-z]+"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "[a-z]+"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rules"
+      }
     );
   }
 
@@ -566,31 +991,101 @@ Model(
           }
         }
       },
-      @"
-Model(
-  Entities=[
-    Entity(
-      Name=rule1,Type=rule1,Properties=[
-        Property(Name=rule2,Type=rule2,IsPlural,Source=ConsumeEntity(rule2)*->rule2)
-      ],
-      ParseAction=ConsumeEntity(rule2)*->rule2
-    ),
-    Entity(
-      Name=rule2,Type=rule2,Properties=[
-        Property(Name=has-a,Type=<bool>,Source=ConsumeString(a)!->has-a),
-        Property(Name=has-b,Type=<bool>,Source=ConsumeString(b)!->has-b),
-        Property(Name=has-c,Type=<bool>,Source=ConsumeString(c)!->has-c)
-      ],
-      ParseAction=ConsumeAny([
-        ConsumeString(a)!->has-a,
-        ConsumeString(b)!->has-b,
-        ConsumeString(c)!->has-c]
-      )
-    )
-  ],
-  Root=rule1
-)
-"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule1",
+              Expression = new RepetitionExpression() {
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "rule2"
+                }
+              }
+            },
+            Name = "rule1",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "rule2",
+                Source = new ConsumeEntity() {
+                  IsPlural = true,
+                  Reference = "rule2"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeEntity() {
+              IsPlural = true,
+              Reference = "rule2"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "rule2",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new StringExpression() {
+                  Name = null,
+                  String = "a"
+                },
+                Expression = new AlternativesExpression() {
+                  NonAlternativesExpression = new StringExpression() {
+                    Name = null,
+                    String = "b"
+                  },
+                  Expression = new StringExpression() {
+                    Name = null,
+                    String = "c"
+                  }
+                }
+              }
+            },
+            Name = "rule2",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "has-a",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "a"
+                }
+              },
+              new Property() {
+                Name = "has-b",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "b"
+                }
+              },
+              new Property() {
+                Name = "has-c",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "c"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "a"
+                },
+                new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "b"
+                },
+                new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "c"
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "rule1"
+      }
     );
   }
 
@@ -598,8 +1093,8 @@ Model(
   public void testAlternativeIdentifiers() {
     // assign ::= exp ;
     // exp ::= a | b ;
-    // a ::= /aa/;
-    // b ::= /bb/;
+    // a ::= ? /aa/ ? ;
+    // b ::= ? /bb/ ?;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -624,36 +1119,132 @@ Model(
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=assign,Type=assign,Subs=[exp],Properties=[
-               Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
-             ],
-             ParseAction=ConsumeEntity(exp)->exp
-           ),
-           VirtualEntity(
-             Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Properties=[
-               Property(Name=alternative,Type=exp,Source=ConsumeAny([ConsumeEntity(a)->alternative,ConsumeEntity(b)->alternative])->alternative)
-             ],
-             ParseAction=ConsumeAny([
-               ConsumeEntity(a)->alternative,
-               ConsumeEntity(b)->alternative
-             ])->alternative
-           ),
-           Entity(
-             Name=a,Type=a,Supers=[exp],
-             Properties=[Property(Name=a,Type=<string>,Source=ConsumePattern(aa)->a)],
-             ParseAction=ConsumePattern(aa)->a
-           ),
-           Entity(
-             Name=b,Type=b,Supers=[exp],
-             Properties=[Property(Name=b,Type=<string>,Source=ConsumePattern(bb)->b)],
-             ParseAction=ConsumePattern(bb)->b
-           )
-         ],
-         Root=assign
-       )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "assign",
+              Expression = new IdentifierExpression() {
+                Name = null,
+                Identifier = "exp"
+              }
+            },
+            Name = "assign",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "exp",
+                Source = new ConsumeEntity() {
+                  Reference = "exp"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeEntity() {
+              Reference = "exp"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>() { "exp" }
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "exp",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "a"
+                },
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "b"
+                }
+              }
+            },
+            Name = "exp",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "alternative",
+                Source = new ConsumeAny() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeEntity() {
+                      Reference = "a"
+                    },
+                    new ConsumeEntity() {
+                      Reference = "b"
+                    }
+                  }
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() {
+                  Reference = "a"
+                },
+                new ConsumeEntity() {
+                  Reference = "b"
+                }
+              }
+            },
+            Supers = new HashSet<string>() {
+              "assign"
+            },
+            Subs = new HashSet<string>() {
+              "a", "b"
+            }
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "a",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "aa"
+              }
+            },
+            Name = "a",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "a",
+                Source = new ConsumePattern() {
+                  Pattern = "aa"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "aa"
+            },
+            Supers = new HashSet<string>() {
+              "exp"
+            },
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "b",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "bb"
+              }
+            },
+            Name = "b",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "b",
+                Source = new ConsumePattern() {
+                  Pattern = "bb"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "bb"
+            },
+            Supers = new HashSet<string>() {
+              "exp"
+            },
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "assign"
+      }
     );
   }
 
@@ -663,8 +1254,8 @@ Model(
     // exp ::= a | b ;
     // a ::= b exp ;
     // b ::= x | y ;
-    // x ::= /xx/ ;
-    // y ::= /yy/ ;
+    // x ::= ? /xx/ ? ;
+    // y ::= ? /yy/ ? ;
     this.importAndCompare(
       new Grammar() {
         Rules = new List<Rule>() {
@@ -703,60 +1294,178 @@ Model(
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=assign,Type=assign,Subs=[exp],Properties=[
-               Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
-             ],
-             ParseAction=ConsumeEntity(exp)->exp
-           ),
-           VirtualEntity(
-             Name=exp,Type=exp,Supers=[assign],Subs=[a,b],Properties=[
-               Property(Name=alternative,Type=exp,Source=ConsumeAny([
-                 ConsumeEntity(a)->alternative,
-                 ConsumeEntity(b)->alternative
-               ])->alternative)
-             ],
-             ParseAction=ConsumeAny([
-               ConsumeEntity(a)->alternative,
-               ConsumeEntity(b)->alternative
-             ])->alternative
-           ),
-           Entity(
-             Name=a,Type=a,Supers=[exp],
-             Properties=[
-               Property(Name=b,Type=b,Source=ConsumeEntity(b)->b),
-               Property(Name=exp,Type=exp,Source=ConsumeEntity(exp)->exp)
-             ],
-             ParseAction=ConsumeAll([
-               ConsumeEntity(b)->b,
-               ConsumeEntity(exp)->exp
-             ])
-           ),
-           VirtualEntity(
-             Name=b,Type=b,Supers=[exp],Subs=[x,y],
-             Properties=[
-               Property(Name=alternative,Type=b,Source=ConsumeAny([ConsumeEntity(x)->alternative,ConsumeEntity(y)->alternative])->alternative)
-             ],
-             ParseAction=ConsumeAny([
-               ConsumeEntity(x)->alternative,
-               ConsumeEntity(y)->alternative
-             ])->alternative
-           ),
-           Entity(
-             Name=x,Type=x,Supers=[b],
-             Properties=[Property(Name=x,Type=<string>,Source=ConsumePattern(xx)->x)],
-             ParseAction=ConsumePattern(xx)->x
-           ),
-           Entity(
-             Name=y,Type=y,Supers=[b],
-             Properties=[Property(Name=y,Type=<string>,Source=ConsumePattern(yy)->y)],
-             ParseAction=ConsumePattern(yy)->y
-           )
-         ],
-         Root=assign
-       )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "assign",
+              Expression = new IdentifierExpression() {
+                Name = null,
+                Identifier = "exp"
+              }
+            },
+            Name = "assign",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "exp",
+                Source = new ConsumeEntity() { Reference = "exp" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeEntity() { Reference = "exp" },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>() { "exp" }
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "exp",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "a"
+                },
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "b"
+                }
+              }
+            },
+            Name = "exp",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "alternative",
+                Source = new ConsumeAny() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeEntity() { Reference = "a" },
+                    new ConsumeEntity() { Reference = "b" }
+                  }
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() { Reference = "a" },
+                new ConsumeEntity() { Reference = "b" }
+              }
+            },
+            Supers = new HashSet<string>() { "assign" },
+            Subs = new HashSet<string>() { "a", "b" }
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "a",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "b"
+                },
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "exp"
+                }
+              }
+            },
+            Name = "a",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "b",
+                Source = new ConsumeEntity() {
+                  Reference = "b"
+                }
+              },
+              new Property() {
+                Name = "exp",
+                Source = new ConsumeEntity() {
+                  Reference = "exp"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() { Reference = "b"   },
+                new ConsumeEntity() { Reference = "exp" }
+              }
+            },
+            Supers = new HashSet<string>() { "exp" },
+            Subs = new HashSet<string>()
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "b",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "x"
+                },
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "y"
+                }
+              }
+            },
+            Name = "b",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "alternative",
+                Source = new ConsumeAny() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeEntity() { Reference = "x" },
+                    new ConsumeEntity() { Reference = "y" }
+                  }
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() { Reference = "x" },
+                new ConsumeEntity() { Reference = "y" }
+              }
+            },
+            Supers = new HashSet<string>() { "exp" },
+            Subs = new HashSet<string>() { "x", "y" }
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "x",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "xx"
+              }
+            },
+            Name = "x",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "x",
+                Source = new ConsumePattern() { Pattern = "xx" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "xx" },
+            Supers = new HashSet<string>() { "b" },
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "y",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "yy"
+              }
+            },
+            Name = "y",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "y",
+                Source = new ConsumePattern() { Pattern = "yy" }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "yy" },
+            Supers = new HashSet<string>() { "b" },
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "assign"
+      }
     );
   }
 
@@ -765,7 +1474,7 @@ Model(
     // record     ::= { value } ;
     // value      ::= literal | variable ;
     // literal    ::= number | string;
-    // variable   ::= identifier "x" number
+    // variable   ::= identifier "x" number ;
     // number     ::= /[0-9]+/
     // string     ::= /[a-z]+/
     // identifier ::= /[a-z]+/
@@ -816,79 +1525,259 @@ Model(
           }
         }
       },
-      @"Model(
-         Entities=[
-           Entity(
-             Name=record,Type=record,Properties=[
-               Property(
-                 Name=value,Type=value,IsPlural,
-                 Source=ConsumeEntity(value)*->value
-               )
-             ],
-             ParseAction=ConsumeEntity(value)*->value
-           ),
-           VirtualEntity(
-             Name=value,Type=value,Subs=[literal,variable],
-             Properties=[
-               Property(Name=alternative,Type=value,Source=ConsumeAny([
-                 ConsumeEntity(literal)->alternative,
-                 ConsumeEntity(variable)->alternative
-               ])->alternative)
-             ],
-             ParseAction=ConsumeAny([
-               ConsumeEntity(literal)->alternative,
-               ConsumeEntity(variable)->alternative
-             ])->alternative
-           ),
-           VirtualEntity(
-             Name=literal,Type=literal,Supers=[value],Subs=[number,string],
-             Properties=[
-               Property(Name=alternative,Type=literal,Source=ConsumeAny([
-                 ConsumeEntity(number)->alternative,
-                 ConsumeEntity(string)->alternative
-               ])->alternative)
-             ],
-             ParseAction=ConsumeAny([
-               ConsumeEntity(number)->alternative,
-               ConsumeEntity(string)->alternative
-             ])->alternative
-           ),
-           Entity(
-             Name=variable,Type=variable,Supers=[value],
-             Properties=[
-               Property(Name=identifier,Type=<string>,Source=ConsumeEntity(identifier)->identifier),
-               Property(Name=number,Type=number,Source=ConsumeEntity(number)->number)
-             ],
-             ParseAction=ConsumeAll([
-               ConsumeEntity(identifier)->identifier,
-               ConsumeString(x),
-               ConsumeEntity(number)->number
-             ])
-           ),
-           Entity(
-             Name=number,Type=number,Supers=[literal],
-             Properties=[
-               Property(Name=number,Type=<string>,Source=ConsumePattern([0-9]+)->number)
-             ],
-             ParseAction=ConsumePattern([0-9]+)->number
-           ),
-           Entity(
-             Name=string,Type=string,Supers=[literal],
-             Properties=[
-               Property(Name=string,Type=<string>,Source=ConsumePattern([a-z]+)->string)
-             ],
-             ParseAction=ConsumePattern([a-z]+)->string
-           ),
-           VirtualEntity(
-             Name=identifier,Type=<string>,
-             Properties=[
-               Property(Name=identifier,Type=<string>,Source=ConsumePattern([a-z]+)->identifier)
-             ],
-             ParseAction=ConsumePattern([a-z]+)->identifier
-           )
-         ],
-         Root=record
-       )"
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "record",
+              Expression = new RepetitionExpression() {
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "value"
+                }
+              }
+            },
+            Name = "record",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "value",
+                Source = new ConsumeEntity() {
+                  IsPlural = true,
+                  Reference = "value"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeEntity() {
+              IsPlural = true,
+              Reference = "value"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "value",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "literal"
+                },
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "variable"
+                }
+              }
+            },
+            Name = "value",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "alternative",
+                Source = new ConsumeAny() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeEntity() {
+                      Reference = "literal"
+                    },
+                    new ConsumeEntity() {
+                      Reference = "variable"
+                    }
+                  }
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() {
+                  Reference = "literal"
+                },
+                new ConsumeEntity() {
+                  Reference = "variable"
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>() {
+              "literal", "variable"
+            }
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "literal",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "number"
+                },
+                Expression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "string"
+                }
+              }
+            },
+            Name = "literal",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "alternative",
+                Source = new ConsumeAny() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeEntity() {
+                      Reference = "number"
+                    },
+                    new ConsumeEntity() {
+                      Reference = "string"
+                    }
+                  }
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() {
+                  Reference = "number"
+                },
+                new ConsumeEntity() {
+                  Reference = "string"
+                }
+              }
+            },
+            Supers = new HashSet<string>() {
+              "value"
+            },
+            Subs = new HashSet<string>() {
+              "number", "string"
+            }
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "variable",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "identifier"
+                },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new StringExpression() {
+                    Name = null,
+                    String = "x"
+                  },
+                  NonAlternativesExpression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "number"
+                  }
+                }
+              }
+            },
+            Name = "variable",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "identifier",
+                Source = new ConsumeEntity() {
+                  Reference = "identifier"
+                }
+              },
+              new Property() {
+                Name = "number",
+                Source = new ConsumeEntity() {
+                  Reference = "number"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() {
+                  Reference = "identifier"
+                },
+                new ConsumeString() {
+                  String = "x"
+                },
+                new ConsumeEntity() {
+                  Reference = "number"
+                }
+              }
+            },
+            Supers = new HashSet<string>() {
+              "value"
+            },
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "number",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "[0-9]+"
+              }
+            },
+            Name = "number",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "number",
+                Source = new ConsumePattern() {
+                  Pattern = "[0-9]+"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "[0-9]+"
+            },
+            Supers = new HashSet<string>() {
+              "literal"
+            },
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "string",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "[a-z]+"
+              }
+            },
+            Name = "string",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "string",
+                Source = new ConsumePattern() {
+                  Pattern = "[a-z]+"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "[a-z]+"
+            },
+            Supers = new HashSet<string>() {
+              "literal"
+            },
+            Subs = new HashSet<string>()
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "identifier",
+              Expression = new ExtractorExpression() {
+                Name = null,
+                Pattern = "[a-z]+"
+              }
+            },
+            Name = "identifier",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "identifier",
+                Source = new ConsumePattern() {
+                  Pattern = "[a-z]+"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "[a-z]+"
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "record"
+      }
     );
   }
 

@@ -401,6 +401,7 @@ public abstract class ParserBase<RootType> {
   }
 }
 
+// TODO merge with Emitter.Format.CSharp
 public class Format {
   // via http://stackoverflow.com/questions/323640
   internal static string Literal(string input) {

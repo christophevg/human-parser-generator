@@ -96,9 +96,9 @@ using System.Linq;";
       return this.GenerateRule(entity.Rule) +
         "public " + ( entity.IsVirtual ? "interface" : "class" ) + " " +
         Format.CSharp.Class(entity) + 
-        ( entity.Supers.Where(s=>s.IsVirtual).Count() > 0 ?
+        ( entity.SuperEntities.Where(s=>s.IsVirtual).Count() > 0 ?
           " : " + string.Join( ", ",
-            entity.Supers.Where(s=> s.IsVirtual)
+            entity.SuperEntities.Where(s=> s.IsVirtual)
               .Select(x => Format.CSharp.Class(x))
           )
           : ""

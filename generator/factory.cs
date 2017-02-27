@@ -170,12 +170,10 @@ namespace HumanParserGenerator.Generator {
     {
       IdentifierExpression id = ((IdentifierExpression)exp);
 
-      Entity referred = this.GetEntity(id.Identifier);
-
       return this.Add(
         entity,
         new Property() { Name = id.Name != null ? id.Name : id.Identifier },
-        new ConsumeEntity() { Entity = referred, Parent = parent }
+        new ConsumeEntity() { Reference = id.Identifier, Parent = parent }
       );
     }
 
@@ -374,10 +372,10 @@ namespace HumanParserGenerator.Generator {
         t += entity.Name;
         t += entity.IsVirtual ? ">" : "";
         if(entity.Supers.Count > 0) {
-          t += " : " + string.Join(",", entity.Supers.Select(s=>s.Name));
+          t += " : " + string.Join(",", entity.Supers);
         }
         if(entity.Subs.Count > 0) {
-          t += " <|-- " + string.Join(",", entity.Subs.Select(s=>s.Name));
+          t += " <|-- " + string.Join(",", entity.Subs);
         }
         this.Log(t);
       }
@@ -385,6 +383,11 @@ namespace HumanParserGenerator.Generator {
     }
 
     private void DetectInheritance(Entity entity) {
+      if(entity.Properties == null ) {
+        Console.Error.WriteLine("properties is null!!!");
+        return;
+      }
+      
       this.Log("["+entity.Name+"] START");
       if( this.done.Contains(entity) ) {
         this.Log("["+entity.Name+"] SKIPPING");
@@ -392,7 +395,7 @@ namespace HumanParserGenerator.Generator {
       }
       // avoid recursion and doubles, keep track of what we've done
       this.done.Add(entity);
-      
+
       // TODO CLEAN THIS UP :-(
       if(entity.Properties.Count == 1 && ! entity.Properties.First().IsPlural) {
         // only 1 Property? => we're the Super of the Entity/ies related to
@@ -454,8 +457,8 @@ namespace HumanParserGenerator.Generator {
       // avoid recursive inheritance relationships
       if( parent.IsA(child) ) { return; }
       // connect
-      parent.Subs.Add(child);
-      child.Supers.Add(parent);
+      parent.Subs.Add(child.Name);
+      child.Supers.Add(parent.Name);
       this.Log(parent.Name + " <|-- " + child.Name);
     }
 

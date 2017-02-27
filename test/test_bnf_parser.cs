@@ -20,12 +20,12 @@ public class BNFParserTests {
     return new Factory().Import(grammar).Model;
   }
 
-  private void processAndCompare(string input, Grammar grammar, string model ) {
+  private void processAndCompare(string input, Grammar grammar, Model model ) {
     Grammar g = this.parse(input);
     if(grammar != null) { Assert.AreEqual( grammar.ToString(), g.ToString() ); }
     Model m = this.transform(g);
     if(model != null) {
-      Assert.AreEqual( model.Replace(" ", "").Replace("\n", ""), m.ToString() );
+      Assert.AreEqual( model.ToString(), m.ToString() );
     }
   }
 
@@ -39,11 +39,11 @@ public class BNFParserTests {
       @"
 program               ::= ""PROGRAM"" identifier
                           ""BEGIN""
-                          { assignment }
+                          { assignment "";"" }
                           ""END.""
                         ;
 
-assignment            ::= identifier "":="" expression "";"" ;
+assignment            ::= identifier "":="" expression ;
 
 expression            ::= identifier
                         | string
@@ -52,9 +52,7 @@ expression            ::= identifier
 
 identifier            ::= name  @ ? /([A-Z][A-Z0-9]*)/ ? ;
 string                ::= text  @ ? /""([^""]*)""|'([^']*)'/ ? ;
-number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;
-
-      ",
+number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;",
       new Grammar() {
         Rules = new List<Rule>() {
           new Rule() {
@@ -76,9 +74,15 @@ number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;
                   },
                   NonAlternativesExpression = new SequentialExpression() {
                     AtomicExpression = new RepetitionExpression() {
-                      Expression = new IdentifierExpression() {
-                        Name = null,
-                        Identifier = "assignment"
+                      Expression = new SequentialExpression() {
+                        AtomicExpression = new IdentifierExpression() {
+                          Name = null,
+                          Identifier = "assignment"
+                        },
+                        NonAlternativesExpression = new StringExpression() {
+                          Name = null,
+                          String = ";"
+                        }
                       }
                     },
                     NonAlternativesExpression = new StringExpression() {
@@ -101,15 +105,9 @@ number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;
                   Name = null,
                   String = ":="
                 },
-                NonAlternativesExpression = new SequentialExpression() {
-                  AtomicExpression = new IdentifierExpression() {
-                    Name = null,
-                    Identifier = "expression"
-                  },
-                  NonAlternativesExpression = new StringExpression() {
-                    Name = null,
-                    String = ";"
-                  }
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "expression"
                 }
               }
             }
@@ -152,64 +150,264 @@ number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;
           }
         }
       },
-      @"
-Model(
-  Entities=[
-    Entity(
-      Name=program,Type=program,Properties=[
-        Property(Name=identifier,Type=identifier,Source=ConsumeEntity(identifier)->identifier),
-        Property(Name=assignment,Type=assignment,IsPlural,Source=ConsumeEntity(assignment)*->assignment)
-      ],ParseAction=ConsumeAll([
-        ConsumeString(PROGRAM),
-        ConsumeEntity(identifier)->identifier,
-        ConsumeString(BEGIN),
-        ConsumeEntity(assignment)*->assignment,
-        ConsumeString(END.) 
-      ])
-    ),
-    Entity(
-      Name=assignment,Type=assignment,Properties=[
-        Property(Name=identifier,Type=identifier,Source=ConsumeEntity(identifier)->identifier),
-        Property(Name=expression,Type=expression,Source=ConsumeEntity(expression)->expression)
-      ],ParseAction=ConsumeAll([
-        ConsumeEntity(identifier)->identifier,
-        ConsumeString(:=),
-        ConsumeEntity(expression)->expression,
-        ConsumeString(;)
-      ])
-    ),
-    VirtualEntity(
-      Name=expression,Type=expression,Subs=[identifier,string,number],Properties=[
-        Property(Name=alternative,Type=expression,Source=ConsumeAny([
-          ConsumeEntity(identifier)->alternative,
-          ConsumeEntity(string)->alternative,
-          ConsumeEntity(number)->alternative
-        ])->alternative)
-      ],ParseAction=ConsumeAny([
-        ConsumeEntity(identifier)->alternative,
-        ConsumeEntity(string)->alternative,
-        ConsumeEntity(number)->alternative
-      ])->alternative
-    ),
-    Entity(
-      Name=identifier,Type=identifier,Supers=[expression],Properties=[
-       Property(Name=name,Type=<string>,Source=ConsumePattern(([A-Z][A-Z0-9]*))->name)
-      ],ParseAction=ConsumePattern(([A-Z][A-Z0-9]*))->name
-    ),
-    Entity(
-      Name=string,Type=string,Supers=[expression],Properties=[
-       Property(Name=text,Type=<string>,Source=ConsumePattern(""([^""]*)""|'([^']*)')->text)
-      ],ParseAction=ConsumePattern(""([^""]*)""|'([^']*)')->text
-    ),
-    Entity(
-      Name=number,Type=number,Supers=[expression],Properties=[
-       Property(Name=value,Type=<string>,Source=ConsumePattern((-?[1-9][0-9]*))->value)
-      ],ParseAction=ConsumePattern((-?[1-9][0-9]*))->value
-    )
-  ],
-  Root=program
-)
-      "
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "program",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new StringExpression() {
+                  Name = null,
+                  String = "PROGRAM"
+                },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "identifier"
+                  },
+                  NonAlternativesExpression = new SequentialExpression() {
+                    AtomicExpression = new StringExpression() {
+                      Name = null,
+                      String = "BEGIN"
+                    },
+                    NonAlternativesExpression = new SequentialExpression() {
+                      AtomicExpression = new RepetitionExpression() {
+                        Expression = new SequentialExpression() {
+                          AtomicExpression = new IdentifierExpression() {
+                            Name = null,
+                            Identifier = "assignment"
+                          },
+                          NonAlternativesExpression = new StringExpression() {
+                            Name = null,
+                            String = ";"
+                          }
+                        }
+                      },
+                      NonAlternativesExpression = new StringExpression() {
+                        Name = null,
+                        String = "END."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            Name = "program",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "identifier",
+                Source = new ConsumeEntity() {
+                  Reference = "identifier"
+                }
+              },
+              new Property() {
+                Name = "assignment",
+                Source = new ConsumeEntity() {
+                  Reference = "assignment"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeString() { String = "PROGRAM" },
+                new ConsumeEntity() { Reference = "identifier" },
+                new ConsumeString() { String = "BEGIN" },
+                new ConsumeAll() {
+                  IsPlural = true,
+                  Actions = new List<ParseAction>() {
+                    new ConsumeEntity() { Reference = "assignment" },
+                    new ConsumeString() {
+                      String = ";"
+                    }
+                  }
+                },
+                new ConsumeString() {
+                  String = "END."
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "assignment",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "identifier"
+                },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new StringExpression() {
+                    Name = null,
+                    String = ":="
+                  },
+                  NonAlternativesExpression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "expression"
+                  }
+                }
+              }
+            },
+            Name = "assignment",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "identifier",
+                Source = new ConsumeEntity() {
+                  Reference = "identifier"
+                }
+              },
+              new Property() {
+                Name = "expression",
+                Source = new ConsumeEntity() {
+                  Reference = "expression"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() { Reference = "identifier" },
+                new ConsumeString() { String = ":=" },
+                new ConsumeEntity() {
+                  Reference = "expression"
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          },
+          // virtual
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "expression",
+              Expression = new AlternativesExpression() {
+                NonAlternativesExpression = new IdentifierExpression() {
+                  Name = null,
+                  Identifier = "identifier"
+                },
+                Expression = new AlternativesExpression() {
+                  NonAlternativesExpression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "string"
+                  },
+                  Expression = new IdentifierExpression() {
+                    Name = null,
+                    Identifier = "number"
+                  }
+                }
+              }
+            },
+            Name = "expression",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "alternative",
+                Source = new ConsumeAny() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeEntity() {
+                      Reference = "identifier"
+                    },
+                    new ConsumeEntity() {
+                      Reference = "string"
+                    },
+                    new ConsumeEntity() {
+                      Reference = "number"
+                    }
+                  }
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAny() {
+              Actions = new List<ParseAction>() {
+                new ConsumeEntity() {
+                  Reference = "identifier"
+                },
+                new ConsumeEntity() {
+                  Reference = "string"
+                },
+                new ConsumeEntity() {
+                  Reference = "number"
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>() {
+              "identifier", "string", "number"
+            }
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "identifier",
+              Expression = new ExtractorExpression() {
+                Name = "name",
+                Pattern = "([A-Z][A-Z0-9]*)"
+              }
+            },
+            Name = "identifier",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "name",
+                Source = new ConsumePattern() {
+                  Pattern = "([A-Z][A-Z0-9]*)"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "([A-Z][A-Z0-9]*)"
+            },
+            Supers = new HashSet<string>() {
+              "expression"
+            },
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "string",
+              Expression = new ExtractorExpression() {
+                Name = "text",
+                Pattern = "\"([^\"]*)\"|'([^']*)'"
+              }
+            },
+            Name = "string",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "text",
+                Source = new ConsumePattern() {
+                  Pattern = "\"([^\"]*)\"|'([^']*)'"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() {
+              Pattern = "\"([^\"]*)\"|'([^']*)'"
+            },
+            Supers = new HashSet<string>() {
+              "expression"
+            },
+            Subs = new HashSet<string>()
+          },
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "number",
+              Expression = new ExtractorExpression() {
+                Name = "value",
+                Pattern = "(-?[1-9][0-9]*)"
+              }
+            },
+            Name = "number",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "value",
+                Source = new ConsumePattern() {
+                  Pattern = "(-?[1-9][0-9]*)"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumePattern() { Pattern = "(-?[1-9][0-9]*)" },
+            Supers = new HashSet<string>() { "expression" },
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "program"
+      }
     );
   }
 
@@ -247,52 +445,52 @@ int              ::= ? /(-?[1-9][0-9]*)/ ? ;"
 
   [Test]
   public void testPropertiesFromStringExpression() {
-    this.processAndCompare(
-      @"
+    this.processAndCompare( @"
 sign-option ::=
    ""SIGN"" [ _ @ ""IS"" ]
    ( ""LEADING"" | ""TRAILING"" )
    [ ""SEPARATE"" [ ""CHARACTER"" ] ]
 ;",
-    new Grammar() {
-      Rules = new List<Rule>() {
-        new Rule() {
-          Identifier = "sign-option",
-          Expression = new SequentialExpression() {
-            AtomicExpression = new StringExpression() {
-              Name = null,
-              String = "SIGN"
-            },
-            NonAlternativesExpression = new SequentialExpression() {
-              AtomicExpression = new OptionalExpression() {
-                Expression = new StringExpression() {
-                  Name = "_",
-                  String = "IS"
-                }
+      new Grammar() {
+        Rules = new List<Rule>() {
+          new Rule() {
+            Identifier = "sign-option",
+            Expression = new SequentialExpression() {
+              AtomicExpression = new StringExpression() {
+                Name = null,
+                String = "SIGN"
               },
               NonAlternativesExpression = new SequentialExpression() {
-                AtomicExpression = new GroupExpression() {
-                  Expression = new AlternativesExpression() {
-                    NonAlternativesExpression = new StringExpression() {
-                      Name = null,
-                      String = "LEADING"
-                    },
-                    Expression = new StringExpression() {
-                      Name = null,
-                      String = "TRAILING"
-                    }
+                AtomicExpression = new OptionalExpression() {
+                  Expression = new StringExpression() {
+                    Name = "_",
+                    String = "IS"
                   }
                 },
-                NonAlternativesExpression = new OptionalExpression() {
-                  Expression = new SequentialExpression() {
-                    AtomicExpression = new StringExpression() {
-                      Name = null,
-                      String = "SEPARATE"
-                    },
-                    NonAlternativesExpression = new OptionalExpression() {
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new GroupExpression() {
+                    Expression = new AlternativesExpression() {
+                      NonAlternativesExpression = new StringExpression() {
+                        Name = null,
+                        String = "LEADING"
+                      },
                       Expression = new StringExpression() {
                         Name = null,
-                        String = "CHARACTER"
+                        String = "TRAILING"
+                      }
+                    }
+                  },
+                  NonAlternativesExpression = new OptionalExpression() {
+                    Expression = new SequentialExpression() {
+                      AtomicExpression = new StringExpression() {
+                        Name = null,
+                        String = "SEPARATE"
+                      },
+                      NonAlternativesExpression = new OptionalExpression() {
+                        Expression = new StringExpression() {
+                          Name = null,
+                          String = "CHARACTER"
+                        }
                       }
                     }
                   }
@@ -301,33 +499,128 @@ sign-option ::=
             }
           }
         }
+      },
+      new Model() {
+        Entities = new List<Entity>() {
+          new Entity() {
+            Rule = new Rule() {
+              Identifier = "sign-option",
+              Expression = new SequentialExpression() {
+                AtomicExpression = new StringExpression() {
+                  Name = null,
+                  String = "SIGN"
+                },
+                NonAlternativesExpression = new SequentialExpression() {
+                  AtomicExpression = new OptionalExpression() {
+                    Expression = new StringExpression() {
+                      Name = "_",
+                      String = "IS"
+                    }
+                  },
+                  NonAlternativesExpression = new SequentialExpression() {
+                    AtomicExpression = new GroupExpression() {
+                      Expression = new AlternativesExpression() {
+                        NonAlternativesExpression = new StringExpression() {
+                          Name = null,
+                          String = "LEADING"
+                        },
+                        Expression = new StringExpression() {
+                          Name = null,
+                          String = "TRAILING"
+                        }
+                      }
+                    },
+                    NonAlternativesExpression = new OptionalExpression() {
+                      Expression = new SequentialExpression() {
+                        AtomicExpression = new StringExpression() {
+                          Name = null,
+                          String = "SEPARATE"
+                        },
+                        NonAlternativesExpression = new OptionalExpression() {
+                          Expression = new StringExpression() {
+                            Name = null,
+                            String = "CHARACTER"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            Name = "sign-option",
+            Properties = new List<Property>() {
+              new Property() {
+                Name = "has-LEADING",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "LEADING"
+                }
+              },
+              new Property() {
+                Name = "has-TRAILING",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "TRAILING"
+                }
+              },
+              new Property() {
+                Name = "has-SEPARATE",
+                Source = new ConsumeString() {
+                  ReportSuccess = true,
+                  String = "SEPARATE"
+                }
+              },
+              new Property() {
+                Name = "has-CHARACTER",
+                Source = new ConsumeString() {
+                  IsOptional = true, ReportSuccess = true,
+                  String = "CHARACTER"
+                }
+              }
+            } .AsReadOnly(),
+            ParseAction = new ConsumeAll() {
+              Actions = new List<ParseAction>() {
+                new ConsumeString() {
+                  String = "SIGN"
+                },
+                new ConsumeString() {
+                  IsOptional = true,
+                  String = "IS"
+                },
+                new ConsumeAny() {
+                  Actions = new List<ParseAction>() {
+                    new ConsumeString() {
+                      ReportSuccess = true,
+                      String = "LEADING"
+                    },
+                    new ConsumeString() {
+                      ReportSuccess = true,
+                      String = "TRAILING"
+                    }
+                  }
+                },
+                new ConsumeAll() {
+                  IsOptional = true,
+                  Actions = new List<ParseAction>() {
+                    new ConsumeString() {
+                      ReportSuccess = true,
+                      String = "SEPARATE"
+                    },
+                    new ConsumeString() {
+                      IsOptional = true, ReportSuccess = true,
+                      String = "CHARACTER"
+                    }
+                  }
+                }
+              }
+            },
+            Supers = new HashSet<string>(),
+            Subs = new HashSet<string>()
+          }
+        },
+        RootName = "sign-option"
       }
-    },
-      @"
-Model(
-  Entities=[
-    Entity(
-      Name=sign-option,Type=sign-option,Properties=[
-        Property(Name=has-LEADING,Type=<bool>,Source=ConsumeString(LEADING)!->has-LEADING),
-        Property(Name=has-TRAILING,Type=<bool>,Source=ConsumeString(TRAILING)!->has-TRAILING),
-        Property(Name=has-SEPARATE,Type=<bool>,Source=ConsumeString(SEPARATE)!->has-SEPARATE),
-        Property(Name=has-CHARACTER,Type=<bool>,IsOptional,Source=ConsumeString(CHARACTER)?!->has-CHARACTER)
-      ],
-      ParseAction=ConsumeAll([
-        ConsumeString(SIGN),
-        ConsumeString(IS)?,
-        ConsumeAny([
-          ConsumeString(LEADING)!->has-LEADING,
-          ConsumeString(TRAILING)!->has-TRAILING]),
-          ConsumeAll([
-            ConsumeString(SEPARATE)!->has-SEPARATE,
-            ConsumeString(CHARACTER)?!->has-CHARACTER
-          ])?
-      ])
-    )
-  ],
-  Root=sign-option
-)"
     );
   }
 

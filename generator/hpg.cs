@@ -302,13 +302,13 @@ namespace HumanParserGenerator {
       // { rank=same Sub1, Sub2 }
       if(entity.Subs.Count == 0) { return ""; } 
       string dot = "";
-      foreach(Entity sub in entity.Subs) {
+      foreach(Entity sub in entity.SubEntities) {
         dot += "\n" + this.PascalCase(sub.Name) + " -> " +
           this.PascalCase(entity.Name);
       }
       if(entity.Subs.Count > 1) {
         dot += "\n{ rank=same " +
-          string.Join(",", entity.Subs.Select(s=>this.PascalCase(s.Name)))+ "}";
+          string.Join(",", entity.Subs.Select(s=>this.PascalCase(s)))+ "}";
       }
       return dot;
     }

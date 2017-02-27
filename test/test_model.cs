@@ -17,7 +17,10 @@ public class GeneratorModelTests {
     Model model = new Model();
 
     Assert.AreEqual(
-      @"Model(Entities=[],Root=)".Replace(" ", "").Replace("\n",""),
+      @"new Model() {
+Entities = new List<Entity>(),
+RootName = null
+}",
       model.ToString()
     );
   }
@@ -35,19 +38,28 @@ public class GeneratorModelTests {
     };
 
     Assert.AreEqual(
-      @"Model(
-         Entities=[
-           Entity(Name=rule,Type=rule,ParseAction=ConsumeString(a))
-         ],
-         Root=rule
-       )".Replace(" ", "").Replace("\n",""),
+      @"new Model() {
+Entities = new List<Entity>() {
+new Entity() {
+Rule = null,
+Name = ""rule"",
+Properties = new List<Property>().AsReadOnly(),
+ParseAction = new ConsumeString() {
+String = ""a""
+},
+Supers = new HashSet<string>(),
+Subs = new HashSet<string>()
+}
+},
+RootName = ""rule""
+}",
       model.ToString()
     );
   }
 
   [Test]
   public void testMinimalModelWithProperty() {
-    // e.g. rule ::= "StringProperty"@"a"
+    // e.g. rule ::= StringProperty @ "a"
     Property property = new Property() { Name = "StringProperty" };
     ParseAction consume = new ConsumeString() {
       Property = property,
@@ -65,18 +77,28 @@ public class GeneratorModelTests {
     };
 
     Assert.AreEqual(
-      @"Model(
-         Entities=[
-           Entity(
-             Name=rule,Type=rule,
-             Properties=[
-               Property(Name=StringProperty,Type=<string>,Source=ConsumeString(a)->StringProperty)
-             ],
-             ParseAction=ConsumeString(a)->StringProperty
-           )
-        ],
-        Root=rule
-      )".Replace(" ", "").Replace("\n",""),
+      @"new Model() {
+Entities = new List<Entity>() {
+new Entity() {
+Rule = null,
+Name = ""rule"",
+Properties = new List<Property>() {
+new Property() {
+Name = ""StringProperty"",
+Source = new ConsumeString() {
+String = ""a""
+}
+}
+}.AsReadOnly(),
+ParseAction = new ConsumeString() {
+String = ""a""
+},
+Supers = new HashSet<string>(),
+Subs = new HashSet<string>()
+}
+},
+RootName = ""rule""
+}",
       model.ToString()
     );
   }

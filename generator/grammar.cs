@@ -408,12 +408,12 @@ public class AsModel {
   	        Pattern = "\"([^\"]*)\"|^'([^']*)'"
   	      }
   	    },
-        // pattern ::= ? /(.*?)(?<keep>/\s*\?\s*[;\.])/ ? ;
+        // pattern ::= ? /(.*?)(?<keep>/\s*\?)/ ? ;
         new Rule() {
   	      Identifier = "pattern",
   	      Expression = new ExtractorExpression() {
   	        Name = null,
-  	        Pattern = "(.*?)(?<keep>/\\s*\\?\\s*[;\\.])"
+  	        Pattern = "(.*?)(?<keep>/\\s*\\?)"
           }
         },
         // _ ::= ? /(\(\*.*?\*\))/ ? ;

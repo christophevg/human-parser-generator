@@ -1,0 +1,177 @@
+(* DB2 DDL gammar for Human Parser Generator                      *)
+(* https://github.com/christophevg/human-parser-generator         *)
+(* author: Christophe VG <contact@christophe.vg>                  *)
+(* This grammar is not based on an official grammar!              *)
+(* It has been assembled to be table to parse a set of DDL files. *)
+
+ddl                     ::= { statement } ;
+
+statement               ::= comment
+                          | "CREATE" create-statement ";"
+                          | "SET" set-statement ";"
+                          | "ALTER" alter-statement ";"
+                          ;
+
+comment                 ::= ? /(--[^\n]*)/ ? ;
+
+(* CREATE ... *)
+
+create-statement        ::= create-database
+                          | create-tablespace
+                          | create-table
+                          | create-index
+                          | create-view
+                          ;
+
+create-database         ::= "DATABASE" name @ fqn { parameter } ;
+
+create-tablespace       ::= "TABLESPACE" name @ fqn
+                            "IN" database @ fqn
+                            { parameter }
+                          ;
+
+create-table            ::= "TABLE" name @ fqn "(" definition-list ")"
+                            "IN" database @ fqn
+                            { parameter }
+                          ;
+
+create-index            ::= [ "UNIQUE" ] "INDEX" name @ fqn "ON" table @ fqn
+                            "(" fields @ index-field-list ")"
+                            { parameter }
+                          ;
+
+index-field-list        ::= index-field [ "," index-field-list ] ;
+index-field             ::= field @ identifier [ "ASC" | "DESC" ];
+
+create-view             ::= "VIEW" name @ fqn "AS" definition @ raw-ddl;
+
+definition-list         ::= definition [ "," definition-list ] ;
+
+definition              ::= constraint-definition | field-definition ;
+
+constraint-definition   ::= "CONSTRAINT" name @ identifier 
+                          ( primary-key-constraint
+                          | foreign-key-constraint
+                          | check-constraint
+                          )
+                        ;
+
+primary-key-constraint  ::= "PRIMARY" "KEY" "(" fields @ identifier-list ")";
+
+foreign-key-constraint  ::= "FOREIGN" "KEY" "(" keys @ identifier-list ")"
+                            "REFERENCES" table @ fqn
+                            "(" references @ identifier-list ")"
+                            { parameter }
+                          ;
+
+check-constraint        ::= "CHECK" "(" rule ")";
+
+(* TODO convert to actual parsing logic in stead of grab-all *)
+rule                    ::= ? /([^\)]*?)(?<keep>\))/ ? ;
+
+field-definition        ::= name @ fqn type { config } ;
+
+type                    ::= type @ identifier
+                            [ "(" length @ number [ "," decimal-length @ number ] ")" ]
+                          ;
+
+config                  ::= constraint-definition | field-parameter ;
+
+field-parameter         ::= not-null @ "NOT NULL"
+                          | "FOR" for @ identifier _ @ "DATA"
+                          | "WITH DEFAULT" [ default-value @ literal ]
+                          ;
+
+(* SET ... *)
+
+set-statement           ::= set-parameter "=" value @ raw-ddl ;
+
+set-parameter           ::= "CURRENT PATH" ;
+
+(* ALTER ... *)
+
+alter-statement         ::= "TABLE" alter-table ;
+
+alter-table             ::= name @ fqn add-statement ;
+
+add-statement           ::= "ADD" { constraint-definition } ;
+
+(* general purpose rules *)
+
+literal                 ::= string | number ;
+
+(* TODO split out into different parameter sets *)
+
+parameter               ::= append-parameter
+                          | buffer-pool-parameter
+                          | ccsid-parameter
+                          | close-parameter
+                          | cluster-parameter
+                          | copy-parameter
+                          | compress-parameter
+                          | data-capture-parameter
+                          | ds-size-parameter
+                          | enforced-parameter
+                          | erase-parameter
+                          | free-page-parameter
+                          | gbp-cache-parameter
+                          | include-parameter
+                          | indexbp-parameter
+                          | lock-max-parameter
+                          | lock-size-parameter
+                          | logged-parameter
+                          | max-partitions-parameter
+                          | max-rows-parameter
+                          | on-delete-parameter
+                          | pct-free-parameter
+                          | piece-size-parameter
+                          | priqty-parameter
+                          | secqty-parameter
+                          | seg-size-parameter
+                          | sto-group-parameter
+                          | track-mod-parameter
+                          | volatile-parameter
+                          ;
+(* sorted *)
+append-parameter         ::= "APPEND" append @ boolean ;
+buffer-pool-parameter    ::= "BUFFERPOOL" bufferpool @ identifier ;
+ccsid-parameter          ::= "CCSID" ccsid @ identifier ;
+close-parameter          ::= "CLOSE" close @ boolean ;
+cluster-parameter        ::= [ "NOT" ] "CLUSTER" ;
+copy-parameter           ::= "COPY" copy @ boolean ;
+compress-parameter       ::= "COMPRESS" compress @ boolean ;
+data-capture-parameter   ::= "DATA CAPTURE" data-capture @ identifier ;
+ds-size-parameter        ::= "DSSIZE" dssize @ number _ @ "G" ;
+enforced-parameter       ::= "ENFORCED" ;
+erase-parameter          ::= "ERASE" erase @ boolean ;
+free-page-parameter      ::= "FREEPAGE" freepage @ number ;
+gbp-cache-parameter      ::= "GBPCACHE" gbpcache @ identifier ;
+include-parameter        ::= "INCLUDE" "(" field @ identifier ")" ;
+indexbp-parameter        ::= "INDEXBP" index @ identifier;
+lock-max-parameter       ::= "LOCKMAX" lockmax @ identifier ;
+lock-size-parameter      ::= "LOCKSIZE" locksize @ identifier ;
+logged-parameter         ::= "LOGGED" ;
+max-partitions-parameter ::= "MAXPARTITIONS" maxpartitions @ number ;
+max-rows-parameter       ::= "MAXROWS" maxrows @ number ;
+on-delete-parameter      ::= "ON DELETE" ( "RESTRICT" | "SET NULL" ) ;
+pct-free-parameter       ::= "PCTFREE" pctfree @ number ;
+piece-size-parameter     ::= "PIECESIZE" size @ number "G" ;
+priqty-parameter         ::= "PRIQTY" priqty @ number ;
+secqty-parameter         ::= "SECQTY" secqty @ number ;
+seg-size-parameter       ::= "SEGSIZE" segsize @ number ;
+sto-group-parameter      ::= [ _ @ "USING" ] "STOGROUP" sto-group @ identifier ;
+track-mod-parameter      ::= "TRACKMOD" trackmod @ boolean ;
+volatile-parameter       ::= [ "NOT" ] "VOLATILE" ;
+
+
+
+fqn                     ::= [ scope @ identifier _ @ "." ] name @ identifier ;
+
+identifier-list         ::= identifier [ "," identifier-list ] ;
+
+identifier              ::= name  @ ? /([\w]+)/ ? ;
+number                  ::= value @ ? /([0-9\\.]+)/ ? ;
+string                  ::= text  @ ? /"([^"]*)"|^'([^']*)'/ ? ;
+boolean                 ::= value @ ? /(YES|yes|TRUE|True|true|NO|no|FALSE|False|false)/ ? ;
+
+raw-ddl                 ::= ? /([^;]*)/ ? ;

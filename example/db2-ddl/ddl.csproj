@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <ProjectGuid>{3199CB26-5A1B-4637-A98D-50A604C722DC}</ProjectGuid>
+    <ProjectTypeGuids>{A3EC570E-D23F-43F0-B5CD-FA1A1BB29928}</ProjectTypeGuids>
+    <AssemblyName>ddl</AssemblyName>
+  </PropertyGroup>
+
+  <Import Project="..\example.targets" />
+          
+</Project>

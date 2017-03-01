@@ -161,7 +161,7 @@ using System.Linq;";
         } else if(property.Type.Equals("<bool>")){
           // "Property = this.Property"
           return string.Format(
-            @"""{0} = this.{0}""",
+            @"""{0} = "" + this.{0}",
             Format.CSharp.Property(property)
           );   
         } else {

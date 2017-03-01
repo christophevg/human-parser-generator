@@ -17,6 +17,10 @@ namespace HumanParserGenerator.Emitter.Format {
       return PascalCase(entity.Name);
     }
 
+    public static string Class(Property property) {
+      return PascalCase(property.Entity.Name + "-" + property.Name);
+    }
+
     public static string Type(Entity entity) {
       return Type(entity.Type);
     }

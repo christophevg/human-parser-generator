@@ -262,9 +262,25 @@ using System.Linq;";
     private string GenerateConsumePattern(ParseAction action) {
       ConsumePattern consume = (ConsumePattern)action;
       return this.WrapAssignment(action,
-        "Consume(Extracting." +
-        Format.CSharp.Class(consume.Property.Entity) + ");"
+        this.GenerateConsumePattern(
+          // TODO turn this into a "rule"
+          // if this action is the only action, our name comes from the Entity
+          (consume.Property.Entity.ParseAction == action ? 
+            Format.CSharp.Class(consume.Property.Entity) :
+            Format.CSharp.Class(consume.Property)),
+          consume.Pattern
+        ) + ";"
       );
+    }
+
+    private Dictionary<string,string> extractions =
+      new Dictionary<string,string>();
+
+    private string GenerateConsumePattern(string name, string pattern) {
+      if( ! this.extractions.ContainsKey(name) ) {
+        this.extractions.Add(name, pattern);
+      }
+      return "Consume(Extracting." + name + ")";
     }
 
     private string GenerateConsumeEntity(ParseAction action) {
@@ -287,7 +303,10 @@ using System.Linq;";
       if( consume.Entity.IsVirtual &&
           consume.Entity.ParseAction is ConsumePattern)
       {
-        string code = "Consume(Extracting." + Format.CSharp.Class(consume.Entity) + ")";
+        string code = this.GenerateConsumePattern(
+          Format.CSharp.Class(consume.Entity),
+            ((ConsumePattern)consume.Entity.ParseAction).Pattern
+        );
         return withoutAssignment ? code : this.WrapAssignment(consume, code);
       }
 
@@ -362,19 +381,15 @@ using System.Linq;";
     // Extracting functionality is generated for all Entities that are "just"
     // consuming a pattern.
     private string GenerateExtracting() {
-      return
-        "public class Extracting {\n" +
+      return "public class Extracting {\n" +
         string.Join("\n",
-          this.Model.Entities
-              .Where(entity => entity.ParseAction is ConsumePattern)
-              .Select(entity => 
-                "public static Regex " + Format.CSharp.Class(entity) +
-                 " = new Regex(" + Format.CSharp.VerbatimStringLiteral(
-                   "^" + ((ConsumePattern)entity.ParseAction).Pattern
-                 ) + ");"
-              )
+          this.extractions.Select(extraction =>
+            "public static Regex " + extraction.Key + " = new Regex(" +
+              Format.CSharp.VerbatimStringLiteral("^" + extraction.Value) +
+            ");"
+          )
         ) + "\n" +
-        "}";
+      "}";
     }
 
     private string GenerateParserFooter() {

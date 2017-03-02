@@ -196,22 +196,22 @@ namespace HumanParserGenerator.Generator {
     public Entity Entity { get; set; }
 
     // a unique name to identify the property, used for variable emission
-    private string rawname;
+    public string RawName { get; private set; }
     // to make sure the name is unique, an index is added - if needed
     public string Name {
       get {
-        return this.rawname + (this.IsIndexed ? this.Index.ToString() : "");
+        return this.RawName + (this.IsIndexed ? this.Index.ToString() : "");
       }
       set {
-        this.rawname = value;
+        this.RawName = value;
       }
     }
 
-    // is this property indexed == are there > 1 properties with our rawname
+    // is this property indexed == are there > 1 properties with our RawName
     public bool IsIndexed {
       get {
         return this.Entity.Properties
-          .Where(property => property.rawname.Equals(this.rawname))
+          .Where(property => property.RawName.Equals(this.RawName))
           .ToList().Count() > 1;
       }
     }
@@ -228,7 +228,7 @@ namespace HumanParserGenerator.Generator {
     public int Index {
       get {
         return this.Entity.Properties
-          .Where(property => property.rawname.Equals(this.rawname))
+          .Where(property => property.RawName.Equals(this.RawName))
           .ToList()
           .IndexOf(this);
       }
@@ -260,7 +260,7 @@ namespace HumanParserGenerator.Generator {
 
     public override string ToString() {
       return "new Property() {\n" +
-        "Name = " + Formatting.CSharp.Literal(this.rawname) + ",\n" +
+        "Name = " + Formatting.CSharp.Literal(this.RawName) + ",\n" +
         "Source = " + this.Source.ToString() + "\n" +
       "}";
     }

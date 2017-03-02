@@ -49,6 +49,7 @@
           DependsOnTargets="Generated">
     <CSC Sources="@(Compile);@(Generated)"
          TargetType="exe"
+         DefineConstants="$(CompileDefines)"
          OutputAssembly="$(OutputPath)parse-$(AssemblyName).exe"  
          EmitDebugInformation="true" />   
   </Target>

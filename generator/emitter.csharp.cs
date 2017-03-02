@@ -352,16 +352,18 @@ using System.Linq;";
       return "Maybe( () => {\n" + code + "\n});";
     }
 
+    // TODO at least: explain why redirect from action -> Property -> Source
+    // TODO clean up IsPlural / HasPluralParent -> Property should be leading
     private string WrapAssignment(ParseAction action, string code) {
       if(action.Type == null)     { return code; }
       if(action.Property == null) { return code; }
       return (action.Property.Entity.IsVirtual ?
         Format.CSharp.Variable(action.Property.Entity) :
         Format.CSharp.EntityProperty(action.Property)) +
-        ( action.HasPluralParent ?
+        ( action.Property.Source.HasPluralParent ?
           ".Add" + (action.Property.IsPlural ? "Range" : "") + "("
           : " = "
-        ) + code + (action.HasPluralParent ? ")" : "");
+        ) + code + (action.Property.Source.HasPluralParent ? ")" : "");
     }
 
     private bool isTryConsumeString(ParseAction action) {

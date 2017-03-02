@@ -47,6 +47,9 @@ namespace HumanParserGenerator.Generator {
       // step 3:
       this.DetectInheritance();
       
+      // step 4:
+      this.CollapseLists();
+
       return this;
     }
 
@@ -470,6 +473,45 @@ namespace HumanParserGenerator.Generator {
       parent.Subs.Add(child.Name);
       child.Supers.Add(parent.Name);
       this.Log(parent.Name + " <|-- " + child.Name);
+    }
+
+    // STEP 4 : Look for pattern: entity { "..." entity } and collapse the
+    //          properties, so that all of them are added to the same list.
+    //          Start with looking for two properties of the same type and name
+    //          of which one IsPlural. Next their ParseActions should be
+    //          follow the pattern mentioned above.
+
+    private void CollapseLists() {
+      foreach(var entity in this.Model.Entities) {
+        this.CollapseLists(entity);
+      }
+    }
+
+    private void CollapseLists(Entity entity) {
+      if(entity.Properties.Count < 2) { return; }
+      // look for same (raw) named properties
+      var groups = entity.Properties
+          .GroupBy(property => property.RawName)
+          .Where(group => group.Count() == 2);
+
+      foreach(var group in groups) {
+        // TODO do they stay in sequence ?
+        Property first = group.ToList()[0];
+        Property more = group.ToList()[1];
+        // TODO is this enough ? too much ? ;-)
+        if(first.Source is ConsumeEntity && more.Source is ConsumeEntity &&
+           ! first.IsPlural && ! more.IsPlural && more.Source.Parent.IsPlural &&
+           first.Source.Parent is ConsumeAll && more.Source.Parent is ConsumeAll &&
+           first.Source.Parent != more.Source.Parent &&
+           ((ConsumeAll)more.Source.Parent).Actions.Count == 2 &&
+           ((ConsumeAll)more.Source.Parent).Actions[0] is ConsumeString)
+        {
+          this.Log("Collapsing property in list pattern: " + group.Key);
+          // redirect parsing outcome to list property and remove first
+          first.Source.Property = more;
+          entity.Remove(first);
+        }
+      }
     }
 
     // Factory helper methods

@@ -4,197 +4,193 @@
 (* This grammar is not based on an official grammar!                    *)
 (* It has been assembled to be able to parse a given set of DDL files.  *)
 
-ddl                           ::= { statement } ;
+ddl                         ::= { statement } ;
 
-statement                     ::= comment
-                                | create-statement
-                                | set-statement
-                                | alter-statement
-                                ;
+statement                   ::= comment
+                              | create-statement
+                              | set-statement
+                              | alter-statement
+                              ;
 
-comment                       ::= message @ ? /--([^\n]*)/ ? ;
+comment                     ::= message @ ? /--([^\n]*)/ ? ;
 
 (* CREATE ... *)
 
-create-statement              ::= "CREATE" 
-                                  ( create-database-statement
-                                  | create-tablespace-statement
-                                  | create-table-statement
-                                  | create-index-statement
-                                  | create-view-statement
-                                  )
-                                  ";"
-                                ;
+create-statement            ::= "CREATE" 
+                                ( create-database-statement
+                                | create-tablespace-statement
+                                | create-table-statement
+                                | create-index-statement
+                                | create-view-statement
+                                )
+                                ";"
+                              ;
 
-create-database-statement     ::= ( _ @ "DATABASE" | _ @ "DB" ) name @ fqn
-                                  { parameter @ database-parameter }
-                                ;
+create-database-statement   ::= ( _ @ "DATABASE" | _ @ "DB" ) name @ fqn
+                                { option @ database-option }
+                              ;
 
-create-tablespace-statement   ::= "TABLESPACE" name @ fqn
-                                  "IN" database @ fqn
-                                  { parameter @ tablespace-parameter }
-                                ;
+create-tablespace-statement ::= "TABLESPACE" name @ fqn
+                                "IN" database @ fqn
+                                { option @ tablespace-option }
+                              ;
 
-create-table-statement        ::= "TABLE" name @ fqn "(" element-list ")"
-                                  "IN" database @ fqn
-                                  { parameter @ table-parameter }
-                                ;
+create-table-statement     ::= "TABLE" name @ fqn "(" element { "," element } ")"
+                              "IN" database @ fqn
+                              { option @ table-option }
+                            ;
 
-create-index-statement        ::= [ "UNIQUE" ] "INDEX" name @ fqn "ON" table @ fqn
-                                  "(" columns @ index-column-list ")"
-                                  { parameter @ index-parameter }
-                                ;
+element                    ::= constraint-definition | column-definition ;
 
-index-column-list             ::= index-column { "," index-column } ;
-index-column                  ::= column @ identifier [ "ASC" | "DESC" ];
+create-index-statement     ::= [ is-unique @ "UNIQUE" ] "INDEX" name @ fqn "ON" table @ fqn
+                               "(" index-column { "," index-column } ")"
+                               { option @ index-option }
+                             ;
 
-create-view-statement         ::= "VIEW" name @ fqn "AS" definition @ raw-ddl;
+index-column               ::= column @ identifier order @ ? /(ASC|DESC)/ ? ;
 
-element-list                  ::= element { _ @ "," element } ;
-element                       ::= constraint-definition | column-definition ;
+create-view-statement      ::= "VIEW" name @ fqn "AS" definition @ raw-ddl;
 
-constraint-definition         ::= "CONSTRAINT" name @ identifier constraint ;
+constraint-definition      ::= "CONSTRAINT" name @ identifier constraint ;
 
-constraint                    ::= primary-key-constraint
-                                | foreign-key-constraint
-                                | check-constraint
-                                ;
+constraint                 ::= primary-key-constraint
+                             | foreign-key-constraint
+                             | check-constraint
+                             ;
 
-primary-key-constraint        ::= "PRIMARY" "KEY" "(" column-list ")" ;
+primary-key-constraint     ::= "PRIMARY" "KEY" "(" column @ identifier { "," column @ identifier } ")" ;
 
-foreign-key-constraint        ::= "FOREIGN" "KEY" "(" keys @ column-list ")"
-                                  "REFERENCES" table @ fqn
-                                  "(" references @ column-list ")"
-                                  { parameter @ foreign-key-parameter }
-                                ;
+foreign-key-constraint     ::= "FOREIGN" "KEY" "(" key @ identifier { "," key @ identifier } ")"
+                               "REFERENCES" table @ fqn
+                               "(" reference @ identifier { "," reference @ identifier } ")"
+                               { option @ foreign-key-option }
+                             ;
 
 (* TODO convert to actual parsing logic in stead of grab-all *)
-check-constraint              ::= "CHECK" "(" rule ")";
-rule                          ::= ? /([^\)]*?)(?<keep>\))/ ? ;
+check-constraint           ::= "CHECK" "(" rule ")";
+rule                       ::= ? /([^\)]*?)(?<keep>\))/ ? ;
 
-column-definition             ::= name @ fqn data-type { column-config } ;
+column-definition          ::= name @ fqn data-type { column-config } ;
 
-data-type                     ::= type @ identifier
-                                  [ "(" length @ number [ "," decimal-length @ number ] ")" ]
-                                ;
+data-type                  ::= type @ identifier
+                               [ "(" length @ number [ "," decimal-length @ number ] ")" ]
+                             ;
 
-column-config                 ::= constraint-definition | column-parameter ;
+column-config              ::= constraint-definition | column-option ;
 
-column-parameter              ::= not-null @ "NOT NULL"
-                                | "FOR" for @ identifier _ @ "DATA"
-                                | "WITH DEFAULT" [ default-value @ literal ]
-                                ;
+column-option              ::= not-null @ "NOT NULL"
+                             | "FOR" for @ identifier _ @ "DATA"
+                             | "WITH DEFAULT" [ default-value @ literal ]
+                             ;
 
 (* SET ... *)
 
-set-statement                 ::= "SET" set-parameter "=" value @ raw-ddl ";" ;
+set-statement              ::= "SET" set-option "=" value @ raw-ddl ";" ;
 
-set-parameter                 ::= "CURRENT PATH" ;
+set-option                 ::= "CURRENT PATH" ;
 
 (* ALTER ... *)
 
-alter-statement               ::= "ALTER" alter-table ";" ;
+alter-statement            ::= "ALTER" alter-table ";" ;
 
-alter-table                   ::= "TABLE" name @ fqn add-statement ;
+alter-table                ::= "TABLE" name @ fqn add-statement ;
 
-add-statement                 ::= "ADD" { constraint-definition } ;
+add-statement              ::= "ADD" { constraint-definition } ;
 
 (* general purpose rules *)
 
-literal                       ::= string | number ;
+literal                    ::= string | number ;
 
-(* TODO split out into different parameter sets *)
+(* TODO split out into different option sets *)
 
-database-parameter           ::= buffer-pool-parameter
-                               | indexbp-parameter
-                               | sto-group-parameter
-                               | ccsid-parameter
-                               ;
+database-option            ::= buffer-pool-option
+                             | indexbp-option
+                             | sto-group-option
+                             | ccsid-option
+                             ;
 
-tablespace-parameter         ::= sto-group-parameter
-                               | priqty-parameter
-                               | secqty-parameter
-                               | erase-parameter
-                               | free-page-parameter
-                               | pct-free-parameter
-                               | gbp-cache-parameter
-                               |  compress-parameter
-                               | track-mod-parameter
-                               |  logged-parameter
-                               | ds-size-parameter
-                               | seg-size-parameter
-                               | max-partitions-parameter
-                               | buffer-pool-parameter
-                               | lock-size-parameter
-                               | lock-max-parameter
-                               | close-parameter
-                               | ccsid-parameter
-                               | max-rows-parameter
-                               ;
+tablespace-option          ::= sto-group-option
+                             | pri-qty-option
+                             | sec-qty-option
+                             | erase-option
+                             | free-page-option
+                             | pct-free-option
+                             | gbp-cache-option
+                             |  compress-option
+                             | track-mod-option
+                             |  logged-option
+                             | ds-size-option
+                             | seg-size-option
+                             | max-partitions-option
+                             | buffer-pool-option
+                             | lock-size-option
+                             | lock-max-option
+                             | close-option
+                             | ccsid-option
+                             | max-rows-option
+                             ;
 
-table-parameter              ::= data-capture-parameter
-                               | ccsid-parameter
-                               | volatile-parameter
-                               | append-parameter
-                               ;
+table-option               ::= data-capture-option
+                             | ccsid-option
+                             | volatile-option
+                             | append-option
+                             ;
 
-index-parameter              ::= sto-group-parameter
-                               | priqty-parameter
-                               | secqty-parameter
-                               | erase-parameter
-                               | free-page-parameter
-                               | pct-free-parameter
-                               | gbp-cache-parameter
-                               | cluster-parameter
-                               | buffer-pool-parameter
-                               | close-parameter
-                               | copy-parameter
-                               | piece-size-parameter
-                               | compress-parameter
-                               | include-parameter
-                               ;
+index-option               ::= sto-group-option
+                             | pri-qty-option
+                             | sec-qty-option
+                             | erase-option
+                             | free-page-option
+                             | pct-free-option
+                             | gbp-cache-option
+                             | cluster-option
+                             | buffer-pool-option
+                             | close-option
+                             | copy-option
+                             | piece-size-option
+                             | compress-option
+                             | include-option
+                             ;
 
-foreign-key-parameter        ::= on-delete-parameter
-                               | enforced-parameter
-                               ;
+foreign-key-option         ::= on-delete-option
+                             | enforced-option
+                             ;
 
-append-parameter             ::= "APPEND" append @ boolean ;
-buffer-pool-parameter        ::= "BUFFERPOOL" bufferpool @ identifier ;
-ccsid-parameter              ::= "CCSID" ccsid @ identifier ;
-close-parameter              ::= "CLOSE" close @ boolean ;
-cluster-parameter            ::= [ "NOT" ] "CLUSTER" ;
-copy-parameter               ::= "COPY" copy @ boolean ;
-compress-parameter           ::= "COMPRESS" compress @ boolean ;
-data-capture-parameter       ::= "DATA CAPTURE" data-capture @ identifier ;
-ds-size-parameter            ::= "DSSIZE" dssize @ number _ @ "G" ;
-enforced-parameter           ::= "ENFORCED" ;
-erase-parameter              ::= "ERASE" erase @ boolean ;
-free-page-parameter          ::= "FREEPAGE" freepage @ number ;
-gbp-cache-parameter          ::= "GBPCACHE" gbpcache @ identifier ;
-include-parameter            ::= "INCLUDE" "(" column @ identifier ")" ;
-indexbp-parameter            ::= "INDEXBP" index @ identifier;
-lock-max-parameter           ::= "LOCKMAX" lockmax @ identifier ;
-lock-size-parameter          ::= "LOCKSIZE" locksize @ identifier ;
-logged-parameter             ::= "LOGGED" ;
-max-partitions-parameter     ::= "MAXPARTITIONS" maxpartitions @ number ;
-max-rows-parameter           ::= "MAXROWS" maxrows @ number ;
-on-delete-parameter          ::= "ON DELETE" ( "RESTRICT" | "SET NULL" ) ;
-pct-free-parameter           ::= "PCTFREE" pctfree @ number ;
-piece-size-parameter         ::= "PIECESIZE" size @ number "G" ;
-priqty-parameter             ::= "PRIQTY" priqty @ number ;
-secqty-parameter             ::= "SECQTY" secqty @ number ;
-seg-size-parameter           ::= "SEGSIZE" segsize @ number ;
-sto-group-parameter          ::= [ _ @ "USING" ] "STOGROUP" sto-group @ identifier ;
-track-mod-parameter          ::= "TRACKMOD" trackmod @ boolean ;
-volatile-parameter           ::= [ "NOT" ] "VOLATILE" ;
+append-option              ::= "APPEND" append @ boolean ;
+buffer-pool-option         ::= "BUFFERPOOL" bufferpool @ identifier ;
+ccsid-option               ::= "CCSID" ccsid @ identifier ;
+close-option               ::= "CLOSE" close @ boolean ;
+cluster-option             ::= [ "NOT" ] "CLUSTER" ;
+copy-option                ::= "COPY" copy @ boolean ;
+compress-option            ::= "COMPRESS" compress @ boolean ;
+data-capture-option        ::= "DATA CAPTURE" data-capture @ identifier ;
+ds-size-option             ::= "DSSIZE" dssize @ number _ @ "G" ;
+enforced-option            ::= "ENFORCED" ;
+erase-option               ::= "ERASE" erase @ boolean ;
+free-page-option           ::= "FREEPAGE" freepage @ number ;
+gbp-cache-option           ::= "GBPCACHE" gbpcache @ identifier ;
+include-option             ::= "INCLUDE" "(" column @ identifier ")" ;
+indexbp-option             ::= "INDEXBP" index @ identifier;
+lock-max-option            ::= "LOCKMAX" lockmax @ identifier ;
+lock-size-option           ::= "LOCKSIZE" locksize @ identifier ;
+logged-option              ::= "LOGGED" ;
+max-partitions-option      ::= "MAXPARTITIONS" maxpartitions @ number ;
+max-rows-option            ::= "MAXROWS" maxrows @ number ;
+on-delete-option           ::= "ON DELETE" ( "RESTRICT" | "SET NULL" ) ;
+pct-free-option            ::= "PCTFREE" pctfree @ number ;
+piece-size-option          ::= "PIECESIZE" size @ number "G" ;
+pri-qty-option             ::= "PRIQTY" pri-qty @ number ;
+sec-qty-option             ::= "SECQTY" sec-qty @ number ;
+seg-size-option            ::= "SEGSIZE" segsize @ number ;
+sto-group-option           ::= [ _ @ "USING" ] "STOGROUP" sto-group @ identifier ;
+track-mod-option           ::= "TRACKMOD" trackmod @ boolean ;
+volatile-option            ::= [ "NOT" ] "VOLATILE" ;
 
-fqn                          ::= [ scope @ identifier _ @ "." ] name @ identifier ;
+fqn                        ::= [ scope @ identifier _ @ "." ] name @ identifier ;
 
-column-list                  ::= column @ identifier { _ @ "," column @ identifier } ;
+identifier                 ::= name  @ ? /([\w]+)/ ? ;
+number                     ::= value @ ? /([0-9\\.]+)/ ? ;
+string                     ::= text  @ ? /"([^"]*)"|^'([^']*)'/ ? ;
+boolean                    ::= value @ ? /(YES|yes|TRUE|True|true|NO|no|FALSE|False|false)/ ? ;
 
-identifier                   ::= name  @ ? /([\w]+)/ ? ;
-number                       ::= value @ ? /([0-9\\.]+)/ ? ;
-string                       ::= text  @ ? /"([^"]*)"|^'([^']*)'/ ? ;
-boolean                      ::= value @ ? /(YES|yes|TRUE|True|true|NO|no|FALSE|False|false)/ ? ;
-
-raw-ddl                      ::= ? /([^;]*)/ ? ;
+raw-ddl                    ::= ? /([^;]*)/ ? ;

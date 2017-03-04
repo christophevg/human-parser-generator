@@ -35,19 +35,21 @@ create-tablespace-statement ::= "TABLESPACE" name @ fqn
                                 { option @ tablespace-option }
                               ;
 
-create-table-statement     ::= "TABLE" name @ fqn "(" element { "," element } ")"
-                              "IN" database @ fqn
-                              { option @ table-option }
-                            ;
+create-table-statement     ::= "TABLE" name @ fqn
+                               "(" element { "," element } ")"
+                               "IN" database @ fqn
+                               { option @ table-option }
+                             ;
 
 element                    ::= constraint-definition | column-definition ;
 
-create-index-statement     ::= [ is-unique @ "UNIQUE" ] "INDEX" name @ fqn "ON" table @ fqn
+create-index-statement     ::= [ is-unique @ "UNIQUE" ] "INDEX" name @ fqn
+                               "ON" table @ fqn
                                "(" index-column { "," index-column } ")"
                                { option @ index-option }
                              ;
 
-index-column               ::= column @ identifier order @ ? /(ASC|DESC)/ ? ;
+index-column               ::= column order @ ? /(ASC|DESC)/ ? ;
 
 create-view-statement      ::= "VIEW" name @ fqn "AS" definition @ raw-ddl;
 
@@ -58,11 +60,13 @@ constraint                 ::= primary-key-constraint
                              | check-constraint
                              ;
 
-primary-key-constraint     ::= "PRIMARY" "KEY" "(" column @ identifier { "," column @ identifier } ")" ;
+primary-key-constraint     ::= "PRIMARY" "KEY"
+                               "(" column @ identifier { "," column } ")" ;
 
-foreign-key-constraint     ::= "FOREIGN" "KEY" "(" key @ identifier { "," key @ identifier } ")"
+foreign-key-constraint     ::= "FOREIGN" "KEY"
+                               "(" key @ identifier { "," key @ column } ")"
                                "REFERENCES" table @ fqn
-                               "(" reference @ identifier { "," reference @ identifier } ")"
+                               "(" reference @ column { "," reference @ column } ")"
                                { option @ foreign-key-option }
                              ;
 
@@ -91,17 +95,13 @@ set-option                 ::= "CURRENT PATH" ;
 
 (* ALTER ... *)
 
-alter-statement            ::= "ALTER" alter-table ";" ;
+alter-statement            ::= "ALTER" alter-table-statement ";" ;
 
-alter-table                ::= "TABLE" name @ fqn add-statement ;
+alter-table-statement      ::= "TABLE" name @ fqn add-to-table-statement ;
 
-add-statement              ::= "ADD" { constraint-definition } ;
+add-to-table-statement     ::= "ADD" { constraint-definition } ;
 
-(* general purpose rules *)
-
-literal                    ::= string | number ;
-
-(* TODO split out into different option sets *)
+(* OPTIONS *)
 
 database-option            ::= buffer-pool-option
                              | indexbp-option
@@ -169,7 +169,7 @@ enforced-option            ::= "ENFORCED" ;
 erase-option               ::= "ERASE" erase @ boolean ;
 free-page-option           ::= "FREEPAGE" freepage @ number ;
 gbp-cache-option           ::= "GBPCACHE" gbpcache @ identifier ;
-include-option             ::= "INCLUDE" "(" column @ identifier ")" ;
+include-option             ::= "INCLUDE" "(" column { "," column } ")" ;
 indexbp-option             ::= "INDEXBP" index @ identifier;
 lock-max-option            ::= "LOCKMAX" lockmax @ identifier ;
 lock-size-option           ::= "LOCKSIZE" locksize @ identifier ;
@@ -186,7 +186,13 @@ sto-group-option           ::= [ _ @ "USING" ] "STOGROUP" sto-group @ identifier
 track-mod-option           ::= "TRACKMOD" trackmod @ boolean ;
 volatile-option            ::= [ "NOT" ] "VOLATILE" ;
 
+(* general purpose rules, extractors *)
+
+column                     ::= identifier ;
+
 fqn                        ::= [ scope @ identifier _ @ "." ] name @ identifier ;
+
+literal                    ::= string | number ;
 
 identifier                 ::= name  @ ? /([\w]+)/ ? ;
 number                     ::= value @ ? /([0-9\\.]+)/ ? ;

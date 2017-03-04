@@ -283,43 +283,35 @@ public abstract class ParserBase<RootType> {
     }
   }
 
-  public class Outcome {
-    public ParserBase<RootType> Parser { get; set; }
-    public bool Success { get; set; }
-    public ParseException Exception { get; set; }
+  private bool Success { get; set; }
+  private ParseException Exception { get; set; }
 
-    public Outcome Or(Action what) {
-      if( ! this.Success ) {
-        return this.Parser.Parse(what);
-      }
-      return this;
-    }
-
-    public Outcome OrThrow(string message) {
-      if( ! this.Success ) {
-        this.Parser.Log(message);
-        throw this.Parser.Source.GenerateParseException(message);
-      }
-      return this;
-    }
-  }
-
-  public Outcome Parse(Action what) {
+  public ParserBase<RootType> Parse(Action what) {
     int pos = this.Source.Position;
     try {
       what();
+      this.Success = true;
     } catch(ParseException e) {
       this.Source.Position = pos;
-      return new Outcome() {
-        Success   = false,
-        Exception = e,
-        Parser    = this
-      };
+      this.Success = false;
+      this.Exception = e;
     }
-    return new Outcome() {
-      Success = true,
-      Parser  = this
-    };
+    return this;
+  }
+
+  public ParserBase<RootType> Or(Action what) {
+    if( ! this.Success ) {
+      return this.Parse(what);
+    }
+    return this;
+  }
+
+  public ParserBase<RootType> OrThrow(string message) {
+    if( ! this.Success ) {
+      this.Log(message);
+      throw this.Source.GenerateParseException(message);
+    }
+    return this;
   }
 
   protected List<T> Many<T>(Func<T> what) {

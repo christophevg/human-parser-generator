@@ -140,7 +140,8 @@ public class Parsable {
     }
     // do actual consumption
     this.Log("Consume(" + text + ") SUCCESS");
-    return this.Consume(text.Length).Equals(text);
+    this.Consume(text.Length);
+    return true;
   }
 
   public bool TryConsume(string text) {
@@ -206,18 +207,8 @@ public class Parsable {
 
   // ACTUAL CONSUMPTION
 
-  // consumes an amount of characters
-  private string Consume(int amount) {
-    amount = Math.Min(amount, this.head.Length);
-
-    // extract
-    string consumed = this.head.Substring(0, amount);
-
-    // drop
-    this.Position += amount;
-
-    return consumed;
-  }
+  // consumes an amount of characters, simply move forward the position
+  private void Consume(int amount) { this.Position += amount; }
   
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {

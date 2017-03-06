@@ -27,6 +27,66 @@ The objectives are:
 * Parsers for a more complex grammars, e.g. [Cobol record definitions (aka Copybooks)](https://github.com/christophevg/human-parser-generator/wiki/Example Cobol) and (a subset of) DB2 DDL, live up to the expectations.
 * Generated parsers are very readable and apply a [fluid parsing API/DSL](https://github.com/christophevg/human-parser-generator/wiki/Parsing DSL).
 
+# Get the Human Parser Generator
+
+> We provide downloads for the repository and a binary build of `hpg.exe` from our [releases GitHub page](https://github.com/christophevg/human-parser-generator/releases).
+
+**Minimal Survival Commands:**
+
+```bash
+$ git clone https://github.com/christophevg/human-parser-generator
+$ cd human-parser-generator
+$ msbuild
+Microsoft (R) Build Engine version 14.1.0.0
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 3/6/2017 1:46:48 PM.
+Project "/Users/xtof/Workspace/human-parser-generator/hpg.csproj" on node 1 (default targets).
+MakeBuildDirectory:
+  Creating directory "bin/Debug/".
+Gen0Parser:
+  /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/csc.exe /debug+ /out:bin/Debug/hpg.gen0.exe /target:exe generator/parsable.cs generator/generator.cs generator/factory.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs
+Gen1Source:
+  mono bin/Debug/hpg.gen0.exe generator/hpg.bnf | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80 > generator/parser.gen1.cs
+Gen1Parser:
+  /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/csc.exe /debug+ /out:bin/Debug/hpg.gen1.exe /target:exe generator/parsable.cs generator/generator.cs generator/factory.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs
+HPGSource:
+  mono bin/Debug/hpg.gen1.exe generator/hpg.bnf | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80 > generator/parser.cs
+Build:
+  /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/csc.exe /debug+ /out:bin/Debug/hpg.exe /target:exe generator/parsable.cs generator/generator.cs generator/factory.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs
+Done Building Project "/Users/xtof/Workspace/human-parser-generator/hpg.csproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.38
+```
+```bash
+$ mono bin/Debug/hpg.exe --help
+Human Parser Generator version 1.1.6274.24805
+Usage: hpg.exe [options] [file ...]
+
+    --help, -h              Show usage information
+    --version, -v           Show version information
+
+    --output, -o FILENAME   Output to file, not stdout
+
+Output options.
+Select one of the following:
+    --parser, -p            Generate parser (DEFAULT)
+    --ast, -a               Show AST
+    --model, -m             Show parser model
+    --grammar, -g           Show grammar
+Formatting options.
+    --text, -t              Generate textual output (DEFAULT).
+    --dot, -d               Generate Graphviz/Dot format output. (model)
+Emission options.
+    --info, -i              Suppress generation of info header
+    --rule, -r              Suppress generation of rule comment
+    --namespace, -n NAME    Embed parser in namespace
+```
+
 # A Complete Example
 
 The following example is taken from [the Wikipedia page on EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form):
@@ -89,8 +149,6 @@ number       = value @ ? /(-?[1-9][0-9]*)/ ? ;
 ```
 
 We can now feed this grammar to the Human Parser Generator
-
-> See [building HPG](https://github.com/christophevg/human-parser-generator/wiki/Building HPG) to build your copy of `hpg.exe`
 
 ```bash
 $ mono hpg.exe example/pascal/pascal.bnf
@@ -183,33 +241,6 @@ new Program() {
     }
   }
 }
-```
-
-The generator has more options:
-
-```bash
-$ mono hpg.exe --help
-Human Parser Generator version 1.1.6274.23516
-Usage: hpg.exe [options] [file ...]
-
-    --help, -h              Show usage information
-    --version, -v           Show version information
-
-    --output, -o FILENAME   Output to file, not stdout
-
-Output options.
-Select one of the following:
-    --parser, -p            Generate parser (DEFAULT)
-    --ast, -a               Show AST
-    --model, -m             Show parser model
-    --grammar, -g           Show grammar
-Formatting options.
-    --text, -t              Generate textual output (DEFAULT).
-    --dot, -d               Generate Graphviz/Dot format output. (model)
-Emission options.
-    --info, -i              Suppress generation of info header
-    --rule, -r              Suppress generation of rule comment
-    --namespace, -n NAME    Embed parser in namespace
 ```
 
 # Documentation

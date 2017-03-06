@@ -48,5 +48,5 @@ Expression = Expression ( "&&" | "<" | "+" | "-" | "*" ) Expression
            | "(" Expression ")"
            ;
 
-Identifier  = ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
+Identifier  = ? /([A-Za-z_][A-Za-z0-9_]*)/ ? ;
 Integer     = ? /(-?[1-9][0-9]*)/ ? ;

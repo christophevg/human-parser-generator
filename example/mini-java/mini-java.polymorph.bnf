@@ -23,22 +23,39 @@ method-declaration       = "public" return-type @ type method-name @ identifier
                              "return" returns @ expression ";"
                            "}" ;
 
-type                     = "int" "[" "]"
-                         |  "boolean"
-                         |  "int"
-                         |  identifier
+type                     = primitive-type
+                         | list-type
+                         | complex-type
                          ;
 
-statement                = "{" { block-statement @ statement } "}"
-                         | "if" "(" condition @ expression ")"
+primitive-type           = integer-type
+                         | boolean-type
+                         ;
+
+integer-type             = "int" ;
+boolean-type             = "boolean" ;
+
+list-type                = integer-type "[" "]";
+
+complex-type             = type @ identifier ;
+
+statement                = block-statement
+                         | if-statement
+                         | while-statement
+                         | print-statement
+                         | assignment-statement
+                         ;
+
+block-statement          = "{" { statement } "}" ;
+if-statement             = "if" "(" condition @ expression ")"
                              true-statement @ statement
                            "else"
                              false-statement @ statement
-                         | "while" "(" expression ")" repeated-statement @ statement
-                         | "System.out.println" "(" output @ expression ")" ";"
-                         | variable @ identifier "=" value @ expression ";"
-                         | indexed-variable @ identifier "[" index @ expression "]"
-                           "=" indexed-value @ expression ";"
+                         ;
+while-statement          = "while" "(" expression ")" statement ;
+print-statement          = "System.out.print" [ "ln" ] "(" expression ")" ";" ;
+assignment-statement     = variable @ identifier [ "[" index @ expression "]" ]
+                           "=" expression ";"
                          ;
 
 expression               = postfix-expression
@@ -50,9 +67,10 @@ postfix-expression       = indexed-expression
                          | length-expression
                          ;
 
-indexed-expression       = non-postfix-expression "[" expression "]" ;
-method-call-expression   = non-postfix-expression "." identifier "(" [ expression { "," expression } ] ")" ;
-length-expression        = non-postfix-expression "." "length" ;
+indexed-expression       = object @ non-postfix-expression "[" expression "]" ;
+method-call-expression   = object @ non-postfix-expression "." identifier
+                           "(" [ argument @ expression { "," argument @ expression } ] ")" ;
+length-expression        = object @ non-postfix-expression "." "length" ;
 
 non-postfix-expression   = prefix-expression
                          | non-prefix-expression
@@ -92,14 +110,21 @@ non-and-expression       = group-expression
 
 group-expression         = "(" expression ")" ;
 
-primary-expression       = integer
-                         | "true"
-                         | "false"
-                         | "this"
-                         | "new" "int" "[" size @ expression "]"
-                         | "new" class-name @ identifier "(" ")"
-                         | identifier
+primary-expression       = integer-expression
+                         | boolean-expression
+                         | this-expression
+                         | constructor-expression
+                         | identifier-expression
                          ;
+
+integer-expression       = value @ integer ;
+boolean-expression       = value @ boolean ;
+this-expression          = "this" ;
+constructor-expression   = "new" "int" "[" size @ expression "]"
+                         | "new" class-name @ identifier "(" ")"
+                         ;
+identifier-expression    = name @ identifier ;
 
 identifier               = ? /([A-Za-z_][A-Za-z0-9_]*)/ ? ;
 integer                  = ? /(-?[1-9][0-9]*)/ ? ;
+boolean                  = ? /(true|false)/ ? ;

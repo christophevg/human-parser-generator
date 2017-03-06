@@ -9,19 +9,21 @@ main-class               = "class" class-name @ identifier "{"
                              "}"
                            "}" ;
 
-class-declaration        = "class" class-name @ identifier [ "extends" extends @ identifier ] "{"
+class-declaration        = "class" class-name @ identifier [ _ @ "extends" extends @ identifier ] "{"
                              { var-declaration }
                              { method-declaration }
                            "}" ;
 
-var-declaration          = type variable @ identifier ";" ;
+var-declaration          = type identifier ";" ;
 
 method-declaration       = "public" return-type @ type method-name @ identifier
-                           "(" [ type identifier { "," type identifier } ] ")" "{"
+                           "(" [ parameter { _ @ "," parameter } ] ")" "{"
                              { var-declaration }
                              { statement }
                              "return" returns @ expression ";"
                            "}" ;
+
+parameter                = type identifier ;
 
 type                     = primitive-type
                          | list-type
@@ -54,7 +56,7 @@ if-statement             = "if" "(" condition @ expression ")"
                          ;
 while-statement          = "while" "(" expression ")" statement ;
 print-statement          = "System.out.print" [ "ln" ] "(" expression ")" ";" ;
-assignment-statement     = variable @ identifier [ "[" index @ expression "]" ]
+assignment-statement     = variable @ identifier [ _ @ "[" index @ expression _ @ "]" ]
                            "=" expression ";"
                          ;
 
@@ -69,7 +71,7 @@ postfix-expression       = indexed-expression
 
 indexed-expression       = object @ non-postfix-expression "[" expression "]" ;
 method-call-expression   = object @ non-postfix-expression "." identifier
-                           "(" [ argument @ expression { "," argument @ expression } ] ")" ;
+                           "(" [ argument @ expression { _ @ "," argument @ expression } ] ")" ;
 length-expression        = object @ non-postfix-expression "." "length" ;
 
 non-postfix-expression   = prefix-expression
@@ -84,26 +86,27 @@ non-prefix-expression    = times-expression
                          | non-times-expression
                          ;
 
-times-expression         = non-times-expression "*" non-prefix-expression ;
+times-expression         = lhs @ non-times-expression "*" rhs @ non-prefix-expression ;
 
 non-times-expression     = additive-expression
                          | non-additive-expression
                          ;
 
-additive-expression      = non-additive-expression [ "+" | "-" ] non-times-expression ;
+additive-expression      = lhs @ non-additive-expression operator @ addition-operator rhs @ non-times-expression ;
+
+addition-operator        = ? /(\+|-)/ ? ;
 
 non-additive-expression  = less-than-expression 
                          | non-less-than-expression
                          ;
 
-less-than-expression     = non-less-than-expression "<" non-additive-expression ;
+less-than-expression     = lhs @ non-less-than-expression "<" rhs @ non-additive-expression ;
 
 non-less-than-expression = and-expression 
                          | non-and-expression
                          ;
                          
-and-expression           = non-and-expression "&&" non-less-than-expression ;
-
+and-expression           = lhs @ non-and-expression "&&" rhs @ non-less-than-expression ;
 
 non-and-expression       = group-expression
                          | primary-expression
@@ -126,6 +129,6 @@ constructor-expression   = "new" "int" "[" size @ expression "]"
                          ;
 identifier-expression    = name @ identifier ;
 
-identifier               = ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
+identifier               = ? /([A-Za-z_][A-Za-z0-9_]*)/ ? ;
 integer                  = ? /(-?[1-9][0-9]*)/ ? ;
 boolean                  = ? /(true|false)/ ? ;

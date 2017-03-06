@@ -68,7 +68,7 @@ non-times-expression     = additive-expression
                          | non-additive-expression
                          ;
 
-additive-expression      = non-additive-expression [ "+" | "-" ] non-times-expression ;
+additive-expression      = non-additive-expression ( "+" | "-" ) non-times-expression ;
 
 non-additive-expression  = less-than-expression 
                          | non-less-than-expression
@@ -98,5 +98,5 @@ primary-expression       = integer
                          | identifier
                          ;
 
-identifier               = ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
+identifier               = ? /([A-Za-z_][A-Za-z0-9_]*)/ ? ;
 integer                  = ? /(-?[1-9][0-9]*)/ ? ;

@@ -6,3 +6,5 @@ tmp
 *.dll
 *.mdb
 TestResult.xml
+bin
+

@@ -106,9 +106,4 @@
     <MSBuild Projects="example\db2-ddl\ddl.csproj"         Properties="AStyle=" />
   </Target>
 
-  <Target Name="AfterClean">
-    <RemoveDir Directories="$(OutputPath)" />
-    <Delete    Files="@(FileWrites)" />
-  </Target>
-
 </Project>

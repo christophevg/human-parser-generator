@@ -2,7 +2,7 @@
 
 A straightforward recursive descent Parser Generator with a focus on "human" code generation and ease of use.  
 Christophe VG (<contact@christophe.vg>)  
-[https://github.com/christophevg/cs-parser-generator](https://github.com/christophevg/cs-parser-generator)
+[https://github.com/christophevg/human-parser-generator](https://github.com/christophevg/human-parser-generator)
 
 # Rationale
 

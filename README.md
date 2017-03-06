@@ -87,6 +87,8 @@ Emission options.
     --namespace, -n NAME    Embed parser in namespace
 ```
 
+> When running on a unix-like environment (e.g. macOS, Linux, ...) the generated parsers are styled using [AStyle](http://astyle.sourceforge.net). On Windows this dependency is suppressed by default. To avoid using AStyle, set the `AStyle` build property to an empty string: ` msbuild /Property:AStyle=`.
+
 # A Complete Example
 
 The following example is taken from [the Wikipedia page on EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form):

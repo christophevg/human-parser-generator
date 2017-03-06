@@ -103,6 +103,7 @@
     <MSBuild Projects="example\cobol\cobol.csproj"         Properties="AStyle=" />
     <MSBuild Projects="example\ini\ini.csproj"             Properties="AStyle=" />
     <MSBuild Projects="example\mini-java\mini-java.csproj" Properties="AStyle=" />
+    <MSBuild Projects="example\db2-ddl\ddl.csproj"         Properties="AStyle=" />
   </Target>
 
 </Project>

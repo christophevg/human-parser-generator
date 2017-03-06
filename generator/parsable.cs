@@ -15,9 +15,14 @@ using System.CodeDom;
 using System.CodeDom.Compiler;
 
 public class ParseException : System.Exception {
-  public int Position     { get; set; }
-  public int Line         { get; set; }
-  public int LinePosition { get; set; }
+  public Parsable Parsable { get; set; }
+  public int Position      { get; set; }
+  public int Line {
+    get { return this.Parsable.LineOf(this.Position); }
+  }
+  public int LinePosition {
+    get { return this.Parsable.LinePositionOf(this.Position); }
+  }
   public int MaxPosition  {
     get {
       return (this.InnerException != null) ?
@@ -26,7 +31,8 @@ public class ParseException : System.Exception {
   }
   public ParseException() : base() { }
   public ParseException(string message) : base(message) { }
-  public ParseException(string message, System.Exception inner) : base(message, inner) { }
+  public ParseException(string message, System.Exception inner) :
+    base(message, inner) {}
 
   public override string ToString() {
     return this.Message +
@@ -37,37 +43,46 @@ public class ParseException : System.Exception {
 public class Parsable {
 
   // the parsable text
-  private string _text;
+  private char[] _text;
   private string text {
     set {
-      this._text = value;
       // keep list of cummulative line-lengths for easy mapping position to line
       int sum = 0;
       foreach(var line in value.Split('\n')) {
         sum += line.Length + 1;
         this.lines.Add(new Tuple<string,int>(line, sum));
       }
-    }
-    get {
-      return this._text;
+      // store string internally as a char[]
+      this._text    = value.ToCharArray();
+      this.Length   = value.Length;   // cache length
+      this.Position = 0;              // start at the beginning
     }
   }
 
-  private List<Tuple<string,int>> lines = new List<Tuple<string,int>>();
+  public int Length { get; private set; }
 
   public int Position { get; set; }
 
-  public int Line {
-    get { return this.LineOf(this.Position); }
+  public int RemainingLength { get { return this.Length - this.Position; } }
+  
+  public string Remaining {
+    get { return new string(this._text, this.Position, this.RemainingLength); }
   }
 
-  public int LinePosition {
+  public bool IsDone {
     get {
-      return this.Position -
-        (this.Line > 0 ? this.lines[this.Line - 1].Item2 : 0);
+      this.Skip();
+      return this.RemainingLength == 0;
     }
   }
-
+  
+  public char Head { get { return this._text[this.Position]; } }
+  
+  // support for accessing "lines" in the parsable text
+  private List<Tuple<string,int>> lines = new List<Tuple<string,int>>();
+  public string this[int index] { get {  return this.lines[index].Item1; } }
+  public int Line { get { return this.LineOf(this.Position); } }
+  public int LinePosition { get { return this.LinePositionOf(this.Position); } }
   public int LineOf(int position) {
     var index = this.lines.Select(x => x.Item2).ToList().BinarySearch(position);
     if(index < 0 ) {      // the position wasn't found, e.g. not start of line
@@ -75,25 +90,13 @@ public class Parsable {
     }
     return index;
   }
-
-  public string this[int index] {
-    get {
-      return this.lines[index].Item1;
-    }
+  public int LinePositionOf(int position) {
+    return position - (this.LineOf(position) > 0 ?
+      this.lines[this.LineOf(position) - 1].Item2 : 0
+    );
   }
 
-  // returns the part of the text that still needs parsing
-  private string head {
-    get { return this.text.Substring(this.Position); }
-  }
-  
-  // helper Regular Expressions for general clean-up
-  // this regular expression only matches NOT printable characters minus space
-  // ASCII range goes from 0-127
-  // 0-31 are non printable (including newline, carriage return, EOF,...)
-  // 127 is DEL is another non printable
-  // 32 is space is normal whitespace we also want to ignore
-  private static Regex leadingWhitespace = new Regex( @"^[^\u0021-\u007E]" );
+  // constructors + support for defining an to-be-ignored pattern
 
   public Parsable(string text) {
     this.text = text;
@@ -111,15 +114,22 @@ public class Parsable {
   }
 
   // skips any whitespace at the start of the current text buffer
+  // whitespace is considered "all NOT printable characters AND space"
+  // ASCII range goes from 0-127
+  // 0-31 are non printable (including newline, carriage return, EOF,...)
+  // 127 is DEL is another non printable
+  // 32 is space is normal whitespace we also want to ignore
   public void SkipLeadingWhitespace() {
-    while(Parsable.leadingWhitespace.Match(this.head).Success) {
+    while( this.RemainingLength > 0 &&
+          (this.Head <= 32 || this.Head == 127))
+    {
       this.Consume(1);
     }
   }
 
   public bool SkipIgnored() {
     if(this.ignored == null) { return false; }
-    Match match = this.ignored.Match(this.head);
+    Match match = this.ignored.Match(this.Remaining);
     if(match.Success) {
       this.Consume(match.Length);
       return true;
@@ -134,7 +144,9 @@ public class Parsable {
   // tries to consume a give string
   public bool Consume(string text) {
     this.Skip();
-    if(! this.head.StartsWith(text) ) {
+    if(this.RemainingLength < text.Length ||
+       ! new string(this._text, this.Position, text.Length).Equals(text) )
+    {
       this.Log("Consume(" + text + ") FAILED");
       throw this.GenerateParseException( "Expected '" + text + "'" );
     }
@@ -157,7 +169,7 @@ public class Parsable {
   
   public string Consume(Regex pattern) {
     this.Skip();
-    Match m = pattern.Match(this.head);
+    Match m = pattern.Match(this.Remaining);
     if(m.Success) {
       this.Log("Consume(" + pattern.ToString() + ") SUCCESS ");
       int length = m.Groups[0].Captures[0].ToString().Length; // total match
@@ -175,40 +187,29 @@ public class Parsable {
     } else {
       this.Log("Consume(" + pattern.ToString() + ") FAILED ");
     }
-    throw this.GenerateParseException( "Expected '" + pattern.ToString() + "'" );
+    throw this.GenerateParseException( "Expected :" + pattern.ToString() );
   }
 
-  // returns an amount of characters, without consuming, not trimming!
+  // returns an amount of characters (aka string), without consuming, untrimmed!
   public string Peek(int amount, int start=0) {
-    return this.head.Substring(start, Math.Min(amount, this.head.Length));
+    return new string(this._text, start, Math.Min(amount, this.RemainingLength));
   }
 
-  // returns lines that cover [start,end] positions in the source
-  public List<string> Context(int start, int end) {
-    start = this.LineOf(start);
-    end   = this.LineOf(end);
-    return this.lines.Select(x=>x.Item1).ToList().GetRange(start, end-start+1);
-  }
-
-  public ParseException GenerateParseException(string message, Exception inner=null) {
-    return new ParseException(message, inner ) {
-      Position     = this.Position,
-      Line         = this.Line,
-      LinePosition = this.LinePosition
+  public ParseException GenerateParseException(string message,
+                                               Exception inner=null)
+  {
+    return new ParseException(message, inner) {
+      Parsable = this,
+      Position = this.Position
     };
-  }
-
-  public bool IsDone {
-    get {
-      this.Skip();
-      return this.Position == this.text.Length;
-    }
   }
 
   // ACTUAL CONSUMPTION
 
   // consumes an amount of characters, simply move forward the position
-  private void Consume(int amount) { this.Position += amount; }
+  private void Consume(int amount) {
+    this.Position += Math.Min(amount, this.RemainingLength);
+  }
   
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
@@ -236,7 +237,7 @@ public abstract class ParserBase<RootType> {
       throw this.Source.GenerateParseException("Failed to parse.");
     }
     if( ! this.Source.IsDone ) {
-      throw this.Source.GenerateParseException("Could not parse remaining data.");
+      throw this.Source.GenerateParseException("Can't parse remaining data.");
     }
     return this;
   }

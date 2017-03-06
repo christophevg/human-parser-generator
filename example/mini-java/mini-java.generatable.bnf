@@ -1,0 +1,102 @@
+(* HPG Grammar for Mini Java *)
+(* https://github.com/christophevg/human-parser-generator/wiki/Tutorial-MiniJava *)
+
+program                  = main-class { class-declaration } ;
+
+main-class               = "class" identifier "{"
+                             "public" "static" "void" "main" "(" "String" "[" "]" identifier ")" "{"
+                               statement
+                             "}"
+                           "}" ;
+
+class-declaration        = "class" identifier [ "extends" identifier ] "{"
+                             { var-declaration }
+                             { method-declaration }
+                           "}" ;
+
+var-declaration          = type identifier ";" ;
+
+method-declaration       = "public" type identifier
+                           "(" [ type identifier { "," type identifier } ] ")" "{"
+                             { var-declaration }
+                             { statement }
+                             "return" expression ";"
+                           "}" ;
+
+type                     = "int" "[" "]"
+                         |  "boolean"
+                         |  "int"
+                         |  identifier
+                         ;
+
+statement                = "{" { statement } "}"
+                         | "if" "(" expression ")" statement "else" statement
+                         | "while" "(" expression ")" statement
+                         | "System.out.println" "(" expression ")" ";"
+                         | identifier "=" expression ";"
+                         | identifier "[" expression "]" "=" expression ";"
+                         ;
+
+expression               = postfix-expression
+                         | non-postfix-expression
+                         ;
+
+postfix-expression       = indexed-expression
+                         | method-call-expression
+                         | length-expression
+                         ;
+
+indexed-expression       = non-postfix-expression "[" expression "]" ;
+method-call-expression   = non-postfix-expression "." identifier "(" [ expression { "," expression } ] ")" ;
+length-expression        = non-postfix-expression "." "length" ;
+
+non-postfix-expression   = prefix-expression
+                         | non-prefix-expression
+                         ;
+
+prefix-expression        = not-expression ;
+
+not-expression           = "!" prefix-expression ;
+
+non-prefix-expression    = times-expression
+                         | non-times-expression
+                         ;
+
+times-expression         = non-times-expression "*" non-prefix-expression ;
+
+non-times-expression     = additive-expression
+                         | non-additive-expression
+                         ;
+
+additive-expression      = non-additive-expression [ "+" | "-" ] non-times-expression ;
+
+non-additive-expression  = less-than-expression 
+                         | non-less-than-expression
+                         ;
+
+less-than-expression     = non-less-than-expression "<" non-additive-expression ;
+
+non-less-than-expression = and-expression 
+                         | non-and-expression
+                         ;
+                         
+and-expression           = non-and-expression "&&" non-less-than-expression ;
+
+
+non-and-expression       = group-expression
+                         | primary-expression
+                         ;
+
+group-expression         = "(" expression ")" ;
+
+primary-expression       = integer
+                         | "true"
+                         | "false"
+                         | "this"
+                         | "new" "int" "[" expression "]"
+                         | "new" identifier "(" ")"
+                         | identifier
+                         ;
+
+identifier               = ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
+integer                  = ? /(-?[1-9][0-9]*)/ ? ;

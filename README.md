@@ -173,10 +173,34 @@ using System.Linq;
 
 // program ::= "PROGRAM" identifier "BEGIN" { assignment ";" } "END." ;
 public class Program {
-public Identifier Identifier { get; set; }
-public List<Assignment> Assignments { get; set; }
+  public Identifier Identifier { get; set; }
+  public List<Assignment> Assignments { get; set; }
   public Program() {
-...
+    this.Assignments = new List<Assignment>();
+  }
+  // ...
+}
+// ...
+public class Parser : ParserBase<Program> {
+
+  // program ::= "PROGRAM" identifier "BEGIN" { assignment ";" } "END." ;
+  public override Program Parse() {
+    Program program = new Program();
+    Log( "ParseProgram" );
+    Parse( () => {
+      Consume("PROGRAM");
+      program.Identifier = ParseIdentifier();
+      Consume("BEGIN");
+      Repeat( () => {
+        program.Assignments.Add(ParseAssignment());
+        Consume(";");
+      });
+      Consume("END.");
+    }).OrThrow("Failed to parse Program");
+    return program;
+  }
+// ...
+}
 ```
 
 > If no `file` is provided, input is read from standard input.

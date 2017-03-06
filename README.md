@@ -23,9 +23,9 @@ The objectives are:
 
 # Current Status - Version 1.1
 
-* The generator is capable of generating a parser for its own EBNF-like definition language, which means it's [self-hosting](wiki/Bootstrapping). 
-* Parsers for a more complex grammars, e.g. [Cobol record definitions (aka Copybooks)](wiki/Example Cobol) and (a subset of) DB2 DDL, live up to the expectations.
-* Generated parsers are very readable and apply a [fluid parsing API/DSL](wiki/Parsing DSL).
+* The generator is capable of generating a parser for its own EBNF-like definition language, which means it's [self-hosting](https://github.com/christophevg/human-parser-generator/wiki/Bootstrapping). 
+* Parsers for a more complex grammars, e.g. [Cobol record definitions (aka Copybooks)](https://github.com/christophevg/human-parser-generator/wiki/Example Cobol) and (a subset of) DB2 DDL, live up to the expectations.
+* Generated parsers are very readable and apply a [fluid parsing API/DSL](https://github.com/christophevg/human-parser-generator/wiki/Parsing DSL).
 
 # A Complete Example
 
@@ -65,7 +65,7 @@ This grammar allows to parse a Pascal program with assignments:
  END.
 ```
 
-To take advantage of the [extended grammar features of the Human Parser Generator](wiki/HPG Grammar), the grammar above can be rewritten to:
+To take advantage of the [extended grammar features of the Human Parser Generator](https://github.com/christophevg/human-parser-generator/wiki/HPG Grammar), the grammar above can be rewritten to:
 
 ```ebnf
 (* a simple program syntax in HPG-flavoured EBNF - based on example from Wikipedia *)
@@ -90,7 +90,7 @@ number       = value @ ? /(-?[1-9][0-9]*)/ ? ;
 
 We can now feed this grammar to the Human Parser Generator
 
-> See [building HPG](wiki/Building HPG) to build your copy of `hpg.exe`
+> See [building HPG](https://github.com/christophevg/human-parser-generator/wiki/Building HPG) to build your copy of `hpg.exe`
 
 ```bash
 $ mono hpg.exe example/pascal/pascal.bnf
@@ -214,4 +214,4 @@ Emission options.
 
 # Documentation
 
-Consult the [repository's wiki](wiki) for more background, tutorials and annotated examples.
+Consult the [repository's wiki](https://github.com/christophevg/human-parser-generator/wiki) for more background, tutorials and annotated examples.

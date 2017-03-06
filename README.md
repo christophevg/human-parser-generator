@@ -4,7 +4,7 @@ A straightforward recursive descent Parser Generator with a focus on "human" cod
 Christophe VG (<contact@christophe.vg>)  
 [https://github.com/christophevg/cs-parser-generator](https://github.com/christophevg/cs-parser-generator)
 
-# Introduction
+# Rationale
 
 Although many parser generators exist, I feel like there is room for one more, which generates a parser in a more "human" way.
 
@@ -16,29 +16,18 @@ The objectives are:
 	* generate parser logic that is readable and understandable
 * be **self hosting**: the generator should be able to generate a parser for itself.
 
-> The project will initially target C#, which is also the language of the generator itself. Once the generator is stable, support for generating other languages can be added.
+> [EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form) is a (meta-)syntax that can be used to express (context-free) grammars. EBNF is an "extension" to [BNF](https://en.wikipedia.org/wiki/Backus–Naur_form).
+> The Human Parser Generator takes EBNF grammars as input to generate parsers for the language expressed by the grammar.
 
-## Current Status
+> The project initially targets C#, which is the language of the generator itself. Once the generator is stable, support for generating other languages can be added.
 
-As of February 18, I tagged the repository `v1.0`. At that point I felt that the current code base was capable of fulfilling the objectives I had set forward at the beginning:
+# Current Status - Version 1.1
 
-* A trivial example of a small subset of the Pascal language can be parsed.
-* The generator is capable of generating a parser for its own EBNF-like definition language, which means its self-hosting (see also below for more information on this feature). 
-* A parser for a more complex grammar for Cobol record definitions (aka Copybooks) is capable of parsing a set of example Copybooks and outputs a nice corresponding parser.
+* The generator is capable of generating a parser for its own EBNF-like definition language, which means it's [self-hosting](wiki/Bootstrapping). 
+* Parsers for a more complex grammars, e.g. [Cobol record definitions (aka Copybooks)](wiki/Example Cobol) and (a subset of) DB2 DDL, live up to the expectations.
+* Generated parsers are very readable and apply a [fluid parsing API/DSL](wiki/Parsing DSL).
 
-Since then I've started working on improving things that didn't turn out the way I wanted or expected:
-
-* The emitted generator became less _human_ with more complex grammars, such as the one for Cobol Copybooks. Especially the nested `try { ... } catch { ... }` blocks were no longer nice on the eye and hard to read. So I started implementing an inner-DSL. See below for more info.
-* Error reporting was not so "useful". Towards `v1.1` I'm aiming for much improved error reporting. See below for more info.
-* A third focus for the next "release" is to make the EBNF-like grammar (more) compliant with EBNF. This requires adding some alternative syntax formats, addition of comments, etc.
-
-## EBNF
-
-[EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form) is a (meta-)syntax that can be used to express (context-free) grammars. EBNF is an "extension" to [BNF](https://en.wikipedia.org/wiki/Backus–Naur_form).
-
-The Human Parser Generator takes EBNF grammars as input to generate parsers for the language expressed by the grammar.
-
-### Example
+# A Complete Example
 
 The following example is taken from [the Wikipedia page on EBNF](https://en.wikipedia.org/wiki/Extended_Backus–Naur_form):
 
@@ -61,7 +50,7 @@ The following example is taken from [the Wikipedia page on EBNF](https://en.wiki
  all characters = ? all visible characters ? ;
 ```
 
-This grammar would allow to parse
+This grammar allows to parse a Pascal program with assignments:
 
 ```pascal
  PROGRAM DEMO1
@@ -76,519 +65,131 @@ This grammar would allow to parse
  END.
 ```
 
-### EBNF Compliancy and Extensions
-
-The following grammar is a rewritten version of the earlier Pascal example. It introduces some of the changes and extensions that were made to the standard EBNF syntax:
+To take advantage of the [extended grammar features of the Human Parser Generator](wiki/HPG Grammar), the grammar above can be rewritten to:
 
 ```ebnf
 (* a simple program syntax in HPG-flavoured EBNF - based on example from Wikipedia *)
 
-program               ::= "PROGRAM" identifier
-                          "BEGIN"
-                          { assignment ";" }
-                          "END."
-                        ;
+program      = "PROGRAM" identifier
+               "BEGIN"
+               { assignment ";" }
+               "END."
+             ;
 
-assignment            ::= identifier ":=" expression ;
+assignment   = identifier ":=" expression ;
 
-expression            ::= identifier
-                        | string
-                        | number
-                        ;
+expression   = identifier
+             | string
+             | number
+             ;
 
-identifier            ::= name  @ ? /([A-Z][A-Z0-9]*)/ ? ;
-string                ::= text  @ ? /"([^"]*)"|'([^']*)'/ ? ;
-number                ::= value @ ? /(-?[1-9][0-9]*)/ ? ;
+identifier   = name  @ ? /([A-Z][A-Z0-9]*)/ ? ;
+string       = text  @ ? /"([^"]*)"|'([^']*)'/ ? ;
+number       = value @ ? /(-?[1-9][0-9]*)/ ? ;
 ```
 
-#### Optional Sequence Separator
+We can now feed this grammar to the Human Parser Generator
 
-Still supported, but not required is the `,` (colon) in between parts of a sequence. This improves readability greatly.
-
-#### Automatic Whitespace Consumption
-
-All whitespace is automatically consumed, removing its explicit presence in rule definitions. Again, this improves readability of the grammar.
-
-#### Use of the EBNF Extensions Mechanisme for Extractors
-
-Using the EBNF extension support, `? ... ?`, _extractors_ are added to allow consumption of (regular expression) patterns.
-
-#### Named Terminal Expressions
-
-Identifiers, strings, and extractors can be given an alternate name using the `<name> @` prefix. See upcoming information on the generator's conventions and implicit generation rules.
-
-#### No Support for Spaces in Rule Names
-
-Spaces in rule names (left hand side of rules) are not allowed. For now, e.g. use dashes. The generator will generate Pascal-cased names.
-
-#### Alternative Syntax Support
-
-A few alternative syntax options are available. These were added because it was easy to do and allows for easier importing of existing grammars.
-
-To bring BNF closer, it is possible to use `=` in stead of `::=` and to have diamond brackets `< ... >` surrounding rule names.
-
-Because we support spanning rules over multiple lines, it is not possible to remove the rule terminator `;`, but an alternative terminator `.` is also provided.
-
-This way the following Pascal grammar is identical to the previous example:
-
-```ebnf
-<program>             = "PROGRAM" <identifier>
-                        "BEGIN"
-                        { <assignment> ";" }
-                        "END."
-                      .
-
-<assignment>          = <identifier> ":=" <expression> .
-
-<expression>          = identifier
-                        | string
-                        | number
-                        .
-
-<identifier>          = name  @ ? /([A-Z][A-Z0-9]*)/ ? .
-<string>              = text  @ ? /"([^"]*)"|'([^']*)'/ ? .
-<number>              = value @ ? /(-?[1-9][0-9]*)/ ? .
-```
-
-## Demos
-
-A few demos show the capabilities and results of the generated parsers.
-
-> I'm running on macOS with [Mono](http://mono-project.com). Mono provides an implementation of `msbuild` in the form of `xbuild`. I've recently moved from `Makefiles` to project build files. This is still to be tested on Windows with the original `msbuild` ;-)
-
-### Pascal
-
-In the [`example/pascal`](example/pascal) folder I've started by writing a manual implementation for the embryonal Pascal example, [`pascal.cs`](example/pascal/pascal.cs), taking into account how I think this could be generated. The output of the example program, parses the example Pascal file and outputs an AST-like structure.
+> See [building HPG](wiki/Building HPG) to build your copy of `hpg.exe`
 
 ```bash
-$ cd example/pascal
-
-$ xbuild /target:Manual
-XBuild Engine Version 14.0
-Mono, Version 4.6.2.0
-Copyright (C) 2005-2013 Various Mono authors
-
-Build started 2/23/2017 12:37:29 AM.
-__________________________________________________
-Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj" (Manual target(s)):
-	Target Manual:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/pascal-manual.exe ../../generator/parsable.cs ../../generator/dump-ast.cs pascal-manual.cs /target:exe
-		Executing: mono bin/Debug/pascal-manual.exe example.pascal | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
-		new Program() {
-		  Identifier = new Identifier() { Name = "DEMO1"},
-		  Assignments = new List<Assignment>() {
-		    new Assignment() {
-		      Identifier = new Identifier() { Name = "A"},
-		      Expression = new Number() {
-		        Value = "3"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "B"},
-		      Expression = new Number() {
-		        Value = "45"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "H"},
-		      Expression = new Number() {
-		        Value = "-100023"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "C"},
-		      Expression = new Identifier() {
-		        Name = "A"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "D123"},
-		      Expression = new Identifier() {
-		        Name = "B34A"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "BABOON"},
-		      Expression = new Identifier() {
-		        Name = "GIRAFFE"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "TEXT"},
-		      Expression = new String() {
-		        Text = "Hello world!"
-		      }
-		    }
-		  }
-		}
-Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj".
-
-Build succeeded.
-	 0 Warning(s)
-	 0 Error(s)
-
-Time Elapsed 00:00:00.7789880
+$ mono hpg.exe example/pascal/pascal.bnf
 ```
 
-> The manual implementation uses two supporting files, [parsable.cs](generator/parsable.cs) and [dump-ast.cs](generator/dump-ast.cs), that are now part of the generator framework. They were "promoted" from the manual example to the actual framework.
+The generated parser is returned on standard output:
 
-> I've chosen to implement the `ToString()` functionality of the AST as C# code that builds the same data structure. This is easy to reuse it, e.g. in unit tests and it formats nicely (using e.g. AStyle).
+```csharp
+// DO NOT EDIT THIS FILE
+// This file was generated using the Human Parser Generator
+// (https://github.com/christophevg/human-parser-generator)
+// on Monday, March 6, 2017 at 1:10:56 PM
+// Source : example/pascal/pascal.bnf
 
-The build file also implements an example on how to generate a Pascal generator from the EBNF-like language definition. In fact, just issuing `xbuild` runs the manual implementation, generates a fresh Pascal parser, compares the manual and generated parser and finally also runs the generated version:
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Linq;
+
+// program ::= "PROGRAM" identifier "BEGIN" { assignment ";" } "END." ;
+public class Program {
+public Identifier Identifier { get; set; }
+public List<Assignment> Assignments { get; set; }
+  public Program() {
+...
+```
+
+> If no `file` is provided, input is read from standard input.
+
+Combine this generated parser with `parsable.cs` and add a minimal driver application:
+
+```csharp
+// run.cs - a minimal driver application of HPG generated parsers
+using System;
+using System.IO;
+
+public class Runner {
+  public static void Main(string[] args) {
+    string source = File.ReadAllText(args[0]);
+
+    Parser parser = new Parser();
+    parser.Parse(source);
+
+    Console.WriteLine(parser.AST);
+  }
+}
+```
+
+Compile and run ...
 
 ```bash
-$ xbuild
-XBuild Engine Version 14.0
-Mono, Version 4.6.2.0
-Copyright (C) 2005-2013 Various Mono authors
-
-Build started 2/23/2017 12:36:53 AM.
-__________________________________________________
-Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj" (default target(s)):
-	Target Manual:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/pascal-manual.exe ../../generator/parsable.cs ../../generator/dump-ast.cs pascal-manual.cs /target:exe
-		Executing: mono bin/Debug/pascal-manual.exe example.pascal | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
-		new Program() {
-		  Identifier = new Identifier() { Name = "DEMO1"},
-		  Assignments = new List<Assignment>() {
-		    new Assignment() {
-		      Identifier = new Identifier() { Name = "A"},
-		      Expression = new Number() {
-		        Value = "3"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "B"},
-		      Expression = new Number() {
-		        Value = "45"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "H"},
-		      Expression = new Number() {
-		        Value = "-100023"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "C"},
-		      Expression = new Identifier() {
-		        Name = "A"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "D123"},
-		      Expression = new Identifier() {
-		        Name = "B34A"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "BABOON"},
-		      Expression = new Identifier() {
-		        Name = "GIRAFFE"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "TEXT"},
-		      Expression = new String() {
-		        Text = "Hello world!"
-		      }
-		    }
-		  }
-		}
-	Target Generated:
-		Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (default target(s)):
-			Target Gen0Parser:
-				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
-			Target Gen1Source:
-				Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
-			Target Gen1Parser:
-				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
-			Target HPGSource:
-				Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
-			Target Build:
-				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs /target:exe
-		Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
-		Executing: mono ../../bin/Debug//hpg.exe -i pascal.bnf | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80 > pascal.cs
-	Target Compare:
-		Executing: diff -u -w  pascal-manual.cs pascal.cs
-	Target BuildGenerated:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/parse-pascal.exe ../../generator/parsable.cs ../../generator/dump-ast.cs pascal.cs /target:exe
-	Target RunGenerated:
-		Executing: mono bin/Debug/parse-pascal.exe example.pascal | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
-		new Program() {
-		  Identifier = new Identifier() { Name = "DEMO1"},
-		  Assignments = new List<Assignment>() {
-		    new Assignment() {
-		      Identifier = new Identifier() { Name = "A"},
-		      Expression = new Number() {
-		        Value = "3"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "B"},
-		      Expression = new Number() {
-		        Value = "45"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "H"},
-		      Expression = new Number() {
-		        Value = "-100023"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "C"},
-		      Expression = new Identifier() {
-		        Name = "A"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "D123"},
-		      Expression = new Identifier() {
-		        Name = "B34A"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "BABOON"},
-		      Expression = new Identifier() {
-		        Name = "GIRAFFE"
-		      }
-		    },new Assignment() {
-		      Identifier = new Identifier() { Name = "TEXT"},
-		      Expression = new String() {
-		        Text = "Hello world!"
-		      }
-		    }
-		  }
-		}
-Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/pascal/pascal.csproj".
-
-Build succeeded.
-	 0 Warning(s)
-	 0 Error(s)
-
-Time Elapsed 00:00:03.0725190
+$ mcs run.cs pascal.cs generator/parsable.cs 
+$ mono run.exe example/pascal/example.pascal
 ```
 
-### Cobol Example
+The output is a string representation of the resulting AST:
 
-In [`example/cobol`](example/cobol) a parser is generated for Cobol record definitions, also known as Copybooks - Warning: this is work in progress. The generated parser is currently capable of parsing several example Copybooks.
+```csharp
+new Program() {
+  Identifier = new Identifier() { Name = "DEMO1"},
+  Assignments = new List<Assignment>() {
+    new Assignment() {
+      Identifier = new Identifier() { Name = "A"},
+      Expression = new Number() { Value = "3" }
+    },
+    new Assignment() {
+      Identifier = new Identifier() { Name = "B"},
+      Expression = new Number() { Value = "45" }
+    },
+    new Assignment() {
+      Identifier = new Identifier() { Name = "H"},
+      Expression = new Number() { Value = "-100023" }
+    },
+    new Assignment() {
+      Identifier = new Identifier() { Name = "C"},
+      Expression = new Identifier() { Name = "A" }
+    },
+    new Assignment() {
+      Identifier = new Identifier() { Name = "D123"},
+      Expression = new Identifier() { Name = "B34A" }
+    },
+    new Assignment() {
+      Identifier = new Identifier() { Name = "BABOON"},
+      Expression = new Identifier() { Name = "GIRAFFE" }
+    },
+    new Assignment() {
+      Identifier = new Identifier() { Name = "TEXT"},
+        Expression = new String() { Text = "Hello world!" }
+    }
+  }
+}
+```
+
+The generator has more options:
 
 ```bash
-$ cd examples/cobol
-
-$ xbuild
-XBuild Engine Version 14.0
-Mono, Version 4.6.2.0
-Copyright (C) 2005-2013 Various Mono authors
-
-Build started 2/23/2017 12:40:14 AM.
-__________________________________________________
-Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/cobol/cobol.csproj" (default target(s)):
-	Target Generated:
-		Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (default target(s)):
-			Target Gen0Parser:
-				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
-			Target Gen1Source:
-				Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
-			Target Gen1Parser:
-				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
-			Target HPGSource:
-				Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
-			Target Build:
-				Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs /target:exe
-		Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
-		Executing: mono ../../bin/Debug//hpg.exe  cobol.bnf | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80 > cobol.cs
-		hpg-emitter: warning: rewriting property name: float
-		hpg-emitter: warning: rewriting property name: float
-		hpg-emitter: warning: rewriting property name: string
-		hpg-emitter: warning: rewriting property name: string
-		hpg-emitter: warning: rewriting property name: float
-		hpg-emitter: warning: rewriting property name: string
-	Target RunTests:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/test.dll ../../generator/parsable.cs ../../generator/dump-ast.cs cobol.cs test_records.cs /target:library /reference:nunit.framework.dll
-		Executing: nunit-console -nologo bin/Debug/test.dll
-		....
-		Tests run: 4, Failures: 0, Not run: 0, Time: 0.109 seconds
-	Target BuildGenerated:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/parse-cobol.exe ../../generator/parsable.cs ../../generator/dump-ast.cs cobol.cs /target:exe
-	Target RunGenerated:
-		Executing: mono bin/Debug/parse-cobol.exe example.cobol | LC_ALL="C" astyle -s2 -xt0 -xe -Y -xC80
-		new Copybook() {
-		  Records = new List<Record>() {
-		    new BasicRecord() {
-		      Level = new Int() { Value = "01"},
-		      LevelName = new LevelName() {
-		        HasFiller = this.HasFiller,
-		        Identifier = new Identifier() {
-		          Name = "TOP"
-		        }
-		      },
-		      Options = new List<Option>() {}
-		    },new BasicRecord() {
-		      Level = new Int() { Value = "05"},
-		      LevelName = new LevelName() {
-		        HasFiller = this.HasFiller,
-		        Identifier = new Identifier() {
-		          Name = "SUB"
-		        }
-		      },
-		      Options = new List<Option>() {}
-		    },new BasicRecord() {
-		      Level = new Int() { Value = "10"},
-		      LevelName = new LevelName() {
-		        HasFiller = this.HasFiller,
-		        Identifier = new Identifier() {
-		          Name = "FIELD"
-		        }
-		      },
-		      Options = new List<Option>() {
-		        new PictureFormatOption() {
-		          Type = "S9",
-		          Digits = new Int() { Value = "05"},
-		          DecimalType = null,
-		          DecimalDigits = null
-		        },new CompUsage() {
-		          Level = "5"
-		        }
-		      }
-		    }
-		  }
-		}
-Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/example/cobol/cobol.csproj".
-
-Build succeeded.
-	 0 Warning(s)
-	 0 Error(s)
-
-Time Elapsed 00:00:04.7227060
-```
-
-The build file also provides a more visible demo that parses a small fragment of a simple Cobol copybook:
-
-```cobol
-01 TOP.
-  05 SUB.
-    10 FIELD   PIC S9(05) COMP-5.
-```
-
-The AST is shown in the output above.
-
-> As shown by the output from the examples, the generator first generates two copies of itself, before the examples use it to generate a Pascal or Cobol parser. This is the implementation of the *self-hosting objective*.
-
-## Being Self Hosting
-
-An important aspect of this project is being self hosting and parsing the EBNF-like grammars with a parser that is generated by the parser generator itself. The following diagram shows what I mean by this; it shows the 9 steps to get from *no parser* to a fully generated second generation EBNF-like parser, that can be used to generate a parser for a different language, e.g. Pascal:
-
-![Bootstrapping HPG](assets/hpg-bootstrap.png)
-
-1. Human encoding of EBNF to loadable C# code
-2. Importing of the Grammar and transformation to a Parser model
-3. Emission of Generation 1 EBNF Parser
-4. Using Generation 1 Parser, parsing of EBNF definition into Grammar parse tree
-5. Importing of the Grammar and transformation to a Parser model
-6. Emission of Generation 2 EBNF Parser
-7. Using Generation 2 Parser, parsing of Pascal definition into Grammar parse tree
-8. Importing of the Grammar and transformation to a Parser model
-9. Emission of Pascal Parser
-
-## Grammar
-
-The grammar for the Human Parser Generator BNF-like notation (currently) looks like this:
-
-```ebnf
-(* Human Parser Generator grammar *)
-
-grammar                     ::= { rule } ;
-
-rule                        ::= [ _ @ "<" ] identifier [ _ @ ">" ]
-                                ( _ @ "::=" | _ @ "=" )
-                                expression
-                                ( _ @ ";" | _ @ "." )
-                              ;
-
-expression                  ::= alternatives-expression
-                              | non-alternatives-expression
-                              ;
-
-alternatives-expression     ::= non-alternatives-expression "|" expression ;
-
-non-alternatives-expression ::= sequential-expression
-                              | atomic-expression
-                              ; 
-
-sequential-expression       ::= atomic-expression [ _ @ "," ] non-alternatives-expression ;
-
-
-atomic-expression           ::= nested-expression
-                              | terminal-expression
-                              ;
-
-nested-expression           ::= optional-expression
-                              | repetition-expression
-                              | group-expression
-                              ;
-
-optional-expression         ::= "[" expression "]" ;
-repetition-expression       ::= "{" expression "}" ;
-group-expression            ::= "(" expression ")" ;
-
-terminal-expression         ::= identifier-expression
-                              | string-expression
-                              | extractor-expression
-                              ;
-
-identifier-expression       ::= [ name ] [ _ @ "<" ] identifier [ _ @ ">" ] ;
-
-string-expression           ::= [ name ] string ;
-
-extractor-expression        ::= [ name ] "?" "/" pattern "/" "?" ;
-
-name                        ::= identifier "@" ;
-
-identifier                  ::= ? /([A-Za-z_][A-Za-z0-9-_]*)/ ? ;
-string                      ::= ? /"([^"]*)"|^'([^']*)'/ ? ;
-pattern                     ::= ? /(.*?)(?<keep>/\s*\?\s*[;\.])/ ? ;
-
-_                           ::= ? /\(\*.*?\*\)/ ? ;
-```
-
-To bootstrap the generator, to allow it to generate a parser for the EBNF-like definition language, a grammar modelled by hand is used. It is located in `generator/grammar.cs` in the `AsModel` class, retrievable via the `BNF` property.
-
-The model is a direct implementation of this EBNF-like definition in object-oriented structures and looks like this:
-
-![Grammar Model](model/grammar.png)
-
-Not shown in the model are `identifier`, `string` and `pattern`. These lowest-level, extracting entities (aka extractors), are not generated as classes, but as (static) prepared regular expressions, and used when needed.
-
-## Generator
-
-The generator accepts a Grammar Model, which is basically an Abstract Syntax Tree (AST), and first transforms this, to a Parser Model. This model is a rewritten version of the Grammar Model and is designed to facilitate the emission of the actual Parser code.
-
-The structure of the Generator (currently) looks like this:
-
-![Parser Model](model/generator.png)
-
-### Building `hpg.exe`
-
-Building the generator simply requires an `xbuild` command in the root of the repository - which is what is also done by the Pascal and Cobol examples above:
-
-```bash
-$ xbuild
-XBuild Engine Version 14.0
-Mono, Version 4.6.2.0
-Copyright (C) 2005-2013 Various Mono authors
-
-Build started 2/22/2017 9:11:12 PM.
-__________________________________________________
-Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (default target(s)):
-	Target Gen0Parser:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
-	Target Gen1Source:
-		Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
-	Target Gen1Parser:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
-	Target HPGSource:
-		Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
-	Target Build:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs generator/hpg.cs /target:exe
-Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
-
-Build succeeded.
-	 0 Warning(s)
-	 0 Error(s)
-
-Time Elapsed 00:00:01.7712950
-```
-
-This compiles a second generation parser generator, called `hpg.exe`:
-
-```bash
-$ mono bin/Debug/hpg.exe --help
-Human Parser Generator version 1.1.6264.18747
+$ mono hpg.exe --help
+Human Parser Generator version 1.1.6274.23516
 Usage: hpg.exe [options] [file ...]
 
     --help, -h              Show usage information
@@ -611,159 +212,6 @@ Emission options.
     --namespace, -n NAME    Embed parser in namespace
 ```
 
-Providing it with an EBNF-like language definition, will simple generate a corresponding parser to standard output:
+# Documentation
 
-```bash
-$ mono bin/Debug/hpg.exe example/pascal/pascal.bnf
-// DO NOT EDIT THIS FILE
-// This file was generated using the Human Parser Generator
-// (https://github.com/christophevg/human-parser-generator)
-// on Thursday, February 23, 2017 at 12:35:26 AM
-// Source : example/pascal/pascal.bnf
-
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Linq;
-
-// program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
-public class Program {
-public Identifier Identifier { get; set; }
-public List<Assignment> Assignments { get; set; }
-  public Program() {
-...
-```
-
-> If no `file` is provided, input is read from standard input.
-
-#### Graphviz/Dot support
-
-The parser model can be dumped and formatted in [Graphviz/Dot](http://graphviz.org) format, which is often an great tool while restructuring/rewriting the EBNF to obtain a nicer class model.
-
-The output is generated, so it isn't as attractive as manually laid out diagrams, but still very useful. A few examples:
-
-#### ENBF
-![HPG Grammar Model](assets/hpg.bnf.png)
-
-#### Pascal
-![Pascal Model](assets/pascal.bnf.png)
-
-#### Cobol
-![Cobol Model](assets/cobol.bnf.png)
-
-### Test Driven Development
-
-To be able to focus on sub-problems and isolate combinations of constructs, I've set up a unit testing infrastructure that generates a EBNF-like parser and then uses that to run the tests:
-
-```bash
-$ xbuild /target:RunTests
-XBuild Engine Version 14.0
-Mono, Version 4.6.2.0
-Copyright (C) 2005-2013 Various Mono authors
-
-Build started 2/22/2017 9:12:48 PM.
-__________________________________________________
-Project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj" (RunTests target(s)):
-	Target Gen0Parser:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen0.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/grammar.cs generator/bootstrap.cs /target:exe
-	Target Gen1Source:
-		Executing: mono bin/Debug/hpg.gen0.exe generator/hpg.bnf > generator/parser.gen1.cs
-	Target Gen1Parser:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/hpg.gen1.exe generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.gen1.cs generator/hpg.cs /target:exe
-	Target HPGSource:
-		Executing: mono bin/Debug/hpg.gen1.exe generator/hpg.bnf > generator/parser.cs
-	Target RunTests:
-		Tool /Library/Frameworks/Mono.framework/Versions/4.6.2/lib/mono/4.5/mcs.exe execution started with arguments:  /debug+ /out:bin/Debug/test.dll generator/parsable.cs generator/generator.cs generator/emitter.csharp.cs generator/emitter.bnf.cs generator/format.csharp.cs generator/AssemblyInfo.cs generator/parser.cs test/test_bnf_parser.cs test/test_factory.cs test/test_model.cs test/test_parsable.cs /target:library /reference:nunit.framework.dll
-		Executing: nunit-console -nologo bin/Debug/test.dll
-		..............................
-		Tests run: 30, Failures: 0, Not run: 0, Time: 0.329 seconds
-Done building project "/Users/xtof/Workspace/2know/bellekens/cobol-copybook-parser/human-parser-generator/hpg.csproj".
-
-Build succeeded.
-	 0 Warning(s)
-	 0 Error(s)
-
-Time Elapsed 00:00:02.8446630
-```
-
-> The unit tests hardly cover the basics of the source tree, but the goal is to have a comprehensive set, covering all aspects.
-
-The repository is currently also tracked by [Circle CI](http://circleci.com). All unit tests and every example is built and the results can be seen on the [project's CI page](http://circleci.com/gh/christophevg/human-parser-generator) and via the _badge_ next to the top-most header in this README file.
-
-### An inner-(parsing)-DSL
-
-After `v1.0` I decided to improve the generated parsers, especially for more complex grammars. A few wrapper functions later this _old_ code
-
-```csharp
-public Program ParseProgram() {
-  Identifier identifier = null;
-  List<Assignment> assignments = new List<Assignment>();
-  this.Log("ParseProgram");
-  int pos = this.source.position;
-  try {
-    this.source.Consume("PROGRAM");
-    identifier = this.ParseIdentifier();
-    this.source.Consume("BEGIN");
-    {
-      Assignment temp;
-      while(true) {
-        try {
-          temp = this.ParseAssignment();
-        } catch(ParseException) {
-          break;
-        }
-        assignments.Add(temp);
-      }
-    }
-    this.source.Consume("END.");
-  } catch(ParseException e) {
-    this.source.position = pos;
-    throw this.source.GenerateParseException(
-      "Failed to parse Program.", e
-    );
-  }
-  return new Program() {
-    Identifier  = identifier,
-    Assignments = assignments
-  };
-}
-```
-
-... was turned into ...
-
-```csharp
-// program ::= "PROGRAM" identifier "BEGIN" { assignment } "END." ;
-public Program ParseProgram() {
-  Program program = new Program();
-  this.Log( "ParseProgram" );
-  Parse( () => {
-    Consume("PROGRAM");
-    program.Identifier = ParseIdentifier();
-    Consume("BEGIN");
-    program.Assignments = Many<Assignment>(ParseAssignment);
-    Consume("END.");
-  }).OrThrow("Failed to parse Program");
-  return program;
-}
-```
-
-Although it violates a few of my personal code style rules, in this case the inner-DSL is dominant and requires as little as possible _normal_ C# code ;-) The first results of this change are nice. I'm now continuing to investigate possibilities down this road.
-
-### Error Reporting
-
-Another aspect I'm working on is improving the Error Reporting. Currently the new code is already a lot more expressive. A few examples:
-
-```
-Parsing failed, best effort parser error:
-Failed to parse Assignment. at line 6/7
-7 : D123:=B34A .
-────╯
-```
-
-```
-Parsing failed, best effort parser error:
-Failed to parse Option. at line 3/70
-3 : 10 LL-VELD                             PIC S9(04) COMP-5    ;           
-────────────────────────────────────────────────────────────╯
-```
+Consult the [repository's wiki](wiki) for more background, tutorials and annotated examples.

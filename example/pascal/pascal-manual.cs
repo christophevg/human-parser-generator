@@ -77,7 +77,7 @@ public class Parser : ParserBase<Program> {
   // program ::= "PROGRAM" identifier "BEGIN" { assignment ";" } "END." ;
   public override Program Parse() {
     Program program = new Program();
-    this.Log( "ParseProgram" );
+    Log( "ParseProgram" );
     Parse( () => {
       Consume("PROGRAM");
       program.Identifier = ParseIdentifier();
@@ -94,7 +94,7 @@ public class Parser : ParserBase<Program> {
   // assignment ::= identifier ":=" expression ;
   public Assignment ParseAssignment() {
     Assignment assignment = new Assignment();
-    this.Log( "ParseAssignment" );
+    Log( "ParseAssignment" );
     Parse( () => {
       assignment.Identifier = ParseIdentifier();
       Consume(":=");
@@ -106,7 +106,7 @@ public class Parser : ParserBase<Program> {
   // expression ::= identifier | string | number ;
   public Expression ParseExpression() {
     Expression expression = null;
-    this.Log( "ParseExpression" );
+    Log( "ParseExpression" );
     Parse( () => {
       Parse( () => {
         expression = ParseIdentifier();
@@ -125,7 +125,7 @@ public class Parser : ParserBase<Program> {
   // identifier ::= name @ /([A-Z][A-Z0-9]*)/ ;
   public Identifier ParseIdentifier() {
     Identifier identifier = new Identifier();
-    this.Log( "ParseIdentifier" );
+    Log( "ParseIdentifier" );
     Parse( () => {
       identifier.Name = Consume(Extracting.Identifier);
     }).OrThrow("Failed to parse Identifier");
@@ -135,7 +135,7 @@ public class Parser : ParserBase<Program> {
   // string ::= text @ /"([^"]*)"|'([^']*)'/ ;
   public String ParseString() {
     String text = new String();
-    this.Log( "ParseString" );
+    Log( "ParseString" );
     Parse( () => {
       text.Text = Consume(Extracting.String);
     }).OrThrow("Failed to parse String");
@@ -145,7 +145,7 @@ public class Parser : ParserBase<Program> {
   // number ::= value @ /(-?[1-9][0-9]*)/ ;
   public Number ParseNumber() {
     Number number = new Number();
-    this.Log( "ParseNumber" );
+    Log( "ParseNumber" );
     Parse( () => {
       number.Value = Consume(Extracting.Number);
     }).OrThrow("Failed to parse Number");

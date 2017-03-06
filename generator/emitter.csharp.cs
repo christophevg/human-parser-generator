@@ -231,7 +231,7 @@ using System.Linq;";
         Format.CSharp.Type(entity) + " " + Format.CSharp.Variable(entity) +
         " = " +
         (entity.IsVirtual ? "null" : "new " + Format.CSharp.Class(entity) + "()") + ";\n" +
-        "this.Log( \"Parse" + Format.CSharp.Class(entity) + "\" );\n" +
+        "Log( \"Parse" + Format.CSharp.Class(entity) + "\" );\n" +
         "Parse( () => {";
     }
 

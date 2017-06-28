@@ -61,7 +61,7 @@ packed-decimal-usage        ::= "PACKED-DECIMAL";
 
 key                     ::= "ASCENDING" | "DESCENDING" [ _ @ "KEY" ] [ _ @ "IS" ] { identifier } ;
 index                   ::= "INDEXED" [ _ @ "BY" ] identifier ;
-symbolic                ::= literal | variable | figurative ;
+symbolic                ::= value | figurative ;
 
 figurative              ::= zero
                           | space

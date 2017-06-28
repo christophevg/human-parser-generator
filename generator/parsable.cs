@@ -171,7 +171,6 @@ public class Parsable {
     this.Skip();
     Match m = pattern.Match(this.Remaining);
     if(m.Success) {
-      this.Log("Consume(" + pattern.ToString() + ") SUCCESS ");
       int length = m.Groups[0].Captures[0].ToString().Length; // total match
       this.Consume(length);
       // we "re-add" what is marked "to-keep"
@@ -179,11 +178,14 @@ public class Parsable {
       //      to be at the end
       this.Position -= m.Groups["keep"].Length;
       // temp solution for regexps with two groups of which only one "captures"
-      try {
-        return m.Groups[1].Value; // only selected part
-      } catch {
-        return m.Groups[2].Value; // only selected part
+      string extracted = null;
+      if(m.Groups[1].Success) {
+        extracted = m.Groups[1].Value; // only selected part
+      } else {
+        extracted = m.Groups[2].Value; // only selected part
       }
+      this.Log("Consume(" + pattern.ToString() + ") SUCCESS ->" + extracted + "<-");
+      return extracted;
     } else {
       this.Log("Consume(" + pattern.ToString() + ") FAILED ");
     }

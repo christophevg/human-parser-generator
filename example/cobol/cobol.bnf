@@ -78,7 +78,7 @@ low-value               ::= "LOW-VALUE" [ _ @ "S" ];
 all-string              ::= "ALL" string;
 null                    ::= "NULL" [ _ @ "S" ] ;
 
-picture-type            ::= ? /([9AXVSP]+)/ ? ;
+picture-type            ::= ? /([9AXVSPZ]+)/ ? ;
 decimal-picture-type    ::= ? /([9]+)/ ? ;
 
 identifier              ::= name @ ? /([A-Z][A-Z0-9-]*)/ ? ;

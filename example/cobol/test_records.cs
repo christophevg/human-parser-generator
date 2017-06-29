@@ -200,4 +200,27 @@ public class GeneratorModelTests {
       }
     );
   }
+
+  [Test]
+  public void BasicRecordWithPicZ() {
+    this.testSingleSentence(
+      "01  SOME-FIELD PIC Z.",
+      new BasicRecord() {
+        Level = new Int() { Value = "01" },
+        LevelName = new LevelName() {
+          HasFiller = false,
+          Identifier = new Identifier() { Name = "SOME-FIELD" },
+        },
+        Options = new List<Option>() {
+          new PictureFormatOption() {
+            Type = "Z",
+            Digits = null,
+            DecimalType = null,
+            DecimalDigits = null
+          }
+        }
+      }
+    );
+  }
+
 }

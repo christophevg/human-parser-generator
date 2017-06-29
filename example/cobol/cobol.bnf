@@ -57,11 +57,11 @@ binary-usage            ::= "BINARY";
 comp-usage              ::= "COMP" [ _ @ "UTATIONAL" ] [ _ @ "-" level @ digit ] ;
 display-usage           ::= "DISPLAY";
 index-usage             ::= "INDEX";
-packed-decimal-usage        ::= "PACKED-DECIMAL";
+packed-decimal-usage    ::= "PACKED-DECIMAL";
 
 key                     ::= "ASCENDING" | "DESCENDING" [ _ @ "KEY" ] [ _ @ "IS" ] { identifier } ;
 index                   ::= "INDEXED" [ _ @ "BY" ] identifier ;
-symbolic                ::= value | figurative ;
+symbolic                ::= figurative | value ;
 
 figurative              ::= zero
                           | space
@@ -72,7 +72,7 @@ figurative              ::= zero
                           ;
 
 zero                    ::= "ZERO" [ _ @ "ES" ] ;
-space                   ::= "SPACE" [ _ @ "S" ] ;
+space                   ::= "SPACE" [ "S" ] ;
 high-value              ::= "HIGH-VALUE" [ _ @ "S" ];
 low-value               ::= "LOW-VALUE" [ _ @ "S" ];
 all-string              ::= "ALL" string;

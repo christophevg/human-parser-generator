@@ -174,4 +174,30 @@ public class GeneratorModelTests {
       }
     );
   }
+
+  [Test]
+  public void BasicRecordWithZeros() {
+    this.testSingleSentence(
+      "01 SOME-FIELD PIC X(16) VALUE ZEROS.",
+      new BasicRecord() {
+        Level = new Int() { Value = "01" },
+        LevelName = new LevelName() {
+          HasFiller = false,
+          Identifier = new Identifier() { Name = "SOME-FIELD" },
+        },
+        Options = new List<Option>() {
+          new PictureFormatOption() {
+            Type = "X",
+            Digits = new Int() { Value = "16" },
+            DecimalType = null,
+            DecimalDigits = null
+          },
+          new ValueOption() {
+            HasIs = false,
+            Value = new Zero() { HasEs = false, HasS = true }
+          }
+        }
+      }
+    );
+  }
 }

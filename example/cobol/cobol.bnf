@@ -71,7 +71,7 @@ figurative              ::= zero
                           | null
                           ;
 
-zero                    ::= "ZERO" [ _ @ "ES" ] ;
+zero                    ::= "ZERO" [ "ES" | "S" ] ;
 space                   ::= "SPACE" [ "S" ] ;
 high-value              ::= "HIGH-VALUE" [ _ @ "S" ];
 low-value               ::= "LOW-VALUE" [ _ @ "S" ];

@@ -69,6 +69,10 @@ public class Parsable {
     get { return new string(this._text, this.Position, this.RemainingLength); }
   }
 
+  public string Context {
+    get { return new string(this._text, this.Position, Math.Min(30, this.RemainingLength)); }    
+  }
+
   public bool IsDone {
     get {
       this.Skip();
@@ -215,7 +219,7 @@ public class Parsable {
   
   [ConditionalAttribute("DEBUG")]
   private void Log(string msg) {
-    Console.Error.WriteLine(msg + " @ " + this.Peek(10).Replace('\n', 'n'));
+    Console.Error.WriteLine(msg + " @ " + this.Context.Replace('\n', 'n'));
   }
 }
 
@@ -252,7 +256,7 @@ public abstract class ParserBase<RootType> {
   [ConditionalAttribute("DEBUG")]
   protected void Log(string msg) {
     Console.Error.WriteLine(
-      msg + " @ " + this.Source.Peek(20).Replace('\n', 'n')
+      msg + " @ " + this.Source.Context.Replace('\n', 'n')
     );
   }
 

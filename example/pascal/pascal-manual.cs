@@ -155,7 +155,7 @@ public class Parser : ParserBase<Program> {
 }
 
 public class Extracting {
-  public static Regex Identifier = new Regex(@"^([A-Z][A-Z0-9]*)");
-  public static Regex String = new Regex(@"^""([^""]*)""|'([^']*)'");
-  public static Regex Number = new Regex(@"^(-?[1-9][0-9]*)");
+  public static Regex Identifier = new Regex(@"\G(([A-Z][A-Z0-9]*))");
+  public static Regex String = new Regex(@"\G(""([^""]*)""|'([^']*)')");
+  public static Regex Number = new Regex(@"\G((-?[1-9][0-9]*))");
 }

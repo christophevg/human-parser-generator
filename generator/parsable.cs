@@ -356,7 +356,7 @@ public abstract class ParserBase<RootType> {
 
   public string BestErrorToString() {
     string report = "";
-    // find best top-level exception, the one that parsed the farest
+    // find best top-level exception, the one that parsed the farthest
     var best = this.Errors.OrderByDescending(x => x.MaxPosition).First();
     // recurse down the exception tree down to the lowest detail
     report = best.ToString() + "\n";

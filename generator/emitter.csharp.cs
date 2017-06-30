@@ -195,7 +195,7 @@ using System.Linq;";
         ( this.Model.Contains("_") && this.Model["_"].ParseAction is ConsumePattern ?
           "\npublic Parser() : base(" +
             Format.CSharp.VerbatimStringLiteral(
-              "^" + ((ConsumePattern)this.Model["_"].ParseAction).Pattern
+              "\\G(" + ((ConsumePattern)this.Model["_"].ParseAction).Pattern + ")"
             ) +
           "){}\n"
           : ""
@@ -387,7 +387,7 @@ using System.Linq;";
         string.Join("\n",
           this.extractions.Select(extraction =>
             "public static Regex " + extraction.Key + " = new Regex(" +
-              Format.CSharp.VerbatimStringLiteral("^" + extraction.Value) +
+              Format.CSharp.VerbatimStringLiteral("\\G(" + extraction.Value + ")") +
             ");"
           )
         ) + "\n" +

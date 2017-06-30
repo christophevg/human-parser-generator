@@ -173,7 +173,7 @@ public class Parsable {
   
   public string Consume(Regex pattern) {
     this.Skip();
-    Match m = pattern.Match(this.Remaining);
+    Match m = pattern.Match(this.Remaining, 0);
     if(m.Success) {
       int length = m.Groups[0].Captures[0].ToString().Length; // total match
       this.Consume(length);
@@ -183,10 +183,10 @@ public class Parsable {
       this.Position -= m.Groups["keep"].Length;
       // temp solution for regexps with two groups of which only one "captures"
       string extracted = null;
-      if(m.Groups[1].Success) {
-        extracted = m.Groups[1].Value; // only selected part
-      } else {
+      if(m.Groups[2].Success) {
         extracted = m.Groups[2].Value; // only selected part
+      } else {
+        extracted = m.Groups[3].Value; // only selected part
       }
       this.Log("Consume(" + pattern.ToString() + ") SUCCESS ->" + extracted + "<-");
       return extracted;

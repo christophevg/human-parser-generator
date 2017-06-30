@@ -344,9 +344,7 @@ public abstract class ParserBase<RootType> {
       var e = error;
       var indent = "";
       while(e!=null) {
-        report += indent + e.Message +
-          " at line " + e.Line + "/" + e.LinePosition +
-          " (" + e.Position + ")";
+        report += indent + e.ToString() + "\n";
         indent += "  ";
         e = e.InnerException as ParseException;
       }

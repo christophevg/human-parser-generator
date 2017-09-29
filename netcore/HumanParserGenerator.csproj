@@ -7,13 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove=".gitignore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\generator\astprinter.cs" Link="astprinter.cs" />
+    <Compile Include="..\generator\codebuilder.cs" Link="codebuilder.cs" />
     <Compile Include="..\generator\emitter.bnf.cs" Link="emitter.bnf.cs" />
-    <Compile Include="..\generator\emitter.csharp.cs" Link="emitter.csharp.cs" />
-    <Compile Include="..\generator\format.cs" Link="format.cs" />
+    <Compile Include="D:\Dev\HPG\generator\emitter.csharp.cs" Link="emitter.csharp.cs" />
+    <Compile Include="D:\Dev\HPG\generator\format.cs" Link="format.cs" />
     <Compile Include="..\generator\generator.cs" Link="generator.cs" />
-    <Compile Include="..\generator\hpg.cs" Link="hpg.cs" />
-    <Compile Include="..\generator\parserbase.cs" Link="parserbase.cs" />
-    <Compile Include="..\generator\scanner.cs" Link="scanner.cs" />
+    <Compile Include="D:\Dev\HPG\generator\hpg.cs" Link="hpg.cs" />
+    <Compile Include="D:\Dev\HPG\generator\parserbase.cs" Link="parserbase.cs" />
+    <Compile Include="D:\Dev\HPG\generator\scanner.cs" Link="scanner.cs" />
   </ItemGroup>
 
 </Project>

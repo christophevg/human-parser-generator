@@ -1,4 +1,4 @@
-// Given a Parser Model, the Emitter generates CSharp code
+﻿// Given a Parser Model, the Emitter generates CSharp code
 // author: Christophe VG <contact@christophe.vg>
 // revised by: Adam Simon <adamosimoni@gmail.com> 
 
@@ -13,79 +13,6 @@ namespace HumanParserGenerator.Emitter
 {
     public class CSharp
     {
-        class Builder
-        {
-            int _indentLevel;
-
-            public Builder()
-            {
-                StringBuilder = new StringBuilder();
-            }
-
-            public StringBuilder StringBuilder { get; }
-
-            public void Indent()
-            {
-                _indentLevel++;
-            }
-
-            public void Unindent()
-            {
-                _indentLevel--;
-            }
-
-            public void AppendIndent()
-            {
-                for (var i = 0; i < _indentLevel; i++)
-                    StringBuilder.Append("    ");
-            }
-
-            public void AppendIndented(string value)
-            {
-                AppendIndent();
-                StringBuilder.Append(value);
-            }
-
-            public void AppendIndentedLine(string value)
-            {
-                AppendIndent();
-                StringBuilder.AppendLine(value);
-            }
-
-            public void AppendBlockStart()
-            {
-                AppendIndentedLine("{");
-                Indent();
-            }
-
-            public void AppendBlockEnd()
-            {
-                Unindent();
-                AppendIndentedLine("}");
-                StringBuilder.AppendLine();
-            }
-
-            public void AppendLine()
-            {
-                StringBuilder.AppendLine();
-            }
-
-            public void AppendLine(string value)
-            {
-                StringBuilder.AppendLine(value);
-            }
-
-            public void Append(string value)
-            {
-                StringBuilder.Append(value);
-            }
-
-            public override string ToString()
-            {
-                return StringBuilder.ToString();
-            }
-        }
-
         public bool EmitInfo { get; set; }
         public bool EmitRule { get; set; }
         public bool EmitVisitor { get; set; }
@@ -102,7 +29,7 @@ namespace HumanParserGenerator.Emitter
 
         public override string ToString()
         {
-            var builder = new Builder();
+            var builder = new CodeBuilder();
 
             if (_model == null)
             {
@@ -118,15 +45,26 @@ namespace HumanParserGenerator.Emitter
 
             GenerateHeader(builder);
             GenerateReferences(builder);
+            GenerateSyntaxNode(builder);
             GenerateNamespace(builder);
             GenerateEntities(builder);
             GenerateParser(builder);
+            GenerateVisitor(builder);
             GenerateFooter(builder);
 
             return builder.ToString();
         }
 
-        private void GenerateHeader(Builder builder)
+        bool IsDerivedConsumePattern(Entity entity)
+        {
+            // TODO: is this check correct?
+            Property property;
+            return
+                entity.Properties.Count == 1 &&
+                ((property = entity.Properties[0]).Type == "<string>" || property.Type == "<bool>");
+        }
+
+        private void GenerateHeader(CodeBuilder builder)
         {
             if (EmitInfo)
             {
@@ -144,17 +82,41 @@ namespace HumanParserGenerator.Emitter
             }
         }
 
-        private void GenerateReferences(Builder builder)
+        private void GenerateReferences(CodeBuilder builder)
         {
             builder.AppendIndentedLine("using System;");
-            builder.AppendIndentedLine("using System.IO;");
             builder.AppendIndentedLine("using System.Collections.Generic;");
             builder.AppendIndentedLine("using System.Text.RegularExpressions;");
             builder.AppendIndentedLine("using System.Linq;");
+            builder.AppendIndentedLine("using HumanParserGenerator;");
             builder.AppendLine();
         }
 
-        private void GenerateNamespace(Builder builder)
+        private void GenerateSyntaxNode(CodeBuilder builder)
+        {
+            if (EmitVisitor)
+            {
+                var @namespace = typeof(ISyntaxNode).Namespace;
+
+                if (!string.IsNullOrEmpty(@namespace))
+                {
+                    builder.AppendIndentedLine($"namespace {@namespace}");
+                    builder.AppendBlockStart();
+                }
+
+                builder.AppendIndentedLine($"public partial interface {typeof(ISyntaxNode).Name}");
+                builder.AppendBlockStart();
+                builder.AppendIndentedLine("void Accept(Visitor visitor);");
+                builder.AppendBlockEnd(appendEmptyLine: false);
+
+                if (!string.IsNullOrEmpty(@namespace))
+                    builder.AppendBlockEnd(appendEmptyLine: false);
+
+                builder.AppendLine();
+            }
+        }
+
+        private void GenerateNamespace(CodeBuilder builder)
         {
             if (Namespace == null)
                 return;
@@ -163,45 +125,40 @@ namespace HumanParserGenerator.Emitter
             builder.AppendBlockStart();
         }
 
-        private void GenerateEntities(Builder builder)
+        private void GenerateEntities(CodeBuilder builder)
         {
             builder.AppendIndentedLine("#region Syntax Tree");
-
-            if (EmitVisitor)
-            {
-                builder.AppendIndentedLine("public partial interface ISyntaxNode");
-                builder.AppendBlockStart();
-                builder.AppendIndentedLine("void Accept(Visitor visitor);");
-                builder.AppendBlockEnd();
-            }
 
             foreach (var entity in _model.Entities)
                 if (!(entity.IsVirtual && entity.ParseAction is ConsumePattern))
                     GenerateEntity(builder, entity);
 
+            builder.RemoveNewLine();
+
             builder.AppendIndentedLine("#endregion");
             builder.AppendLine();
         }
 
-        private void GenerateEntity(Builder builder, Entity entity)
+        private void GenerateEntity(CodeBuilder builder, Entity entity)
         {
             GenerateEntityHeader(builder, entity);
-            GenerateProperties(builder, entity);
+            GenerateEntityProperties(builder, entity);
+            GenerateEntityMethods(builder, entity);
             GenerateEntityFooter(builder, entity);
         }
 
         #region Syntax Tree
-        private void GenerateEntityHeader(Builder builder, Entity entity)
+        private void GenerateEntityHeader(CodeBuilder builder, Entity entity)
         {
             builder.AppendIndented($"public {(entity.IsVirtual ? "interface" : "class")} {Format.CSharp.Class(entity)} : ");
 
-            builder.AppendLine(string.Join(", ", new[] { "ISyntaxNode" /* TODO */ }
+            builder.AppendLine(string.Join(", ", new[] { typeof(ISyntaxNode).Name }
                 .Concat(entity.Supers.Where(s => s.IsVirtual).Select(Format.CSharp.Class))));
 
             builder.AppendBlockStart();
         }
 
-        private void GenerateProperties(Builder builder, Entity entity)
+        private void GenerateEntityProperties(CodeBuilder builder, Entity entity)
         {
             if (entity.IsVirtual)
                 return;
@@ -210,7 +167,22 @@ namespace HumanParserGenerator.Emitter
                 GenerateProperty(builder, property);
         }
 
-        private void GenerateProperty(Builder builder, Property property)
+        private void GenerateEntityMethods(CodeBuilder builder, Entity entity)
+        {
+            if (entity.IsVirtual || !EmitVisitor)
+                return;
+
+            builder.AppendLine();
+
+            var entityName = Format.CSharp.Class(entity);
+
+            builder.AppendIndentedLine("public void Accept(Visitor visitor)");
+            builder.AppendBlockStart();
+            builder.AppendIndentedLine($"visitor.Visit{entityName}(this);");
+            builder.AppendBlockEnd(appendEmptyLine: false);
+        }
+
+        private void GenerateProperty(CodeBuilder builder, Property property)
         {
             var propertyType = Format.CSharp.Type(property);
             var propertyName = Format.CSharp.Property(property);
@@ -220,7 +192,7 @@ namespace HumanParserGenerator.Emitter
             builder.AppendLine();
         }
 
-        private void GenerateEntityFooter(Builder builder, Entity entity)
+        private void GenerateEntityFooter(CodeBuilder builder, Entity entity)
         {
             builder.AppendBlockEnd();
         }
@@ -230,7 +202,7 @@ namespace HumanParserGenerator.Emitter
         #region Parser
         const string PatternsClassName = "Patterns";
 
-        private void GenerateParser(Builder builder)
+        private void GenerateParser(CodeBuilder builder)
         {
             builder.AppendIndentedLine("#region Parser");
 
@@ -242,25 +214,7 @@ namespace HumanParserGenerator.Emitter
             builder.AppendLine();
         }
 
-        // Extracting functionality is generated for all Entities that are "just"
-        // consuming a pattern.
-        private void GeneratePatterns(Builder builder)
-        {
-            builder.AppendIndentedLine($"private static class {PatternsClassName}");
-            builder.AppendBlockStart();
-
-            foreach (var entity in _model.Entities)
-                if (entity.ParseAction is ConsumePattern consumePattern)
-                {
-                    var entityName = Format.CSharp.Class(entity);
-                    var pattern = Format.CSharp.VerbatimStringLiteral("^" + consumePattern.Pattern);
-                    builder.AppendIndentedLine($"public static readonly Regex {entityName} = new Regex({pattern}, RegexOptions.Compiled);");
-                }
-
-            builder.AppendBlockEnd();
-        }
-
-        private void GenerateParserHeader(Builder builder)
+        private void GenerateParserHeader(CodeBuilder builder)
         {
             builder.AppendIndentedLine($"public sealed class Parser : ParserBase<{Format.CSharp.Class(_model.Root)}>");
 
@@ -277,27 +231,42 @@ namespace HumanParserGenerator.Emitter
             GeneratePatterns(builder);
         }
 
-        private void GenerateEntityParsers(Builder builder)
+        // Extracting functionality is generated for all Entities that are "just"
+        // consuming a pattern.
+        private void GeneratePatterns(CodeBuilder builder)
+        {
+            builder.AppendIndentedLine($"private static class {PatternsClassName}");
+            builder.AppendBlockStart();
+
+            foreach (var entity in _model.Entities)
+                if (entity.ParseAction is ConsumePattern consumePattern)
+                {
+                    var entityName = Format.CSharp.Class(entity);
+                    var pattern = Format.CSharp.VerbatimStringLiteral("^" + consumePattern.Pattern);
+                    builder.AppendIndentedLine($"public static readonly Regex {entityName} = new Regex({pattern}, RegexOptions.Compiled);");
+                }
+
+            builder.AppendBlockEnd();
+        }
+
+        private void GenerateEntityParsers(CodeBuilder builder)
         {
             foreach (var entity in _model.Entities)
                 if (!(entity.IsVirtual && entity.ParseAction is ConsumePattern))
                     GenerateEntityParser(builder, entity);
+
+            builder.RemoveNewLine();
         }
 
-        private void GenerateEntityParser(Builder builder, Entity entity)
+        private void GenerateEntityParser(CodeBuilder builder, Entity entity)
         {
             GenerateEntityParserHeader(builder, entity);
 
             builder.AppendIndent();
 
-            Action<Builder> generator = b => GenerateParseAction(b, entity.ParseAction);
+            Action<CodeBuilder> generator = b => GenerateParseAction(b, entity.ParseAction);
 
-            
-            if (!(entity.ParseAction is ConsumePattern) &&
-                // TODO: is this check correct? simpler solution?
-                !(entity.Properties.Count == 1 && 
-                entity.Properties[0].Source is ConsumeEntity consumeEntity &&
-                consumeEntity.Entity.ParseAction is ConsumePattern))
+            if (!(entity.ParseAction is ConsumePattern) && !IsDerivedConsumePattern(entity))
             {
                 var originalGenerator = generator;
                 generator = b => GenerateEntityWrapper(builder, entity, originalGenerator);
@@ -310,18 +279,12 @@ namespace HumanParserGenerator.Emitter
             GenerateEntityParserFooter(builder, entity);
         }
 
-        private void GenerateEntityParserHeader(Builder builder, Entity entity)
+        private void GenerateEntityParserHeader(CodeBuilder builder, Entity entity)
         {
             var modifiers = entity.IsRoot ? "protected override" : "private";
             var methodName = GetEntityMethodName(entity);
 
-            var resultTypeName =
-                // TODO: is this check correct? simpler solution?
-                !(entity.Properties.Count == 1 &&
-                    entity.Properties[0].Source is ConsumeEntity consumeEntity &&
-                    consumeEntity.Entity.ParseAction is ConsumePattern) ?
-                Format.CSharp.Class(entity) :
-                "string";
+            var resultTypeName = !IsDerivedConsumePattern(entity) ? Format.CSharp.Class(entity) : "string";
 
             GenerateRule(builder, entity.Rule);
             builder.AppendIndentedLine($"{modifiers} void {methodName}(Action<{resultTypeName}> onSuccess)");
@@ -329,7 +292,7 @@ namespace HumanParserGenerator.Emitter
             builder.AppendBlockStart();
         }
 
-        private void GenerateEntityWrapper(Builder builder, Entity entity, Action<Builder> generator)
+        private void GenerateEntityWrapper(CodeBuilder builder, Entity entity, Action<CodeBuilder> generator)
         {
             if (entity.IsVirtual)
                 builder.Append("VirtualNonTerminal");
@@ -355,7 +318,7 @@ namespace HumanParserGenerator.Emitter
             return entity.IsRoot ? "Root" : "_" + Format.CSharp.Class(entity);
         }
 
-        private Action<Builder> GetParseActionGenerator(ParseAction action)
+        private Action<CodeBuilder> GetParseActionGenerator(ParseAction action)
         {
             switch (action)
             {
@@ -374,7 +337,7 @@ namespace HumanParserGenerator.Emitter
             }
         }
 
-        private void GenerateParseAction(Builder builder, ParseAction action)
+        private void GenerateParseAction(CodeBuilder builder, ParseAction action)
         {
             var generator = GetParseActionGenerator(action);
 
@@ -393,7 +356,7 @@ namespace HumanParserGenerator.Emitter
             generator(builder);
         }
 
-        private void GenerateConsumeWrapper(Builder builder, string methodName, Action<Builder> generator)
+        private void GenerateConsumeWrapper(CodeBuilder builder, string methodName, Action<CodeBuilder> generator)
         {
             builder.Append(methodName);
             builder.AppendLine("(");
@@ -407,12 +370,31 @@ namespace HumanParserGenerator.Emitter
             builder.AppendIndented(")");
         }
 
-        private void GenerateConsumeString(Builder builder, ConsumeString action)
+        private void GenerateConsumeString(CodeBuilder builder, ConsumeString action)
         {
-            builder.Append($"Terminal(\"{action.String}\")");
+            builder.Append($"Terminal(\"{action.String}\"");
+
+            if (action.Property != null && action.Parent is ConsumeAny)
+            {
+                builder.Append(", r => ");
+                builder.Append(BuildSetter(action));
+            }
+
+            builder.Append($")");
+
+            string BuildSetter(ConsumeString a)
+            {
+                var propertyEntityName = Format.CSharp.Class(a.Property.Entity);
+                var propertyName = Format.CSharp.Property(a.Property);
+
+                return
+                    a.Property.IsPlural || a.Property.Source.HasPluralParent ?
+                    $"GetNode<{propertyEntityName}>().{propertyName}.Add(r)" :
+                    $"GetNode<{propertyEntityName}>().{propertyName} = r";
+            }
         }
 
-        private void GenerateConsumePattern(Builder builder, ConsumePattern action)
+        private void GenerateConsumePattern(CodeBuilder builder, ConsumePattern action)
         {
             var entityName = Format.CSharp.Class(action.Property.Entity);
 
@@ -428,7 +410,7 @@ namespace HumanParserGenerator.Emitter
             }
         }
 
-        private void GenerateConsumeEntity(Builder builder, ConsumeEntity action)
+        private void GenerateConsumeEntity(CodeBuilder builder, ConsumeEntity action)
         {
             var entityName = Format.CSharp.Class(action.Entity);
             var methodName = GetEntityMethodName(action.Entity);
@@ -441,7 +423,7 @@ namespace HumanParserGenerator.Emitter
             string BuildSetter(ConsumeEntity a)
             {
                 if (a.Property == null)
-                    return "{ }";
+                    return "r => { }";
 
                 if (a.Property.Entity.IsVirtual)
                     return !(a.Entity.IsVirtual && a.Entity.ParseAction is ConsumePattern) ? "SetNode" : "onSuccess";
@@ -456,7 +438,7 @@ namespace HumanParserGenerator.Emitter
             }
         }
 
-        private void GenerateConsumeComposite(Builder builder, string methodName, ConsumeAll action)
+        private void GenerateConsumeComposite(CodeBuilder builder, string methodName, ConsumeAll action)
         {
             builder.Append(methodName);
             builder.AppendLine("(");
@@ -478,27 +460,107 @@ namespace HumanParserGenerator.Emitter
             builder.AppendIndented(")");
         }
 
-        private void GenerateEntityParserFooter(Builder builder, Entity entity)
+        private void GenerateEntityParserFooter(CodeBuilder builder, Entity entity)
         {
             builder.AppendBlockEnd();
         }
 
-        private void GenerateParserFooter(Builder builder)
+        private void GenerateParserFooter(CodeBuilder builder)
         {
-            builder.AppendBlockEnd();
+            builder.AppendBlockEnd(appendEmptyLine: false);
         }
 
         #endregion
 
-        private void GenerateFooter(Builder builder)
+        #region Visitor
+        private void GenerateVisitor(CodeBuilder builder)
+        {
+            if (!EmitVisitor)
+                return;
+
+            builder.AppendIndentedLine("#region Visitor");
+
+            GenerateVisitorHeader(builder);
+            GenerateVisitorBody(builder);
+            GenerateVisitorFooter(builder);
+
+            builder.AppendIndentedLine("#endregion");
+            builder.AppendLine();
+        }
+
+        private void GenerateVisitorHeader(CodeBuilder builder)
+        {
+            builder.AppendIndentedLine($"public class Visitor");
+
+            builder.AppendBlockStart();
+        }
+
+        private void GenerateVisitorBody(CodeBuilder builder)
+        {
+            builder.AppendIndentedLine("public void Visit(ISyntaxNode node)");
+            builder.AppendBlockStart();
+            builder.AppendIndentedLine("Visit(node, null);");
+            builder.AppendBlockEnd();
+
+            builder.AppendIndentedLine("protected virtual void Visit(ISyntaxNode node, ISyntaxNode parent)");
+            builder.AppendBlockStart();
+            builder.AppendIndentedLine("node?.Accept(this);");
+            builder.AppendBlockEnd();
+
+            foreach (var entity in _model.Entities)
+                if (!entity.IsVirtual)
+                    GenerateEntityVisit(builder, entity);
+
+            builder.RemoveNewLine();
+        }
+
+        private void GenerateEntityVisit(CodeBuilder builder, Entity entity)
+        {
+            var entityName = Format.CSharp.Class(entity);
+
+            builder.AppendIndentedLine($"public virtual void Visit{entityName}({entityName} node)");
+            builder.AppendBlockStart();
+
+            foreach (var property in entity.Properties)
+                if (!(property.Entity.ParseAction is ConsumePattern) && property.Type != "<string>" && property.Type != "<bool>")
+                    GeneratePropertyVisit(builder, property);
+
+            builder.AppendBlockEnd();
+        }
+
+        private void GeneratePropertyVisit(CodeBuilder builder, Property property)
+        {
+            var propertyName = Format.CSharp.Property(property);
+
+            if (property.IsPlural || property.Source.HasPluralParent)
+            {
+                builder.AppendIndentedLine($"for (var i = 0; i < node.{propertyName}.Count; i++)");
+                builder.Indent();
+                builder.AppendIndentedLine($"Visit(node.{propertyName}[i], node);");
+                builder.Unindent();
+            }
+            else
+                builder.AppendIndentedLine($"Visit(node.{propertyName}, node);");
+        }
+
+        private void GenerateVisitorFooter(CodeBuilder builder)
+        {
+            builder.AppendBlockEnd(appendEmptyLine: false);
+        }
+
+        #endregion
+
+        private void GenerateFooter(CodeBuilder builder)
         {
             if (Namespace != null)
-                builder.AppendBlockEnd();
+                builder.AppendBlockEnd(appendEmptyLine: false);
+
+            builder.RemoveNewLine();
         }
 
         private Emitter.BNF _bnf = new Emitter.BNF();
 
-        private void GenerateRule(Builder builder, Rule rule)
+        private void GenerateRule(CodeBuilder builder, Rule rule)
         {
             if (!EmitRule)
                 return;

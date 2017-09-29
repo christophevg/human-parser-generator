@@ -30,6 +30,7 @@ namespace HumanParserGenerator {
 
     private bool         emitInfo      = true;
     private bool         emitRule      = true;
+    private bool         emitVisitor   = true;
     private List<string> sources       = new List<string>();
     private string       emitNamespace = null;
 
@@ -83,7 +84,8 @@ namespace HumanParserGenerator {
           { "-t",       this.FormatText    }, { "--text",    this.FormatText    },
           { "-d",       this.FormatDot     }, { "--dot",     this.FormatDot     },
           { "-i",       this.SuppressInfo  }, { "--info",    this.SuppressInfo  },
-          { "-r",       this.SuppressRule  }, { "--rule",    this.SuppressRule  }
+          { "-r",       this.SuppressRule  }, { "--rule",    this.SuppressRule  },
+          { "-v",       this.SuppressVisitor  }, { "--visitor", this.SuppressVisitor  },
         }[option]();
       } catch(KeyNotFoundException) {}
 
@@ -131,6 +133,7 @@ namespace HumanParserGenerator {
       Console.WriteLine("Emission options.");
       Console.WriteLine("    --info, -i              Suppress generation of info header");
       Console.WriteLine("    --rule, -r              Suppress generation of rule comment");
+      Console.WriteLine("    --visitor, -v           Suppress generation of visitor class");
       Console.WriteLine("    --namespace, -n NAME    Embed parser in namespace");
       return false;
     }
@@ -143,6 +146,7 @@ namespace HumanParserGenerator {
     private bool FormatDot()     { this.format = Format.Dot;     return true; }
     private bool SuppressInfo()  { this.emitInfo = false;        return true; }
     private bool SuppressRule()  { this.emitRule = false;        return true; }
+    private bool SuppressVisitor() { this.emitVisitor = false;   return true; }
     private bool UseNamespace(string name) {
       this.emitNamespace = name;
       return true;
@@ -163,7 +167,10 @@ namespace HumanParserGenerator {
       grammar = parser.SyntaxTree;
 
       if( this.output == Output.AST ) {
-        Console.WriteLine(grammar.ToString());
+        var builder = new CodeBuilder();
+        var printer = new AstPrinter(builder);
+        printer.Visit(grammar);            
+        Console.WriteLine(builder.ToString());
         return 0;
       }
 
@@ -194,6 +201,7 @@ namespace HumanParserGenerator {
       Emitter.CSharp code = new Emitter.CSharp() {
         EmitInfo  = this.emitInfo,
         EmitRule  = this.emitRule,
+        EmitVisitor = this.emitVisitor,
         Namespace = this.emitNamespace,
         Sources   = this.sources
       }

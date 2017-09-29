@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>hpg</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\generator\emitter.bnf.cs" Link="emitter.bnf.cs" />
+    <Compile Include="..\generator\emitter.csharp.cs" Link="emitter.csharp.cs" />
+    <Compile Include="..\generator\format.cs" Link="format.cs" />
+    <Compile Include="..\generator\generator.cs" Link="generator.cs" />
+    <Compile Include="..\generator\hpg.cs" Link="hpg.cs" />
+    <Compile Include="..\generator\parserbase.cs" Link="parserbase.cs" />
+    <Compile Include="..\generator\scanner.cs" Link="scanner.cs" />
+  </ItemGroup>
+
+</Project>

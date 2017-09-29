@@ -155,12 +155,12 @@ namespace HumanParserGenerator {
 
       // EBNF-like file -> AST/Grammar Model
       Grammar grammar = null;
-      try {
-        grammar = new Parser().Parse(this.input).AST;
-      } catch(ParseException e) {
-        Console.Error.WriteLine(e.Message);
-        return 1;
+      var parser = new Parser().Parse(this.input);
+      if (parser.Error != null) {
+          Console.Error.WriteLine(parser.Error);
+          return 1;
       }
+      grammar = parser.SyntaxTree;
 
       if( this.output == Output.AST ) {
         Console.WriteLine(grammar.ToString());

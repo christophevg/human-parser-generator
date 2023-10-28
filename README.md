@@ -4,6 +4,9 @@ A straightforward recursive descent Parser Generator with a focus on "human" cod
 Christophe VG (<contact@christophe.vg>)  
 [https://github.com/christophevg/human-parser-generator](https://github.com/christophevg/human-parser-generator)
 
+> [!IMPORTANT]  
+> This repo has been [archived](https://docs.github.com/en/repositories/archiving-a-github-repository/archiving-repositories#)
+
 # Rationale
 
 Although many parser generators exist, I feel like there is room for one more, which generates a parser in a more "human" way.
